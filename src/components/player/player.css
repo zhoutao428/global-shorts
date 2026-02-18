@@ -1,0 +1,481 @@
+/* 播放器样式 - 适配项目主题 */
+
+.global-shorts-player {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+    --player-primary: var(--primary, #FF385C);
+    --player-bg: var(--dark, #121212);
+    --player-controls-bg: linear-gradient(transparent, rgba(0,0,0,0.7));
+}
+
+/* 主题变体 */
+.global-shorts-player.theme-dark {
+    --player-text: #fff;
+    --player-controls-bg: linear-gradient(transparent, rgba(0,0,0,0.8));
+}
+
+.global-shorts-player.theme-light {
+    --player-text: #333;
+    --player-controls-bg: linear-gradient(transparent, rgba(255,255,255,0.9));
+}
+
+/* 视频包装器 */
+.player-video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.player-video {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* 大播放按钮 */
+.player-big-play-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: var(--player-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.9;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.player-big-play-btn i {
+    font-size: 32px;
+    color: white;
+}
+
+.player-big-play-btn:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+}
+
+.player-big-play-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* 控制栏 */
+.player-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: var(--player-controls-bg);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 20;
+}
+
+.player-controls.show {
+    opacity: 1;
+}
+
+/* 进度条容器 */
+.progress-bar-container {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    padding: 10px 0;
+    cursor: pointer;
+}
+
+.progress-bar {
+    position: relative;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+}
+
+.buffered-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+}
+
+.play-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--player-primary);
+    border-radius: 2px;
+}
+
+.progress-handle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.progress-bar:hover .progress-handle {
+    opacity: 1;
+}
+
+.progress-range {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* 控制栏布局 */
+.controls-left,
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.controls-left {
+    margin-bottom: 10px;
+}
+
+.controls-right {
+    margin-top: 10px;
+    justify-content: flex-end;
+}
+
+/* 控制按钮 */
+.control-btn {
+    background: none;
+    border: none;
+    color: var(--player-text);
+    font-size: 18px;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.control-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.control-btn i {
+    pointer-events: none;
+}
+
+/* 播放按钮状态 */
+.play-pause .fa-pause {
+    display: none;
+}
+
+.play-pause.playing .fa-play {
+    display: none;
+}
+
+.play-pause.playing .fa-pause {
+    display: inline;
+}
+
+/* 音量控制 */
+.volume-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.volume-slider {
+    width: 80px;
+    position: relative;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+}
+
+.volume-progress {
+    height: 100%;
+    background: var(--player-primary);
+    border-radius: 2px;
+}
+
+.volume-range {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* 音量图标状态 */
+.volume.muted .fa-volume-up {
+    display: none;
+}
+
+.volume .fa-volume-mute {
+    display: none;
+}
+
+.volume.muted .fa-volume-mute {
+    display: inline;
+}
+
+/* 时间显示 */
+.time-display {
+    color: var(--player-text);
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.current-time,
+.duration {
+    font-family: monospace;
+}
+
+.time-separator {
+    margin: 0 5px;
+    opacity: 0.5;
+}
+
+/* 全屏按钮状态 */
+.fullscreen .fa-compress {
+    display: none;
+}
+
+.fullscreen.fullscreen-active .fa-expand {
+    display: none;
+}
+
+.fullscreen.fullscreen-active .fa-compress {
+    display: inline;
+}
+
+/* 加载动画 */
+.player-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 15;
+}
+
+.player-loading.show {
+    display: block;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: var(--player-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 错误提示 */
+.player-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    display: none;
+    z-index: 15;
+}
+
+.player-error.show {
+    display: block;
+}
+
+.player-error i {
+    font-size: 40px;
+    color: var(--player-primary);
+    margin-bottom: 10px;
+}
+
+/* 清晰度标记 */
+.quality.hd {
+    color: var(--player-primary);
+}
+
+.quality.hd i {
+    filter: drop-shadow(0 0 5px var(--player-primary));
+}
+
+/* 菜单样式 */
+.player-quality-menu,
+.player-subtitle-menu,
+.player-speed-menu {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    background: var(--player-bg);
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 150px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+    z-index: 25;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.player-quality-menu.show,
+.player-subtitle-menu.show,
+.player-speed-menu.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.menu-item {
+    padding: 10px 16px;
+    color: var(--player-text);
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+}
+
+.menu-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.menu-item.active {
+    color: var(--player-primary);
+    background: rgba(255,56,92,0.1);
+}
+
+/* 弹幕容器 */
+.player-danmaku {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 5;
+}
+
+.danmaku-item {
+    position: absolute;
+    white-space: nowrap;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    font-size: 20px;
+    animation: danmakuMove linear forwards;
+}
+
+@keyframes danmakuMove {
+    from { transform: translateX(100%); }
+    to { transform: translateX(-100%); }
+}
+
+/* 进度预览 */
+.player-preview {
+    position: absolute;
+    bottom: 80px;
+    background: var(--player-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    display: none;
+    z-index: 30;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.player-preview.show {
+    display: block;
+}
+
+.preview-image {
+    width: 160px;
+    height: 90px;
+    background: #000;
+}
+
+.preview-time {
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 12px;
+    color: white;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .player-big-play-btn {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .player-big-play-btn i {
+        font-size: 24px;
+    }
+    
+    .control-btn {
+        font-size: 16px;
+        padding: 6px;
+    }
+    
+    .volume-slider {
+        width: 50px;
+    }
+    
+    .time-display {
+        font-size: 12px;
+    }
+    
+    .controls-right .control-btn span {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-controls {
+        padding: 12px;
+    }
+    
+    .controls-left,
+    .controls-right {
+        gap: 8px;
+    }
+    
+    .volume-control {
+        display: none;
+    }
+}
