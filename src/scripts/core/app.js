@@ -2,9 +2,13 @@
  * 应用入口文件 - 更新版
  */
 // 在 app.js 顶部添加
+// 1. 先导入样式（确保在最顶部）
 import '@styles/variables.css';
 import '@styles/reset.css';
 import '@styles/main.css';
+import '@styles/pages/home.css';  // 加上这一行
+
+// 2. 再导入其他模块
 import router from './router.js';
 import Auth from './auth.js';
 import i18n from './i18n.js';
