@@ -1,0 +1,185 @@
+<!-- 分类导航 -->
+<section class="category-nav">
+    <h2 class="section-title">
+        <i class="fas fa-th-large"></i>
+        <span data-i18n="categories">分类</span>
+    </h2>
+    <div class="category-list" id="categoryList">
+        <div class="category-item active" data-category="all">
+            <i class="fas fa-fire"></i>
+            <span data-i18n="hot">热门推荐</span>
+        </div>
+        <div class="category-item" data-category="romance">
+            <i class="fas fa-heart"></i>
+            <span data-i18n="romance">爱情</span>
+        </div>
+        <div class="category-item" data-category="ceo">
+            <i class="fas fa-user-tie"></i>
+            <span data-i18n="ceo">总裁</span>
+        </div>
+        <div class="category-item" data-category="fantasy">
+            <i class="fas fa-hat-wizard"></i>
+            <span data-i18n="fantasy">玄幻</span>
+        </div>
+        <div class="category-item" data-category="suspense">
+            <i class="fas fa-mask"></i>
+            <span data-i18n="suspense">悬疑</span>
+        </div>
+        <div class="category-item" data-category="comedy">
+            <i class="fas fa-laugh"></i>
+            <span data-i18n="comedy">喜剧</span>
+        </div>
+    </div>
+</section>
+
+<!-- 搜索栏 -->
+<div class="search-container">
+    <div class="search-bar">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" id="searchInput" 
+               placeholder="搜索剧集、演员、分类...">
+        <button class="search-btn" id="searchBtn">
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 剧集网格 -->
+<section class="drama-grid-container">
+    <h2 class="section-title">
+        <i class="fas fa-film"></i>
+        <span data-i18n="recommended">推荐剧集</span>
+    </h2>
+    
+    <div class="drama-grid" id="dramaGrid">
+        <!-- 剧集卡片将通过JS动态生成 -->
+    </div>
+    
+    <!-- 加载中动画 -->
+    <div class="drama-loading" id="dramaLoading">
+        <div class="loading-spinner"></div>
+    </div>
+</section>
+
+<!-- 页面特定样式 -->
+<style>
+    /* 首页特有样式 */
+    .search-container {
+        margin: 20px 0;
+    }
+    
+    .search-bar {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray);
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 15px 45px 15px 45px;
+        background: var(--light-dark);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 30px;
+        color: var(--light);
+        font-size: 16px;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+    
+    .search-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--primary);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .search-btn:hover {
+        background: var(--primary-dark);
+        transform: translateY(-50%) scale(1.05);
+    }
+    
+    .drama-loading {
+        text-align: center;
+        padding: 40px;
+        display: none;
+    }
+    
+    .drama-loading.show {
+        display: block;
+    }
+    
+    .load-more-trigger {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .end-message {
+        color: var(--gray);
+        font-size: 14px;
+    }
+    
+    /* 签到模态框样式 */
+    .checkin-calendar {
+        padding: 20px;
+    }
+    
+    .checkin-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .checkin-day {
+        text-align: center;
+        padding: 10px;
+        background: var(--light-dark);
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    
+    .checkin-day.claimed {
+        background: var(--success);
+        color: white;
+    }
+    
+    .checkin-day.today {
+        border: 2px solid var(--primary);
+    }
+    
+    .checkin-day span {
+        display: block;
+        font-size: 12px;
+        color: var(--gray);
+    }
+    
+    .checkin-day.claimed span {
+        color: rgba(255,255,255,0.8);
+    }
+    
+    .checkin-info {
+        text-align: center;
+        color: var(--gray);
+        font-size: 13px;
+    }
+</style>
