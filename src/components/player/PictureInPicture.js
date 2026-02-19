@@ -1,0 +1,1 @@
+export default class PictureInPicture{constructor(t){this.player=t}}

@@ -1,0 +1,1 @@
+export default class DownloadManager{constructor(a){this.player=a}download(){}}

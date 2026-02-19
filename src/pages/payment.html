@@ -1,0 +1,934 @@
+<!-- 充值页内容 - 不包含公共导航栏 -->
+
+<!-- 页面加载动画 -->
+<div class="page-loading" id="pageLoading">
+    <div class="loading-spinner"></div>
+    <p>加载中...</p>
+</div>
+
+<!-- 页面头部 -->
+<header class="payment-header">
+    <div class="container">
+        <div class="header-content">
+            <button class="back-btn" id="backBtn">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 class="payment-title">充值中心</h1>
+            <div class="coin-balance">
+                <i class="fas fa-coins"></i>
+                <span>1,250</span>
+            </div>
+        </div>
+        <p class="payment-subtitle">选择套餐，安全便捷支付</p>
+    </div>
+</header>
+
+<!-- 主内容 -->
+<main class="payment-main container">
+    <!-- 选项卡 -->
+    <div class="payment-tabs">
+        <button class="payment-tab active" data-tab="coins">
+            <i class="fas fa-coins"></i>
+            金币充值
+        </button>
+        <button class="payment-tab" data-tab="vip">
+            <i class="fas fa-crown"></i>
+            VIP会员
+        </button>
+        <button class="payment-tab" data-tab="history">
+            <i class="fas fa-history"></i>
+            交易记录
+        </button>
+    </div>
+    
+    <!-- 金币充值选项卡 -->
+    <div class="tab-content active" id="coinsTab">
+        <section class="packages-section">
+            <h2 class="section-title">选择充值金额</h2>
+            <div class="packages-grid" id="coinPackages">
+                <!-- 金币套餐通过JS动态生成 -->
+            </div>
+        </section>
+    </div>
+    
+    <!-- VIP会员选项卡 -->
+    <div class="tab-content" id="vipTab">
+        <section class="vip-section">
+            <h2 class="section-title">选择VIP套餐</h2>
+            <div class="vip-grid" id="vipPackages">
+                <!-- VIP套餐通过JS动态生成 -->
+            </div>
+        </section>
+        
+        <section class="vip-benefits">
+            <h3 class="section-title">VIP特权</h3>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <i class="fas fa-ban"></i>
+                    <h4>无广告观看</h4>
+                    <p>告别广告干扰，畅享纯净观看体验</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-rocket"></i>
+                    <h4>抢先观看</h4>
+                    <p>新剧集提前24小时观看</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-film"></i>
+                    <h4>独家内容</h4>
+                    <p>VIP专属剧集和幕后花絮</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-download"></i>
+                    <h4>离线缓存</h4>
+                    <p>下载剧集随时随地观看</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-headset"></i>
+                    <h4>优先客服</h4>
+                    <p>24小时专属客服支持</p>
+                </div>
+                <div class="benefit-item">
+                    <i class="fas fa-gift"></i>
+                    <h4>生日礼包</h4>
+                    <p>每月领取专属金币礼包</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- 交易记录选项卡 -->
+    <div class="tab-content" id="historyTab">
+        <section class="history-section">
+            <h2 class="section-title">交易记录</h2>
+            <div id="transactionHistory" class="transaction-list">
+                <!-- 交易记录通过JS动态生成 -->
+            </div>
+        </section>
+    </div>
+    
+    <!-- 支付方式选择 -->
+    <section class="payment-methods-section">
+        <h2 class="section-title">选择支付方式</h2>
+        <div class="methods-grid">
+            <div class="method-card active" data-method="card">
+                <div class="method-icon">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <div class="method-name">信用卡/借记卡</div>
+                <div class="method-desc">Visa, MasterCard, AMEX</div>
+            </div>
+            <div class="method-card" data-method="paypal">
+                <div class="method-icon">
+                    <i class="fab fa-paypal"></i>
+                </div>
+                <div class="method-name">PayPal</div>
+                <div class="method-desc">快速安全支付</div>
+            </div>
+            <div class="method-card" data-method="googlepay">
+                <div class="method-icon">
+                    <i class="fab fa-google-pay"></i>
+                </div>
+                <div class="method-name">Google Pay</div>
+                <div class="method-desc">一键支付</div>
+            </div>
+            <div class="method-card" data-method="applepay">
+                <div class="method-icon">
+                    <i class="fab fa-apple-pay"></i>
+                </div>
+                <div class="method-name">Apple Pay</div>
+                <div class="method-desc">iPhone用户专属</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 支付表单 -->
+    <section class="payment-form-section" id="paymentFormSection">
+        <h2 class="section-title">支付信息</h2>
+        <form id="paymentForm">
+            <div class="form-group">
+                <label class="form-label">邮箱地址</label>
+                <input type="email" class="form-control" id="email" 
+                       placeholder="your@email.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">卡号</label>
+                <input type="text" class="form-control" id="cardNumber" 
+                       placeholder="1234 5678 9012 3456" maxlength="19" 
+                       oninput="this.value = this.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim()">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">有效期</label>
+                    <input type="text" class="form-control" id="expiry" 
+                           placeholder="MM/YY" maxlength="5"
+                           oninput="this.value = this.value.replace(/[^\d]/g, '').replace(/(\d{2})(\d{0,2})/, '$1/$2')">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">CVV</label>
+                    <input type="text" class="form-control" id="cvv" 
+                           placeholder="123" maxlength="4"
+                           oninput="this.value = this.value.replace(/\D/g, '')">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">持卡人姓名</label>
+                <input type="text" class="form-control" id="cardName" 
+                       placeholder="John Smith" required>
+            </div>
+            
+            <div class="security-badge">
+                <i class="fas fa-shield-alt"></i>
+                <span>SSL安全加密 | 256-bit 加密保护</span>
+            </div>
+            
+            <button type="submit" class="pay-now-btn" id="payNowBtn" disabled>
+                <i class="fas fa-lock"></i> 立即支付
+            </button>
+        </form>
+    </section>
+    
+    <!-- 优惠码 -->
+    <section class="promo-section">
+        <h2 class="section-title">优惠码</h2>
+        <div class="promo-input-group">
+            <input type="text" class="promo-input" id="promoCode" 
+                   placeholder="输入优惠码" maxlength="20">
+            <button class="apply-promo-btn" id="applyPromoBtn">应用</button>
+        </div>
+        <div class="promo-tips">
+            <span class="promo-tip">新用户专享 WELCOME10 (10%优惠)</span>
+            <span class="promo-tip">VIP20 (VIP套餐20%优惠)</span>
+            <span class="promo-tip">COIN50 (金币套餐50%优惠)</span>
+        </div>
+    </section>
+</main>
+
+<!-- 页面特定样式 -->
+<style>
+    .page-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--dark);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+    
+    .page-loading.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .page-loading .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255,56,92,0.3);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .payment-header {
+        background: linear-gradient(135deg, var(--light-dark), var(--secondary));
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 0 0 30px 30px;
+    }
+    
+    .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .back-btn {
+        background: transparent;
+        border: none;
+        color: var(--light);
+        font-size: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    
+    .back-btn:hover {
+        background: rgba(255,255,255,0.1);
+    }
+    
+    .payment-title {
+        font-size: 24px;
+        font-weight: 700;
+    }
+    
+    .coin-balance {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0,200,83,0.2);
+        padding: 10px 20px;
+        border-radius: 30px;
+        font-weight: 700;
+    }
+    
+    .coin-balance i {
+        color: #FFAB00;
+        font-size: 20px;
+    }
+    
+    .payment-subtitle {
+        color: var(--gray);
+        font-size: 16px;
+        text-align: center;
+    }
+    
+    .payment-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 15px;
+    }
+    
+    .payment-tab {
+        background: transparent;
+        border: none;
+        color: var(--gray);
+        padding: 10px 25px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        border-radius: 30px;
+    }
+    
+    .payment-tab i {
+        font-size: 18px;
+    }
+    
+    .payment-tab:hover {
+        color: var(--light);
+        background: rgba(255,255,255,0.05);
+    }
+    
+    .payment-tab.active {
+        color: var(--primary);
+        background: rgba(255,56,92,0.1);
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .section-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-title i {
+        color: var(--primary);
+    }
+    
+    .packages-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .package-card {
+        background: var(--light-dark);
+        border-radius: 20px;
+        padding: 30px 20px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+        border: 2px solid transparent;
+        position: relative;
+    }
+    
+    .package-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--primary);
+        box-shadow: 0 15px 30px rgba(255,56,92,0.2);
+    }
+    
+    .package-card.popular {
+        border-color: #FFD700;
+    }
+    
+    .popular-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #FFD700;
+        color: #000;
+        padding: 6px 20px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    
+    .package-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: rgba(255,56,92,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 30px;
+        color: var(--primary);
+    }
+    
+    .package-amount {
+        font-size: 28px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: #FFAB00;
+    }
+    
+    .package-bonus {
+        color: var(--success);
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    .package-price {
+        margin-bottom: 15px;
+    }
+    
+    .original-price {
+        color: var(--gray);
+        text-decoration: line-through;
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    
+    .current-price {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    .package-discount {
+        background: var(--success);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+    
+    .buy-btn {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .buy-btn:hover {
+        background: #E0314F;
+        transform: translateY(-2px);
+    }
+    
+    .vip-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .vip-card {
+        background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,165,0,0.1));
+        border: 2px solid #FFD700;
+        border-radius: 20px;
+        padding: 30px 20px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .vip-card.popular {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, rgba(255,56,92,0.1), rgba(255,56,92,0.05));
+    }
+    
+    .vip-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(255,215,0,0.2);
+    }
+    
+    .vip-icon {
+        font-size: 50px;
+        color: #FFD700;
+        margin-bottom: 15px;
+    }
+    
+    .vip-name {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .vip-duration {
+        color: var(--gray);
+        margin-bottom: 15px;
+    }
+    
+    .vip-price {
+        margin-bottom: 15px;
+    }
+    
+    .vip-discount {
+        background: var(--success);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 20px;
+    }
+    
+    .vip-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 25px 0;
+        text-align: left;
+    }
+    
+    .vip-features li {
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .vip-features i {
+        color: var(--success);
+        font-size: 14px;
+    }
+    
+    .buy-vip-btn {
+        width: 100%;
+        padding: 12px;
+        background: #FFD700;
+        color: #000;
+        border: none;
+        border-radius: 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .buy-vip-btn:hover {
+        background: #FFA500;
+        transform: translateY(-2px);
+    }
+    
+    .vip-benefits {
+        margin-top: 40px;
+    }
+    
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .benefit-item {
+        background: var(--light-dark);
+        border-radius: 15px;
+        padding: 25px 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .benefit-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    
+    .benefit-item i {
+        font-size: 36px;
+        color: var(--primary);
+        margin-bottom: 15px;
+    }
+    
+    .benefit-item h4 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .benefit-item p {
+        color: var(--gray);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    
+    .history-section {
+        background: var(--light-dark);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .transaction-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .history-item:last-child {
+        border-bottom: none;
+    }
+    
+    .history-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .history-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .history-icon.success {
+        background: rgba(0,200,83,0.1);
+        color: var(--success);
+    }
+    
+    .history-icon.pending {
+        background: rgba(255,171,0,0.1);
+        color: var(--warning);
+    }
+    
+    .history-icon.failed {
+        background: rgba(245,34,45,0.1);
+        color: var(--error);
+    }
+    
+    .history-details h4 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .history-details p {
+        font-size: 12px;
+        color: var(--gray);
+    }
+    
+    .history-amount {
+        font-weight: 700;
+    }
+    
+    .history-amount.success {
+        color: var(--success);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--gray);
+    }
+    
+    .empty-state i {
+        font-size: 60px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    .empty-state h4 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: var(--light);
+    }
+    
+    .payment-methods-section {
+        margin-bottom: 40px;
+    }
+    
+    .methods-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .method-card {
+        background: var(--light-dark);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .method-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary);
+    }
+    
+    .method-card.active {
+        border-color: var(--primary);
+        background: rgba(255,56,92,0.1);
+    }
+    
+    .method-icon {
+        font-size: 36px;
+        margin-bottom: 15px;
+    }
+    
+    .method-card[data-method="card"] .method-icon { color: var(--primary); }
+    .method-card[data-method="paypal"] .method-icon { color: #003087; }
+    .method-card[data-method="googlepay"] .method-icon { color: #4285F4; }
+    .method-card[data-method="applepay"] .method-icon { color: #000; }
+    
+    .method-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .method-desc {
+        color: var(--gray);
+        font-size: 12px;
+    }
+    
+    .payment-form-section {
+        background: var(--light-dark);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        color: var(--light);
+        font-size: 16px;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: rgba(255,56,92,0.05);
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .security-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--success);
+        margin-bottom: 20px;
+        padding: 15px;
+        background: rgba(0,200,83,0.05);
+        border-radius: 10px;
+    }
+    
+    .pay-now-btn {
+        width: 100%;
+        padding: 18px;
+        background: var(--success);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .pay-now-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,200,83,0.4);
+    }
+    
+    .pay-now-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .promo-section {
+        background: var(--light-dark);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .promo-input-group {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .promo-input {
+        flex: 1;
+        padding: 15px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        color: var(--light);
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+    
+    .promo-input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+    
+    .apply-promo-btn {
+        padding: 15px 30px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .apply-promo-btn:hover {
+        background: #E0314F;
+        transform: translateY(-2px);
+    }
+    
+    .promo-tips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .promo-tip {
+        padding: 5px 12px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 20px;
+        font-size: 12px;
+        color: var(--gray);
+    }
+    
+    @media (max-width: 768px) {
+        .packages-grid,
+        .vip-grid,
+        .benefits-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .methods-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .promo-input-group {
+            flex-direction: column;
+        }
+        
+        .payment-tabs {
+            flex-wrap: wrap;
+        }
+        
+        .payment-tab {
+            flex: 1;
+            justify-content: center;
+            padding: 10px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .header-content {
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .methods-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

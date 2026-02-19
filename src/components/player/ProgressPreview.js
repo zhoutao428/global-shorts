@@ -1,0 +1,1 @@
+export default class ProgressPreview{constructor(r){this.player=r}}

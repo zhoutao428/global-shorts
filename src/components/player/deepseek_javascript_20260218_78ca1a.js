@@ -1,0 +1,1 @@
+export default class AudioMode{constructor(e){this.player=e}enable(){}disable(){}}

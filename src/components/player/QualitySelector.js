@@ -1,0 +1,1 @@
+export default class QualitySelector{constructor(t){this.player=t}}

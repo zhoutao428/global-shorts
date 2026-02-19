@@ -1,0 +1,1 @@
+class Auth{constructor(){this.token=localStorage.getItem("token"),this.user=null}isLoggedIn(){return!!this.token}isVIP(){return this.user?.isVip||!1}setToken(t){this.token=t,localStorage.setItem("token",t)}logout(){this.token=null,this.user=null,localStorage.removeItem("token"),localStorage.removeItem("user")}}export default new Auth;

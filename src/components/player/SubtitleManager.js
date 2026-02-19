@@ -1,0 +1,1 @@
+export default class SubtitleManager{constructor(t){this.player=t}}
