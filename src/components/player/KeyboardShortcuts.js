@@ -1,1 +1,0 @@
-export default class KeyboardShortcuts{constructor(t){this.player=t}}

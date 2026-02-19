@@ -1,1 +1,0 @@
-export default class Danmaku{constructor(t,a){this.player=t,this.container=a}send(t,a={}){}}

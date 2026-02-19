@@ -1,1 +1,0 @@
-export default class Modal{constructor(o={}){this.options=o}show(){}hide(){}}

@@ -1,1 +1,0 @@
-class I18n{constructor(){this.currentLang="en",this.translations={}}init(t){this.currentLang=t,localStorage.setItem("language",t)}t(t){return t}}export default new I18n;
