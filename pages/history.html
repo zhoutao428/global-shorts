@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History - Global Shorts</title>
+  <style>
+    /* 复用您现有页面的CSS，确保样式一致 */
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding-bottom: 70px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    /* 复用您现有页面的顶部导航 */
+    .header {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .language-selector select {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    
+    .coin-balance {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 15px;
+      border-radius: 20px;
+    }
+    
+    .coin-icon {
+      font-size: 18px;
+    }
+    
+    .coin-amount {
+      font-weight: 600;
+      color: #ff385c;
+    }
+    
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn-login, .btn-signup {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-login {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-signup {
+      background: linear-gradient(90deg, #ff385c 0%, #ff9a3d 100%);
+      color: #fff;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+    
+    .user-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    /* 复用您现有页面的底部导航 */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 1000;
+    }
+    
+    .nav-item {
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 12px;
+    }
+    
+    .nav-item.active, .nav-item:hover {
+      color: #ff385c;
+    }
+    
+    /* 历史页面内容 */
+    .history-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: white;
+    }
+    
+    .history-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    
+    .history-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .history-item:hover {
+      transform: translateY(-5px);
+    }
+    
+    .history-item-img {
+      height: 120px;
+      background: linear-gradient(135deg, #ff385c 0%, #ff9a3d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+    }
+    
+    .history-item-info {
+      padding: 15px;
+    }
+    
+    .history-item-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: white;
+    }
+    
+    .history-item-meta {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+    }
+    
+    .history-empty {
+      text-align: center;
+      padding: 50px 0;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="header">
+    <div class="header-container">
+      <div class="logo">Global Shorts</div>
+      <div class="header-right">
+        <div class="language-selector">
+          <select id="language">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+          </select>
+        </div>
+        <div class="coin-balance">
+          <span class="coin-icon">💰</span>
+          <span class="coin-amount">1,250</span>
+        </div>
+        <div class="auth-buttons" id="authButtons">
+          <button class="btn-login" id="loginBtn">Login</button>
+          <button class="btn-signup" id="signupBtn">Sign Up</button>
+        </div>
+        <div class="user-info" id="userInfo" style="display:none">
+          <div class="avatar">JS</div>
+          <div class="user-name">John Smith</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 历史内容 -->
+  <div class="history-container">
+    <div class="section-title">Your Viewing History</div>
+    
+    <div class="history-list">
+      <!-- 历史剧集 -->
+      <div class="history-item">
+        <div class="history-item-img">The CEO's Secret Marriage</div>
+        <div class="history-item-info">
+          <div class="history-item-title">The CEO's Secret Marriage</div>
+          <div class="history-item-meta">Episode 5 • 2 days ago</div>
+        </div>
+      </div>
+      
+      <div class="history-item">
+        <div class="history-item-img">Forbidden Love</div>
+        <div class="history-item-info">
+          <div class="history-item-title">Forbidden Love</div>
+          <div class="history-item-meta">Episode 3 • 3 days ago</div>
+        </div>
+      </div>
+      
+      <div class="history-item">
+        <div class="history-item-img">Revenge Queen</div>
+        <div class="history-item-info">
+          <div class="history-item-title">Revenge Queen</div>
+          <div class="history-item-meta">Episode 7 • 5 days ago</div>
+        </div>
+      </div>
+      
+      <div class="history-item">
+        <div class="history-item-img">Secret Baby</div>
+        <div class="history-item-info">
+          <div class="history-item-title">Secret Baby</div>
+          <div class="history-item-meta">Episode 2 • 1 week ago</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 如果没有历史 -->
+    <!--
+    <div class="history-empty">
+      <div style="font-size:24px; margin-bottom:10px">No viewing history yet</div>
+      <div>Start watching dramas to see your history here</div>
+    </div>
+    -->
+  </div>
+
+  <!-- 底部导航 -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span>🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="discover.html" class="nav-item">
+      <span>🔍</span>
+      <span>Discover</span>
+    </a>
+    <a href="history.html" class="nav-item active">
+      <span>🕒</span>
+      <span>History</span>
+    </a>
+    <a href="library.html" class="nav-item">
+      <span>📚</span>
+      <span>Library</span>
+    </a>
+    <a href="profile.html" class="nav-item">
+      <span>👤</span>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <script>
+    // 简单用户状态管理（不改动您的UI）
+    function checkLogin() {
+      const user = localStorage.getItem('userProfile');
+      if (user) {
+        document.getElementById('authButtons').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
+      } else {
+        document.getElementById('authButtons').style.display = 'flex';
+        document.getElementById('userInfo').style.display = 'none';
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      checkLogin();
+      
+      // 点击剧集跳转到播放器
+      document.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', function() {
+          window.location.href = 'player.html';
+        });
+      });
+    });
+  </script>
+</body>
+</html>
