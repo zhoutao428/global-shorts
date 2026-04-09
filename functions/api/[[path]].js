@@ -7,7 +7,7 @@ import { handleAdmin } from './admin/index.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
-    const url = new URL(request.url);
+    
     
     // 测试端点 - 放在最前面
     if (url.pathname === '/api/test-db') {
