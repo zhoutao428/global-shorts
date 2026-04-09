@@ -5,6 +5,15 @@ import { handlePublic } from './public.js';
 import { handleUser } from './user.js';
 import { handleAdmin } from './admin/index.js';
 
+// ========== 添加 CORS 头函数 ==========
+function addCors(response) {
+    const newResponse = new Response(response.body, response);
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+        newResponse.headers.set(key, value);
+    });
+    return newResponse;
+}
+
 export async function onRequest(context) {
     const { request, env } = context;
     const url = new URL(request.url);
