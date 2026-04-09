@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户分析 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            <span>Global Shorts 后台</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i>
+            <span id="currentLanguage">中文</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 用户下拉菜单（放在header外面，但紧随其后） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+
+    <div class="admin-container">
+        <!-- 侧边栏（完整版） -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <h1 class="page-title">用户分析</h1>
+                <p class="page-description">用户增长、活跃度、留存率等数据分析</p>
+            </div>
+
+            <!-- 时间筛选 -->
+            <div class="search-filter" style="justify-content:space-between;">
+                <div style="display:flex; gap:12px;">
+                    <select class="form-control" style="width:150px;" id="analysisPeriod">
+                        <option value="week">最近7天</option>
+                        <option value="month" selected>最近30天</option>
+                        <option value="quarter">最近90天</option>
+                        <option value="year">最近1年</option>
+                    </select>
+                    <button class="btn btn-primary" id="applyAnalysisBtn">应用</button>
+                </div>
+                <button class="btn btn-secondary" id="exportAnalysisBtn">
+                    <i class="fas fa-download"></i>导出报告
+                </button>
+            </div>
+
+            <!-- 核心指标卡片 -->
+            <div class="stats-grid" style="margin-bottom:24px;">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #1890ff, #096dd9);">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>+1,245</h3>
+                        <p>新增用户</p>
+                        <small style="color:var(--success);">↑ 12.5%</small>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #52c41a, #389e0d);">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>8,567</h3>
+                        <p>活跃用户 (DAU)</p>
+                        <small style="color:var(--success);">↑ 8.3%</small>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #faad14, #d48806);">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>42.3%</h3>
+                        <p>次月留存率</p>
+                        <small style="color:var(--success);">↑ 3.2%</small>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #722ed1, #531dab);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>18.5min</h3>
+                        <p>平均使用时长</p>
+                        <small style="color:var(--success);">↑ 2.1min</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户增长趋势图 -->
+            <div class="chart-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 class="chart-title">用户增长趋势</h3>
+                    <div>
+                        <span style="margin-right:16px; color:var(--gray);">
+                            <i class="fas fa-square" style="color:var(--primary);"></i> 新增用户
+                        </span>
+                        <span style="color:var(--gray);">
+                            <i class="fas fa-square" style="color:var(--success);"></i> 累计用户
+                        </span>
+                    </div>
+                </div>
+                <div style="height:300px;">
+                    <canvas id="userGrowthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 用户留存分析 -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <h3 class="card-title">用户留存分析</h3>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>用户群组</th>
+                                <th>第1天</th>
+                                <th>第3天</th>
+                                <th>第7天</th>
+                                <th>第14天</th>
+                                <th>第30天</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2024-02-23 注册</td>
+                                <td>100%</td>
+                                <td>42.3%</td>
+                                <td>28.5%</td>
+                                <td>19.2%</td>
+                                <td>12.8%</td>
+                            </tr>
+                            <tr>
+                                <td>2024-02-16 注册</td>
+                                <td>100%</td>
+                                <td>41.8%</td>
+                                <td>27.9%</td>
+                                <td>18.7%</td>
+                                <td>12.1%</td>
+                            </tr>
+                            <tr>
+                                <td>2024-02-09 注册</td>
+                                <td>100%</td>
+                                <td>43.2%</td>
+                                <td>29.1%</td>
+                                <td>19.8%</td>
+                                <td>13.2%</td>
+                            </tr>
+                            <tr>
+                                <td>2024-02-02 注册</td>
+                                <td>100%</td>
+                                <td>40.5%</td>
+                                <td>26.8%</td>
+                                <td>18.1%</td>
+                                <td>11.9%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 用户画像分析 -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+                <!-- 年龄分布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">年龄分布</h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="height:200px;">
+                            <canvas id="ageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 性别分布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">性别分布</h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="height:200px;">
+                            <canvas id="genderChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设备分布 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">设备分布</h3>
+                </div>
+                <div class="card-content">
+                    <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
+                        <div style="height:200px;">
+                            <canvas id="deviceChart"></canvas>
+                        </div>
+                        <div>
+                            <table class="admin-table">
+                                <tbody>
+                                    <tr><td>iOS</td><td>45%</td></tr>
+                                    <tr><td>Android</td><td>48%</td></tr>
+                                    <tr><td>Web</td><td>7%</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin-core.js"></script>
+    <script src="/js/admin-users.js"></script>
+    <script>
+        // 初始化图表
+        document.addEventListener('DOMContentLoaded', () => {
+            // 用户增长图表
+            const growthCtx = document.getElementById('userGrowthChart').getContext('2d');
+            new Chart(growthCtx, {
+                type: 'line',
+                data: {
+                    labels: ['3/1', '3/5', '3/9', '3/13', '3/17', '3/21', '3/25'],
+                    datasets: [
+                        {
+                            label: '新增用户',
+                            data: [120, 135, 142, 158, 165, 172, 189],
+                            borderColor: '#1890ff',
+                            backgroundColor: 'rgba(24,144,255,0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: '累计用户',
+                            data: [12500, 12635, 12777, 12935, 13100, 13272, 13461],
+                            borderColor: '#52c41a',
+                            backgroundColor: 'rgba(82,196,26,0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true },
+                        y1: { position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+
+            // 年龄分布
+            const ageCtx = document.getElementById('ageChart').getContext('2d');
+            new Chart(ageCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['18-24岁', '25-30岁', '31-35岁', '36-40岁', '40岁以上'],
+                    datasets: [{
+                        data: [25, 35, 20, 12, 8],
+                        backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#722ed1', '#f5222d']
+                    }]
+                }
+            });
+
+            // 性别分布
+            const genderCtx = document.getElementById('genderChart').getContext('2d');
+            new Chart(genderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['男性', '女性', '未填写'],
+                    datasets: [{
+                        data: [52, 45, 3],
+                        backgroundColor: ['#1890ff', '#f5222d', '#8c8c8c']
+                    }]
+                }
+            });
+
+            // 设备分布
+            const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+            new Chart(deviceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['iOS', 'Android', 'Web'],
+                    datasets: [{
+                        data: [45, 48, 7],
+                        backgroundColor: ['#1890ff', '#52c41a', '#faad14']
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { max: 100 }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

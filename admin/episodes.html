@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分集管理 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="admin-header">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+            <div class="logo"><i class="fas fa-globe-americas"></i><span>Global Shorts 后台</span></div>
+        </div>
+        <div class="header-right">
+            <div class="language-switcher" id="languageSwitcher">
+                <i class="fas fa-language"></i><span id="currentLanguage">中文</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+                <div class="user-avatar" id="userAvatar">AD</div>
+                <div>
+                    <div id="adminName">管理员</div>
+                    <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 用户下拉菜单 -->
+    <div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+        <a href="/admin/profile.html"><i class="fas fa-user"></i>个人资料</a>
+        <a href="/admin/settings.html"><i class="fas fa-cog"></i>账户设置</a>
+        <a href="/admin/change-password.html"><i class="fas fa-key"></i>修改密码</a>
+        <div class="dropdown-divider"></div>
+        <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i>退出登录</a>
+    </div>
+
+    <div class="admin-container">
+        <!-- 侧边栏（完整版） -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <h1 class="page-title">分集管理</h1>
+                <p class="page-description">管理每部剧集的分集信息</p>
+            </div>
+
+            <!-- 剧集选择下拉框 -->
+            <div class="search-filter">
+                <div style="flex:1; display:flex; gap:12px;">
+                    <select class="form-control" id="dramaSelect" style="max-width:400px;">
+                        <option value="">请选择剧集</option>
+                    </select>
+                    <a href="/admin/dramas.html" class="btn btn-secondary">返回剧集列表</a>
+                </div>
+                <button class="btn btn-primary" id="addEpisodeBtn" disabled>
+                    <i class="fas fa-plus"></i>添加分集
+                </button>
+            </div>
+
+            <!-- 当前剧集信息卡片 -->
+            <div id="dramaInfoCard" style="display:none; margin-bottom:20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title" id="currentDramaTitle"></h3>
+                        <div>
+                            <span class="status-badge" id="dramaStatusBadge"></span>
+                            <span class="status-badge" id="dramaAccessTypeBadge"></span>
+                        </div>
+                    </div>
+                    <div class="card-content" style="display:flex; gap:20px; align-items:center;">
+                        <img id="dramaCover" src="" alt="封面" style="width:80px; height:80px; object-fit:cover; border-radius:4px; display:none;">
+                        <div>
+                            <p id="dramaDescription" style="color:var(--gray); margin-bottom:8px;"></p>
+                            <p>总集数: <span id="dramaTotalEpisodes">0</span> | 已上传: <span id="uploadedEpisodes">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分集列表表格（带批量删除功能） -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">分集列表</h3>
+                    <div class="bulk-actions" style="display: flex; gap: 10px; align-items: center;">
+                        <label>
+                            <input type="checkbox" id="selectAllCheckboxHeader"> 全选
+                        </label>
+                        <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" disabled>批量删除</button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;">
+                                    <input type="checkbox" id="selectAllCheckboxHeader">
+                                </th>
+                                <th>集数</th>
+                                <th>标题</th>
+                                <th>视频链接</th>
+                                <th>时长</th>
+                                <th>语言</th>
+                                <th>价格(金币)</th>
+                                <th>状态</th>
+                                <th>上传时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="episodeTableBody">
+                            <tr><td colspan="10" class="empty-placeholder">请先选择剧集</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑分集模态框（修改：免费/收费单选） -->
+    <div class="modal-overlay" id="addEpisodeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="episodeModalTitle">添加分集</h3>
+                <button class="modal-close" id="closeEpisodeModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="episodeForm">
+                    <input type="hidden" id="episodeId">
+                    <div class="form-group">
+    <label class="form-label">解锁价格 (金币)</label>
+    <input type="number" class="form-control" id="episodePrice" name="price" min="0" step="1" value="0">
+    <small>设置为0表示免费观看</small>
+</div>
+                    <div class="form-group">
+                        <label class="form-label">标题 <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="episodeTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">视频URL <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="videoUrl" placeholder="https://cdn.example.com/video.mp4" required>
+                        <small style="color:var(--gray);">输入真实的视频链接地址</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">时长(秒)</label>
+                        <input type="number" class="form-control" id="episodeDuration" placeholder="例如: 300">
+                    </div>
+                    <!-- 语言下拉框（动态加载） -->
+                    <div class="form-group">
+                        <label class="form-label">语言</label>
+                        <select class="form-control" id="episodeLanguage">
+                            <!-- 选项由JS动态生成 -->
+                        </select>
+                        <small style="color:var(--gray);">从区域语言管理同步</small>
+                    </div>
+                                        <div class="form-group">
+                        <label class="form-label">状态</label>
+                        <select class="form-control" id="episodeStatus">
+                            <option value="published">已发布</option>
+                            <option value="draft">草稿</option>
+                            <option value="hidden">隐藏</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEpisodeBtn">取消</button>
+                <button class="btn btn-primary" id="saveEpisodeBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">...</div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-content.js"></script>
+
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        let currentDramaId = null;
+        let currentDramaAccessType = 'free'; // 保留用于显示剧集类型，但不再影响分集免费设置
+        let languageList = [];
+        let episodesList = []; // 存储当前分集数据
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            await loadLanguageList();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const dramaId = urlParams.get('drama_id');
+            
+            await loadDramaSelect();
+            
+            if (dramaId) {
+                document.getElementById('dramaSelect').value = dramaId;
+                await loadDramaInfo(dramaId);
+                await loadEpisodes(dramaId);
+                document.getElementById('addEpisodeBtn').disabled = false;
+            }
+
+            // 绑定事件
+            document.getElementById('dramaSelect').addEventListener('change', async (e) => {
+                currentDramaId = e.target.value;
+                if (currentDramaId) {
+                    await loadDramaInfo(currentDramaId);
+                    await loadEpisodes(currentDramaId);
+                    document.getElementById('addEpisodeBtn').disabled = false;
+                    
+                    const url = new URL(window.location);
+                    url.searchParams.set('drama_id', currentDramaId);
+                    window.history.pushState({}, '', url);
+                } else {
+                    document.getElementById('dramaInfoCard').style.display = 'none';
+                    document.getElementById('episodeTableBody').innerHTML = '<tr><td colspan="10" class="empty-placeholder">请先选择剧集</td></tr>';
+                    document.getElementById('addEpisodeBtn').disabled = true;
+                }
+            });
+
+            document.getElementById('addEpisodeBtn').addEventListener('click', () => {
+                if (!currentDramaId) {
+                    alert('请先选择剧集');
+                    return;
+                }
+                document.getElementById('episodeId').value = '';
+                document.getElementById('episodeForm').reset();
+                document.getElementById('episodeModalTitle').textContent = '添加分集';
+                setDefaultLanguage(); // 设置默认语言
+                
+                adminCore.openModal('addEpisodeModal');
+            });
+
+            document.getElementById('closeEpisodeModal').addEventListener('click', () => {
+                adminCore.closeModal('addEpisodeModal');
+            });
+
+            document.getElementById('cancelEpisodeBtn').addEventListener('click', () => {
+                adminCore.closeModal('addEpisodeModal');
+            });
+
+            document.getElementById('saveEpisodeBtn').addEventListener('click', saveEpisode);
+
+            // 批量删除事件
+            document.getElementById('selectAllCheckboxHeader').addEventListener('change', toggleSelectAll);
+            document.getElementById('bulkDeleteBtn').addEventListener('click', handleBulkDelete);
+        });
+
+        // 加载语言列表
+        async function loadLanguageList() {
+            try {
+                const response = await fetch(`${API_BASE}/languages`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const data = await response.json();
+                if (data.success && Array.isArray(data.data)) {
+                    languageList = data.data;
+                    console.log('语言列表加载成功:', languageList);
+                } else {
+                    console.warn('语言列表加载失败，使用默认语言');
+                    languageList = [{ code: 'en-US', name: 'English' }];
+                }
+            } catch (error) {
+                console.error('加载语言列表失败', error);
+                languageList = [{ code: 'en-US', name: 'English' }];
+            }
+        }
+
+        function renderLanguageSelect(selectedCode = 'en-US') {
+            const select = document.getElementById('episodeLanguage');
+            if (!select) return;
+            let options = '';
+            languageList.forEach(lang => {
+                const selected = (lang.code === selectedCode) ? 'selected' : '';
+                options += `<option value="${lang.code}" ${selected}>${lang.name} (${lang.code})</option>`;
+            });
+            select.innerHTML = options;
+        }
+
+        function setDefaultLanguage() {
+            const defaultLang = languageList.find(l => l.code === 'en-US') || languageList[0];
+            renderLanguageSelect(defaultLang ? defaultLang.code : 'en-US');
+        }
+
+        async function loadDramaSelect() {
+            const select = document.getElementById('dramaSelect');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/dramas?limit=100`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    select.innerHTML = '<option value="">请选择剧集</option>';
+                    data.data.forEach(drama => {
+                        const option = document.createElement('option');
+                        option.value = drama.id;
+                        option.textContent = `${drama.title} (${drama.total_episodes || 0}集)`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('加载剧集列表失败:', error);
+            }
+        }
+
+        async function loadDramaInfo(dramaId) {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch(`${API_BASE}/dramas/${dramaId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            const drama = data.data;
+            document.getElementById('currentDramaTitle').textContent = drama.title;
+            document.getElementById('dramaDescription').textContent = drama.description || '暂无描述';
+            document.getElementById('dramaTotalEpisodes').textContent = drama.total_episodes || 0;
+            
+            const coverImg = document.getElementById('dramaCover');
+            if (drama.cover_url) {
+                coverImg.src = drama.cover_url;
+                coverImg.style.display = 'block';
+            } else {
+                coverImg.style.display = 'none';
+            }
+
+            const statusBadge = document.getElementById('dramaStatusBadge');
+            if (drama.status === 'published') {
+                statusBadge.textContent = '已发布';
+                statusBadge.className = 'status-badge status-active';
+            } else if (drama.status === 'draft') {
+                statusBadge.textContent = '草稿';
+                statusBadge.className = 'status-badge status-inactive';
+            } else {
+                statusBadge.textContent = '隐藏';
+                statusBadge.className = 'status-badge status-suspended';
+            }
+
+            // 删除 access_type 相关代码，只显示剧集信息
+            const accessBadge = document.getElementById('dramaAccessTypeBadge');
+            if (accessBadge) {
+                accessBadge.style.display = 'none'; // 隐藏权限徽章
+            }
+
+            document.getElementById('dramaInfoCard').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('加载剧集信息失败:', error);
+    }
+}
+
+        async function loadEpisodes(dramaId) {
+            const tbody = document.getElementById('episodeTableBody');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/episodes?drama_id=${dramaId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    episodesList = data.data;
+                    renderEpisodes(data.data);
+                    document.getElementById('uploadedEpisodes').textContent = data.data.length;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">加载失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载分集失败:', error);
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        function renderEpisodes(episodes) {
+            const tbody = document.getElementById('episodeTableBody');
+            
+            if (!episodes || episodes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">暂无分集，点击"添加分集"创建</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            
+            episodes.sort((a, b) => a.episode_number - b.episode_number).forEach(ep => {
+                const row = document.createElement('tr');
+                row.dataset.id = ep.id;
+                
+                let durationText = '-';
+                if (ep.duration) {
+                    const minutes = Math.floor(ep.duration / 60);
+                    const seconds = ep.duration % 60;
+                    durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+
+                let statusBadge = '';
+                let statusClass = '';
+                if (ep.status === 'published' || ep.is_active) {
+                    statusBadge = '已发布';
+                    statusClass = 'status-active';
+                } else if (ep.status === 'draft') {
+                    statusBadge = '草稿';
+                    statusClass = 'status-inactive';
+                } else {
+                    statusBadge = '隐藏';
+                    statusClass = 'status-suspended';
+                }
+
+                const languageObj = languageList.find(l => l.code === ep.language);
+                const languageName = languageObj ? languageObj.name : (ep.language || '-');
+
+                row.innerHTML = `
+                    <td><input type="checkbox" class="episode-select" value="${ep.id}"></td>
+                    <td>${ep.episode_number}</td>
+                    <td>${ep.title}</td>
+                    <td>
+                        ${ep.video_url ? 
+                            `<a href="${ep.video_url}" target="_blank" style="color:var(--primary);">查看链接</a>` : 
+                            '<span style="color:var(--gray);">无视频</span>'}
+                    </td>
+                    <td>${durationText}</td>
+                    <td>${languageName}</td>
+                    <td>${ep.price === 0 ? '免费' : ep.price + '金币'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusBadge}</span></td>
+                    <td>${ep.created_at ? ep.created_at.substring(0,10) : '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="editEpisode('${ep.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteEpisode('${ep.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('selectAllCheckboxHeader').checked = false;
+            updateBulkDeleteButton();
+        }
+
+        function toggleSelectAll(e) {
+            const checked = e.target.checked;
+            document.querySelectorAll('.episode-select').forEach(cb => cb.checked = checked);
+            updateBulkDeleteButton();
+        }
+
+        function updateBulkDeleteButton() {
+            const selectedCount = document.querySelectorAll('.episode-select:checked').length;
+            document.getElementById('bulkDeleteBtn').disabled = selectedCount === 0;
+        }
+
+        // 监听每行复选框的变化
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('episode-select')) {
+                updateBulkDeleteButton();
+                const allChecked = document.querySelectorAll('.episode-select:checked').length === document.querySelectorAll('.episode-select').length;
+                document.getElementById('selectAllCheckboxHeader').checked = allChecked;
+            }
+        });
+
+        async function handleBulkDelete() {
+            const selectedIds = Array.from(document.querySelectorAll('.episode-select:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+
+            if (!confirm(`确定要删除选中的 ${selectedIds.length} 个分集吗？此操作不可撤销。`)) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const id of selectedIds) {
+                try {
+                    const response = await fetch(`${API_BASE}/episodes/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        console.error(`删除分集 ${id} 失败:`, data.error);
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`删除分集 ${id} 失败:`, error);
+                }
+            }
+
+            alert(`批量删除完成：成功 ${successCount} 个，失败 ${failCount} 个`);
+            if (currentDramaId) {
+                await loadEpisodes(currentDramaId);
+            }
+        }
+
+        // 编辑分集
+       window.editEpisode = async function(id) {
+    if (!currentDramaId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentDramaId = urlParams.get('drama_id');
+        if (!currentDramaId) {
+            alert('请先选择剧集');
+            return;
+        }
+    }
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch(`${API_BASE}/episodes/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            const ep = data.data;
+            document.getElementById('episodeId').value = ep.id;
+            
+            document.getElementById('episodeTitle').value = ep.title;
+            document.getElementById('videoUrl').value = ep.video_url || '';
+            document.getElementById('episodeDuration').value = ep.duration || '';
+            
+            // ✅ 关键：读取并设置价格
+            document.getElementById('episodePrice').value = ep.price !== undefined ? ep.price : 0;
+            
+            // 删除 is_free 相关代码（因为只用 price）
+            // 不再设置免费/收费单选按钮
+            
+            document.getElementById('episodeStatus').value = ep.status || 'published';
+            
+            renderLanguageSelect(ep.language || 'en-US');
+            
+            document.getElementById('episodeModalTitle').textContent = '编辑分集';
+            adminCore.openModal('addEpisodeModal');
+        }
+    } catch (error) {
+        alert('加载分集失败');
+    }
+};
+
+        // 删除分集
+        window.deleteEpisode = async function(id) {
+            if (!confirm('确定要删除该分集吗？')) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/episodes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    if (currentDramaId) {
+                        await loadEpisodes(currentDramaId);
+                    }
+                    alert('删除成功！');
+                } else {
+                    alert('删除失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        // 保存分集
+async function saveEpisode() {
+    console.log('=== saveEpisode 调试 ===');
+    console.log('episodePrice 元素:', document.getElementById('episodePrice'));
+    console.log('episodePrice 值:', document.getElementById('episodePrice')?.value);
+    
+    if (!currentDramaId) {
+        alert('请先选择剧集');
+        return;
+    }
+
+    const token = localStorage.getItem('token');
+    const episodeId = document.getElementById('episodeId').value;
+
+    // 获取价格
+    const price = parseInt(document.getElementById('episodePrice').value) || 0;
+
+    // 获取集数
+    let episodeNumber = 0;
+    if (episodeId) {
+        // 编辑时，从原有数据中获取集数
+        const originalEp = episodesList.find(ep => ep.id === episodeId);
+        if (originalEp) {
+            episodeNumber = originalEp.episode_number;
+        }
+    } else {
+        // 新增时，自动计算最大集数+1
+        const maxNum = Math.max(0, ...episodesList.map(ep => ep.episode_number));
+        episodeNumber = maxNum + 1;
+    }
+
+    const formData = {
+        drama_id: currentDramaId,
+        episode_number: episodeNumber,  // ✅ 添加这个字段！
+        title: document.getElementById('episodeTitle').value,
+        video_url: document.getElementById('videoUrl').value,
+        duration: parseInt(document.getElementById('episodeDuration').value) || 0,
+        price: price,
+        status: document.getElementById('episodeStatus').value,
+        language: document.getElementById('episodeLanguage').value
+    };
+
+    console.log('提交的 formData:', formData);  // 调试用
+
+    if (!formData.video_url) {
+        alert('请输入视频链接');
+        return;
+    }
+
+    const url = episodeId ? `${API_BASE}/episodes/${episodeId}` : `${API_BASE}/episodes`;
+    const method = episodeId ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            adminCore.closeModal('addEpisodeModal');
+            await loadEpisodes(currentDramaId);
+            alert('保存成功！');
+        } else {
+            alert('保存失败：' + data.error);
+        }
+    } catch (error) {
+        console.error('保存错误:', error);
+        alert('网络错误，请重试');
+    }
+}
+    </script>
+</body>
+</html>

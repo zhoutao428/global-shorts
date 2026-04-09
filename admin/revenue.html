@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收入分析 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            <span>Global Shorts 后台</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i>
+            <span id="currentLanguage">中文</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 用户下拉菜单（放在header外面，但紧随其后） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+    <div class="admin-container">
+        <!-- 侧边栏：所有菜单改为真实链接，运营分析下的收入分析激活 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <!-- 页面内容 -->
+            <div class="page-header">
+                <h1 class="page-title">收入分析</h1>
+                <p class="page-description">查看平台收入趋势和明细</p>
+            </div>
+
+            <!-- 时间筛选栏 -->
+            <div class="search-filter" style="justify-content:space-between;">
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <select class="form-control" style="width:150px;" id="dateRange">
+                        <option value="today">今日</option>
+                        <option value="yesterday">昨日</option>
+                        <option value="week" selected>本周</option>
+                        <option value="month">本月</option>
+                        <option value="quarter">本季度</option>
+                        <option value="year">本年</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                    <select class="form-control" style="width:150px;" id="channelFilter">
+                        <option value="all">全部渠道</option>
+                        <option value="vip">VIP订阅</option>
+                        <option value="episode">单集购买</option>
+                        <option value="ad">广告收入</option>
+                        <option value="coin">金币充值</option>
+                    </select>
+                    <div id="customDateRange" style="display:none; gap:8px;">
+                        <input type="date" class="form-control" id="startDate" style="width:140px;">
+                        <span>至</span>
+                        <input type="date" class="form-control" id="endDate" style="width:140px;">
+                    </div>
+                    <button class="btn btn-primary" id="applyFilterBtn">应用筛选</button>
+                </div>
+                <div>
+                    <button class="btn btn-primary" id="exportRevenueBtn">
+                        <i class="fas fa-download"></i>导出报表
+                    </button>
+                </div>
+            </div>
+
+            <!-- 统计卡片（动态加载） -->
+            <div class="stats-grid" id="revenueStats">
+                <div class="stat-card">
+                    <div class="stat-icon revenue"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="stat-info">
+                        <h3 id="todayRevenue">$0</h3>
+                        <p>今日收入</p>
+                        <small id="todayGrowth" style="color:var(--success);">↑ 0%</small>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon revenue"><i class="fas fa-calendar-week"></i></div>
+                    <div class="stat-info">
+                        <h3 id="weekRevenue">$0</h3>
+                        <p>本周收入</p>
+                        <small id="weekGrowth" style="color:var(--success);">↑ 0%</small>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon revenue"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="stat-info">
+                        <h3 id="monthRevenue">$0</h3>
+                        <p>本月收入</p>
+                        <small id="monthGrowth" style="color:var(--success);">↑ 0%</small>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon revenue"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-info">
+                        <h3 id="growthRate">0%</h3>
+                        <p>环比增长</p>
+                        <small id="prevPeriod" style="color:var(--gray);">上月: 0%</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收入趋势图表 -->
+            <div class="chart-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
+                    <h3 class="chart-title" style="margin-bottom:0;">收入趋势（近30天）</h3>
+                    <div>
+                        <span style="margin-right:16px; color:var(--gray);">
+                            <i class="fas fa-circle" style="color:var(--primary);"></i> VIP订阅
+                        </span>
+                        <span style="margin-right:16px; color:var(--gray);">
+                            <i class="fas fa-circle" style="color:var(--success);"></i> 单集购买
+                        </span>
+                        <span style="color:var(--gray);">
+                            <i class="fas fa-circle" style="color:var(--warning);"></i> 广告收入
+                        </span>
+                    </div>
+                </div>
+                <div style="height:300px; position:relative;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 收入构成和月度目标 -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+                <!-- 收入构成饼图 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">收入构成</h3>
+                        <select class="form-control" style="width:100px;" id="piePeriod">
+                            <option value="month">本月</option>
+                            <option value="quarter">本季</option>
+                            <option value="year">本年</option>
+                        </select>
+                    </div>
+                    <div class="card-content" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                        <div style="width:150px; height:150px; position:relative;">
+                            <canvas id="revenuePieChart"></canvas>
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <div style="margin-bottom:8px;" id="vipPercent">
+                                <i class="fas fa-circle" style="color:var(--primary);"></i> VIP订阅 <span style="float:right;">0%</span>
+                            </div>
+                            <div style="margin-bottom:8px;" id="episodePercent">
+                                <i class="fas fa-circle" style="color:var(--success);"></i> 单集购买 <span style="float:right;">0%</span>
+                            </div>
+                            <div style="margin-bottom:8px;" id="adPercent">
+                                <i class="fas fa-circle" style="color:var(--warning);"></i> 广告收入 <span style="float:right;">0%</span>
+                            </div>
+                            <div id="coinPercent">
+                                <i class="fas fa-circle" style="color:var(--error);"></i> 金币充值 <span style="float:right;">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 收入目标卡片 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">月度目标进度</h3>
+                        <button class="btn btn-sm btn-secondary" id="setTargetBtn">设置目标</button>
+                    </div>
+                    <div class="card-content">
+                        <div style="margin-bottom:16px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <span>本月目标</span>
+                                <span id="monthTarget">$300,000</span>
+                            </div>
+                            <div style="height:10px; background:var(--border); border-radius:5px;">
+                                <div id="targetProgress" style="width:82%; height:100%; background:var(--primary); border-radius:5px;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                                <span>已达成</span>
+                                <span id="achievedAmount">$245,780 (82%)</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                                <span>剩余天数</span>
+                                <span id="remainingDays">7天</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>日均需达成</span>
+                                <span id="dailyNeeded">$7,746</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收入明细表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">收入明细</h3>
+                    <div>
+                        <select class="form-control" style="width:120px; display:inline-block; margin-right:8px;" id="detailViewType">
+                            <option value="day" selected>按日查看</option>
+                            <option value="week">按周查看</option>
+                            <option value="month">按月查看</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>订单数</th>
+                                <th>VIP订阅</th>
+                                <th>单集购买</th>
+                                <th>广告收入</th>
+                                <th>金币充值</th>
+                                <th>总计</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="revenueTableBody">
+                            <tr><td colspan="8" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="pagination" id="revenuePagination" style="margin-top:20px;">
+                        <div class="page-item active" data-page="1">1</div>
+                        <div class="page-item" data-page="2">2</div>
+                        <div class="page-item" data-page="3">3</div>
+                        <div class="page-item" data-page="4">4</div>
+                        <div class="page-item" data-page="5">5</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 设置目标模态框 -->
+    <div class="modal-overlay" id="setTargetModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">设置月度目标</h3>
+                <button class="modal-close" id="closeTargetModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="targetForm">
+                    <div class="form-group">
+                        <label class="form-label">目标月份</label>
+                        <input type="month" class="form-control" id="targetMonth" value="2024-03">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">目标金额（美元）</label>
+                        <input type="number" class="form-control" id="targetAmount" value="300000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-control" id="targetNote" rows="2" placeholder="可选"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelTargetBtn">取消</button>
+                <button class="btn btn-primary" id="saveTargetBtn">保存目标</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        let revenueChart, pieChart;
+        let currentPage = 1;
+        let currentFilters = {
+            dateRange: 'week',
+            channel: 'all',
+            startDate: '',
+            endDate: ''
+        };
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 初始化图表
+            initCharts();
+
+            // 加载收入数据
+            await loadRevenueData();
+
+            // 绑定事件
+            document.getElementById('dateRange').addEventListener('change', (e) => {
+                const customRange = document.getElementById('customDateRange');
+                customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+            });
+
+            document.getElementById('applyFilterBtn').addEventListener('click', () => {
+                currentPage = 1;
+                updateFilters();
+                loadRevenueData();
+            });
+
+            document.getElementById('exportRevenueBtn').addEventListener('click', exportRevenueReport);
+            document.getElementById('setTargetBtn').addEventListener('click', openTargetModal);
+            document.getElementById('closeTargetModal').addEventListener('click', () => {
+                adminCore.closeModal('setTargetModal');
+            });
+            document.getElementById('cancelTargetBtn').addEventListener('click', () => {
+                adminCore.closeModal('setTargetModal');
+            });
+            document.getElementById('saveTargetBtn').addEventListener('click', saveTarget);
+            document.getElementById('detailViewType').addEventListener('change', () => {
+                currentPage = 1;
+                loadRevenueDetails();
+            });
+
+            // 分页点击
+            document.querySelectorAll('#revenuePagination .page-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page && page !== currentPage) {
+                        currentPage = page;
+                        loadRevenueDetails();
+                        
+                        document.querySelectorAll('#revenuePagination .page-item').forEach(p => p.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // 初始化图表
+        function initCharts() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'VIP订阅', data: [], borderColor: '#1890ff', backgroundColor: 'rgba(24,144,255,0.1)', tension: 0.4 },
+                        { label: '单集购买', data: [], borderColor: '#52c41a', backgroundColor: 'rgba(82,196,26,0.1)', tension: 0.4 },
+                        { label: '广告收入', data: [], borderColor: '#faad14', backgroundColor: 'rgba(250,173,20,0.1)', tension: 0.4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            const pieCtx = document.getElementById('revenuePieChart').getContext('2d');
+            pieChart = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['VIP订阅', '单集购买', '广告收入', '金币充值'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#f5222d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 更新筛选条件
+        function updateFilters() {
+            currentFilters.dateRange = document.getElementById('dateRange').value;
+            currentFilters.channel = document.getElementById('channelFilter').value;
+            
+            if (currentFilters.dateRange === 'custom') {
+                currentFilters.startDate = document.getElementById('startDate').value;
+                currentFilters.endDate = document.getElementById('endDate').value;
+            }
+        }
+
+        // 加载收入数据
+async function loadRevenueData() {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const params = new URLSearchParams({
+            dateRange: currentFilters.dateRange,
+            channel: currentFilters.channel,
+            startDate: currentFilters.startDate,
+            endDate: currentFilters.endDate
+        });
+
+        // 并行获取所有数据
+        const [summaryRes, trendRes, compositionRes] = await Promise.all([
+            fetch(`${API_BASE}/revenue/summary?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE}/revenue/trend`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE}/revenue/composition?period=month`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+        ]);
+
+        const summary = await summaryRes.json();
+        const trend = await trendRes.json();
+        const composition = await compositionRes.json();
+
+        if (summary.success) {
+            updateRevenueStats(summary.data.stats);
+            updateTargetProgress(summary.data.target);
+        }
+        
+        if (trend.success) {
+            updateRevenueChart(trend.data);
+        }
+        
+        if (composition.success) {
+            updateRevenuePie(composition.data);
+        }
+    } catch (error) {
+        console.error('加载收入数据失败:', error);
+    }
+
+    // 加载明细
+    await loadRevenueDetails();
+}
+
+        // 更新统计卡片
+        function updateRevenueStats(stats) {
+            document.getElementById('todayRevenue').textContent = `$${stats.today.amount.toLocaleString()}`;
+            document.getElementById('todayGrowth').innerHTML = stats.today.growth > 0 ? 
+                `↑ ${stats.today.growth}%` : `↓ ${Math.abs(stats.today.growth)}%`;
+            document.getElementById('todayGrowth').style.color = stats.today.growth >= 0 ? 'var(--success)' : 'var(--error)';
+            
+            document.getElementById('weekRevenue').textContent = `$${stats.week.amount.toLocaleString()}`;
+            document.getElementById('weekGrowth').innerHTML = stats.week.growth > 0 ? 
+                `↑ ${stats.week.growth}%` : `↓ ${Math.abs(stats.week.growth)}%`;
+            document.getElementById('weekGrowth').style.color = stats.week.growth >= 0 ? 'var(--success)' : 'var(--error)';
+            
+            document.getElementById('monthRevenue').textContent = `$${stats.month.amount.toLocaleString()}`;
+            document.getElementById('monthGrowth').innerHTML = stats.month.growth > 0 ? 
+                `↑ ${stats.month.growth}%` : `↓ ${Math.abs(stats.month.growth)}%`;
+            document.getElementById('monthGrowth').style.color = stats.month.growth >= 0 ? 'var(--success)' : 'var(--error)';
+            
+            document.getElementById('growthRate').textContent = `${stats.growth.rate}%`;
+            document.getElementById('prevPeriod').textContent = `上月: ${stats.growth.previous}%`;
+        }
+
+        // 更新收入趋势图表
+        function updateRevenueChart(trend) {
+    if (!trend || !trend.labels) {
+        console.warn('趋势数据为空', trend);
+        return;
+    }
+    
+    revenueChart.data.labels = trend.labels;
+    revenueChart.data.datasets[0].data = trend.vip || [];
+    revenueChart.data.datasets[1].data = trend.episode || [];
+    revenueChart.data.datasets[2].data = trend.ad || [];
+    revenueChart.update();
+}
+
+        // 更新收入构成饼图
+        function updateRevenuePie(composition) {
+            pieChart.data.datasets[0].data = [
+                composition.vip,
+                composition.episode,
+                composition.ad,
+                composition.coin
+            ];
+            pieChart.update();
+
+            const total = composition.vip + composition.episode + composition.ad + composition.coin;
+            document.getElementById('vipPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--primary);"></i> VIP订阅 <span style="float:right;">${Math.round(composition.vip / total * 100)}%</span>`;
+            document.getElementById('episodePercent').innerHTML = `<i class="fas fa-circle" style="color:var(--success);"></i> 单集购买 <span style="float:right;">${Math.round(composition.episode / total * 100)}%</span>`;
+            document.getElementById('adPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--warning);"></i> 广告收入 <span style="float:right;">${Math.round(composition.ad / total * 100)}%</span>`;
+            document.getElementById('coinPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--error);"></i> 金币充值 <span style="float:right;">${Math.round(composition.coin / total * 100)}%</span>`;
+        }
+
+        // 更新目标进度
+        function updateTargetProgress(target) {
+            document.getElementById('monthTarget').textContent = `$${target.monthTarget.toLocaleString()}`;
+            document.getElementById('targetProgress').style.width = `${target.percentage}%`;
+            document.getElementById('achievedAmount').textContent = `$${target.achieved.toLocaleString()} (${target.percentage}%)`;
+            document.getElementById('remainingDays').textContent = `${target.remainingDays}天`;
+            document.getElementById('dailyNeeded').textContent = `$${target.dailyNeeded.toLocaleString()}`;
+        }
+
+        // 加载收入明细
+        async function loadRevenueDetails() {
+            const tbody = document.getElementById('revenueTableBody');
+            const token = localStorage.getItem('token');
+            const viewType = document.getElementById('detailViewType').value;
+
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 10,
+                    viewType: viewType,
+                    dateRange: currentFilters.dateRange,
+                    channel: currentFilters.channel
+                });
+
+                const response = await fetch(`${API_BASE}/revenue/details?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderRevenueDetails(data.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无收入数据</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载收入明细失败:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        // 渲染收入明细
+        function renderRevenueDetails(details) {
+            const tbody = document.getElementById('revenueTableBody');
+            tbody.innerHTML = '';
+
+            details.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.date}</td>
+                    <td>${item.orders.toLocaleString()}</td>
+                    <td>$${item.vip.toLocaleString()}</td>
+                    <td>$${item.episode.toLocaleString()}</td>
+                    <td>$${item.ad.toLocaleString()}</td>
+                    <td>$${item.coin.toLocaleString()}</td>
+                    <td><strong>$${item.total.toLocaleString()}</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="viewDetail('${item.date}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 查看详情
+        window.viewDetail = function(date) {
+            alert('查看详情：' + date);
+        };
+
+        // 导出报表
+        async function exportRevenueReport() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const params = new URLSearchParams({
+                    dateRange: currentFilters.dateRange,
+                    channel: currentFilters.channel,
+                    startDate: currentFilters.startDate,
+                    endDate: currentFilters.endDate
+                });
+
+                const response = await fetch(`${API_BASE}/revenue/export?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `revenue_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('导出失败');
+                }
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('导出失败，请重试');
+            }
+        }
+
+        // 打开目标设置模态框
+        function openTargetModal() {
+            document.getElementById('targetMonth').value = '2024-03';
+            document.getElementById('targetAmount').value = '300000';
+            document.getElementById('targetNote').value = '';
+            adminCore.openModal('setTargetModal');
+        }
+
+        // 保存目标
+        async function saveTarget() {
+            const token = localStorage.getItem('token');
+            
+            const targetData = {
+                month: document.getElementById('targetMonth').value,
+                amount: parseFloat(document.getElementById('targetAmount').value),
+                note: document.getElementById('targetNote').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/revenue/target`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(targetData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('setTargetModal');
+                    loadRevenueData();
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+    </script>
+</body>
+</html>

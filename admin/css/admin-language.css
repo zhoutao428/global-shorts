@@ -1,0 +1,213 @@
+/* admin-language.css - 区域语言管理专用样式 */
+
+/* 语言筛选器 */
+.language-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--gray-light);
+    border-radius: 8px;
+}
+.filter-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.filter-btn:hover {
+    border-color: var(--primary);
+}
+
+/* 批量操作栏 */
+.batch-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+/* 翻译键值表格容器 - 新增水平滚动支持 */
+.keys-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: white;
+}
+
+/* 翻译键值表格 */
+.keys-table {
+    min-width: 800px;
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+.keys-table th {
+    position: sticky;
+    top: 0;
+    background: var(--gray-light);
+    z-index: 10;
+    white-space: nowrap;
+    padding: 12px 8px;
+}
+.keys-table td {
+    padding: 8px;
+    white-space: nowrap;
+}
+
+/* 固定第一列（复选框+键名） */
+.keys-table th:first-child,
+.keys-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 5;
+    box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+}
+.keys-table th:first-child {
+    background: var(--gray-light);
+    z-index: 15;
+}
+.keys-table td:first-child {
+    background: white;
+}
+
+/* 键名样式 */
+.keys-table .key-name {
+    font-family: monospace;
+    background: var(--gray-light);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    white-space: nowrap;
+}
+
+/* 翻译单元格 */
+.translation-cell {
+    position: relative;
+    min-width: 150px;
+}
+.translation-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    transition: all 0.2s;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+.translation-input:hover {
+    border-color: var(--border);
+    background: white;
+}
+.translation-input:focus {
+    border-color: var(--primary);
+    outline: none;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+}
+.translation-input.empty {
+    color: var(--gray);
+    font-style: italic;
+}
+.translation-input.empty::placeholder {
+    color: var(--gray);
+    font-style: italic;
+}
+
+/* 语言进度条 */
+.lang-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+}
+.lang-progress span {
+    min-width: 40px;
+    font-size: 12px;
+}
+.lang-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.lang-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+.lang-progress-fill.success { background: var(--success); }
+.lang-progress-fill.warning { background: var(--warning); }
+.lang-progress-fill.error { background: var(--error); }
+
+/* 上传区域 */
+.upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+    background: var(--gray-light);
+}
+.upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(24,144,255,0.05);
+}
+.upload-area i {
+    font-size: 48px;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+.upload-area.dragover {
+    border-color: var(--primary);
+    background: rgba(24,144,255,0.1);
+}
+
+/* 导入预览 */
+#importPreview {
+    margin-top: 20px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+}
+#importPreview h4 {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+#importPreview .admin-table {
+    max-height: 300px;
+    overflow-y: auto;
+    display: block;
+}
+#importPreview td {
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
+/* 语言代码徽章 */
+.lang-code-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--gray-light);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--gray);
+    margin-left: 6px;
+    white-space: nowrap;
+}

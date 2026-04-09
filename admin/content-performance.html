@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容表现 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            <span>Global Shorts 后台</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i>
+            <span id="currentLanguage">中文</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 用户下拉菜单（放在header外面，但紧随其后） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+
+    <div class="admin-container">
+        <!-- 侧边栏：所有菜单改为真实链接，运营分析下的内容表现激活 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+
+        <main class="admin-main">
+            <div class="page-header">
+                <h1 class="page-title">内容表现</h1>
+                <p class="page-description">剧集播放、互动数据排行（含收藏）</p>
+            </div>
+
+            <!-- 统计卡片（新增收藏卡片） -->
+            <div class="stats-grid" style="margin-bottom:24px;">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #1890ff, #096dd9);">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalViews">0</h3>
+                        <p>总播放量</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #52c41a, #389e0d);">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalLikes">0</h3>
+                        <p>总点赞</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #faad14, #d48806);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalFavorites">0</h3>
+                        <p>总收藏</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #f5222d, #cf1322);">
+                        <i class="fas fa-comment"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalComments">0</h3>
+                        <p>总评论</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #722ed1, #531dab);">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalShares">0</h3>
+                        <p>总分享</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 筛选栏 -->
+            <div class="search-filter" style="justify-content:space-between; flex-wrap:wrap;">
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <select class="form-control" style="width:150px;" id="categoryFilter">
+                        <option value="">全部类型</option>
+                        <!-- 分类选项建议从接口动态加载，此处仅作示例 -->
+                        <option value="romance">爱情</option>
+                        <option value="ceo">总裁</option>
+                        <option value="fantasy">玄幻</option>
+                        <option value="suspense">悬疑</option>
+                        <option value="comedy">喜剧</option>
+                    </select>
+                    <select class="form-control" style="width:150px;" id="timeRangeFilter">
+                        <option value="today">今日</option>
+                        <option value="week" selected>本周</option>
+                        <option value="month">本月</option>
+                        <option value="year">本年</option>
+                        <option value="all">全部</option>
+                    </select>
+                    <button class="btn btn-primary" id="applyFilterBtn">应用筛选</button>
+                </div>
+                <div>
+                    <button class="btn btn-primary" id="exportPerformanceBtn">
+                        <i class="fas fa-download"></i>导出数据
+                    </button>
+                </div>
+            </div>
+
+            <!-- 播放量排行图表（只显示播放量和点赞，收藏单独在表格显示） -->
+            <div class="chart-container">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
+                    <h3 class="chart-title" style="margin-bottom:0;">剧集表现 TOP 10</h3>
+                    <div>
+                        <span style="margin-right:16px; color:var(--gray);">
+                            <i class="fas fa-square" style="color:var(--primary);"></i> 播放量
+                        </span>
+                        <span style="margin-right:16px; color:var(--gray);">
+                            <i class="fas fa-square" style="color:var(--success);"></i> 点赞
+                        </span>
+                    </div>
+                </div>
+                <div style="height:350px; position:relative;">
+                    <canvas id="topDramasChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 剧集表现表格（新增收藏列） -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">剧集表现详情</h3>
+                    <div>
+                        <span style="color:var(--gray); margin-right:12px;" id="updateTime">更新时间: --</span>
+                        <button class="btn btn-sm btn-secondary" id="refreshDataBtn">
+                            <i class="fas fa-sync-alt"></i>刷新
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>剧集名称</th>
+                                <th>分类</th>
+                                <th>播放量</th>
+                                <th>点赞</th>
+                                <th>收藏</th>
+                                <th>评论数</th>
+                                <th>分享数</th>
+                                <th>完播率</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performanceTableBody">
+                            <tr><td colspan="10" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="pagination" id="performancePagination" style="margin-top:20px;"></div>
+                </div>
+            </div>
+
+            <!-- 分类表现分析 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">分类表现分析</h3>
+                    <select class="form-control" style="width:150px;" id="categoryStatPeriod">
+                        <option value="week">本周</option>
+                        <option value="month" selected>本月</option>
+                        <option value="year">本年</option>
+                    </select>
+                </div>
+                <div class="card-content">
+                    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:24px;">
+                        <div style="height:250px;">
+                            <canvas id="categoryViewsChart"></canvas>
+                        </div>
+                        <div>
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>分类</th>
+                                        <th>播放量</th>
+                                        <th>占比</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoryStatsBody">
+                                    <tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 语言选择模态框（保持不变） -->
+    <div class="modal-overlay" id="languageModal">...</div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        let topDramasChart, categoryViewsChart;
+        let currentPage = 1;
+        let currentFilters = {
+            category: '',
+            timeRange: 'week'
+        };
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            initCharts();
+            await loadPerformanceData();
+
+            document.getElementById('applyFilterBtn').addEventListener('click', () => {
+                currentFilters.category = document.getElementById('categoryFilter').value;
+                currentFilters.timeRange = document.getElementById('timeRangeFilter').value;
+                currentPage = 1;
+                loadPerformanceData();
+            });
+
+            document.getElementById('refreshDataBtn').addEventListener('click', () => {
+                loadPerformanceData();
+            });
+
+            document.getElementById('exportPerformanceBtn').addEventListener('click', exportPerformanceData);
+
+            document.getElementById('categoryStatPeriod').addEventListener('change', (e) => {
+                loadCategoryStats(e.target.value);
+            });
+
+            // 分页点击事件委托
+            document.getElementById('performancePagination').addEventListener('click', (e) => {
+                if (e.target.classList.contains('page-item')) {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page && page !== currentPage) {
+                        currentPage = page;
+                        loadPerformanceTable();
+                        // 更新激活样式
+                        document.querySelectorAll('#performancePagination .page-item').forEach(p => p.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                }
+            });
+        });
+
+        // 初始化图表
+        function initCharts() {
+            const topCtx = document.getElementById('topDramasChart').getContext('2d');
+            topDramasChart = new Chart(topCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [
+                    { label: '播放量', data: [], backgroundColor: '#1890ff', borderRadius: 4 },
+                    { label: '点赞', data: [], backgroundColor: '#52c41a', borderRadius: 4 }
+                ]},
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: value => value.toLocaleString() } } }
+                }
+            });
+
+            const catCtx = document.getElementById('categoryViewsChart').getContext('2d');
+            categoryViewsChart = new Chart(catCtx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#1890ff','#52c41a','#faad14','#f5222d','#722ed1'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // 加载所有表现数据
+        async function loadPerformanceData() {
+            const token = localStorage.getItem('token');
+            try {
+                const params = new URLSearchParams({
+                    category: currentFilters.category,
+                    timeRange: currentFilters.timeRange
+                });
+                const response = await fetch(`${API_BASE}/content/performance?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.success) {
+                    updateStats(data.data.stats);
+                    updateTopDramasChart(data.data.topDramas);
+                } else {
+                    showError('加载表现数据失败：' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('加载表现数据失败:', error);
+                showError('网络错误，请重试');
+            }
+
+            await loadPerformanceTable();
+            await loadCategoryStats(currentFilters.timeRange);
+            updateTimeLabel();
+        }
+
+        // 更新统计卡片（数字使用千位分隔符）
+        function updateStats(stats) {
+            document.getElementById('totalViews').textContent = stats.totalViews?.toLocaleString() || '0';
+            document.getElementById('totalLikes').textContent = stats.totalLikes?.toLocaleString() || '0';
+            document.getElementById('totalFavorites').textContent = stats.totalFavorites?.toLocaleString() || '0';
+            document.getElementById('totalComments').textContent = stats.totalComments?.toLocaleString() || '0';
+            document.getElementById('totalShares').textContent = stats.totalShares?.toLocaleString() || '0';
+        }
+
+        // 更新TOP图表
+        function updateTopDramasChart(dramas) {
+            if (!dramas || dramas.length === 0) {
+                topDramasChart.data.labels = [];
+                topDramasChart.data.datasets[0].data = [];
+                topDramasChart.data.datasets[1].data = [];
+            } else {
+                topDramasChart.data.labels = dramas.map(d => d.title.length > 15 ? d.title.substring(0,15)+'...' : d.title);
+                topDramasChart.data.datasets[0].data = dramas.map(d => d.views);
+                topDramasChart.data.datasets[1].data = dramas.map(d => d.likes);
+            }
+            topDramasChart.update();
+        }
+
+        // 更新时间标签
+        function updateTimeLabel() {
+            const now = new Date();
+            document.getElementById('updateTime').textContent = `更新时间: ${now.toLocaleString()}`;
+        }
+
+        // 加载表现表格（分页）
+        async function loadPerformanceTable() {
+            const tbody = document.getElementById('performanceTableBody');
+            const token = localStorage.getItem('token');
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 10,
+                    category: currentFilters.category,
+                    timeRange: currentFilters.timeRange
+                });
+                const response = await fetch(`${API_BASE}/content/performance/dramas?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.success) {
+                    if (data.data.length > 0) {
+                        renderPerformanceTable(data.data);
+                        renderPagination(data.pagination);
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">暂无数据</td></tr>';
+                        document.getElementById('performancePagination').innerHTML = '';
+                    }
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">加载失败：' + (data.error || '') + '</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载表格失败:', error);
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">网络错误，请重试</td></tr>';
+            }
+        }
+
+        // 渲染表格（数字使用千位分隔符）
+        function renderPerformanceTable(dramas) {
+            const tbody = document.getElementById('performanceTableBody');
+            tbody.innerHTML = '';
+            dramas.forEach((drama, index) => {
+                const completionRate = drama.completion_rate || 0;
+                const rateColor = completionRate >= 80 ? 'var(--success)' : (completionRate >= 60 ? 'var(--warning)' : 'var(--error)');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>#${(currentPage-1)*10 + index + 1}</strong></td>
+                    <td><a href="/dramas.html?id=${drama.id}" style="color:var(--primary);">${drama.title}</a></td>
+                    <td>${drama.category || '-'}</td>
+                    <td>${(drama.views || 0).toLocaleString()}</td>
+                    <td>${(drama.likes || 0).toLocaleString()}</td>
+                    <td>${(drama.favorites || 0).toLocaleString()}</td>
+                    <td>${(drama.comments || 0).toLocaleString()}</td>
+                    <td>${(drama.shares || 0).toLocaleString()}</td>
+                    <td>
+                        <span style="color:${rateColor};">${completionRate}%</span>
+                        <div style="width:60px; height:4px; background:var(--border); border-radius:2px; margin-top:4px;">
+                            <div style="width:${completionRate}%; height:100%; background:${rateColor}; border-radius:2px;"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="viewDramaDetail('${drama.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 渲染分页
+        function renderPagination(pagination) {
+            const container = document.getElementById('performancePagination');
+            let html = '';
+            for (let i = 1; i <= pagination.pages; i++) {
+                html += `<div class="page-item ${i === pagination.page ? 'active' : ''}" data-page="${i}">${i}</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // 查看剧集详情
+        window.viewDramaDetail = function(id) {
+            window.location.href = `/dramas.html?id=${id}`;
+        };
+
+        // 加载分类统计
+        async function loadCategoryStats(period) {
+            const tbody = document.getElementById('categoryStatsBody');
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE}/content/performance/categories?period=${period}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.success && data.data.length > 0) {
+                    renderCategoryStats(data.data);
+                    updateCategoryChart(data.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无分类数据</td></tr>';
+                    categoryViewsChart.data.labels = [];
+                    categoryViewsChart.data.datasets[0].data = [];
+                    categoryViewsChart.update();
+                }
+            } catch (error) {
+                console.error('加载分类统计失败:', error);
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        function renderCategoryStats(categories) {
+            const tbody = document.getElementById('categoryStatsBody');
+            tbody.innerHTML = '';
+            categories.forEach(cat => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${cat.name}</td><td>${cat.views.toLocaleString()}</td><td>${cat.percentage}%</td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateCategoryChart(categories) {
+            categoryViewsChart.data.labels = categories.map(c => c.name);
+            categoryViewsChart.data.datasets[0].data = categories.map(c => c.percentage);
+            categoryViewsChart.update();
+        }
+
+        // 导出数据
+        async function exportPerformanceData() {
+            const token = localStorage.getItem('token');
+            try {
+                const params = new URLSearchParams({
+                    category: currentFilters.category,
+                    timeRange: currentFilters.timeRange
+                });
+                const response = await fetch(`${API_BASE}/content/performance/export?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `content_performance_${new Date().toISOString().split('T')[0]}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    showError('导出失败');
+                }
+            } catch (error) {
+                console.error('导出失败:', error);
+                showError('导出失败，请重试');
+            }
+        }
+
+        // 正式错误提示（使用自定义事件，需确保有监听器）
+        function showError(msg) {
+            console.error(msg);
+            const event = new CustomEvent('showToast', {
+                detail: { message: msg, type: 'error' }
+            });
+            document.dispatchEvent(event);
+        }
+    </script>
+</body>
+</html>

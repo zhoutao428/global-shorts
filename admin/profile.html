@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <style>
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 24px;
+            padding: 24px;
+            background: var(--light);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .avatar-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            font-weight: 700;
+            object-fit: cover;
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .avatar-upload-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .info-label {
+            width: 120px;
+            color: var(--gray);
+        }
+        .info-value {
+            flex: 1;
+            font-weight: 500;
+        }
+        .avatar-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: var(--gray-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid var(--border);
+        }
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .avatar-preview .placeholder {
+            font-size: 60px;
+            color: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+            <div class="logo"><i class="fas fa-globe-americas"></i><span>Global Shorts 后台</span></div>
+        </div>
+        <div class="header-right">
+            <div class="language-switcher" id="languageSwitcher">
+                <i class="fas fa-language"></i><span id="currentLanguage">中文</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+                <div class="user-avatar" id="userAvatar">AD</div>
+                <div>
+                    <div id="adminName">管理员</div>
+                    <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 用户下拉菜单 -->
+    <div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+        <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+            <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+        </a>
+        <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+            <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+        </a>
+        <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+            <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+        </a>
+        <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+        <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+            <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+        </a>
+    </div>
+
+    <div class="admin-container">
+        <!-- 侧边栏 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-menu">
+                <a href="/admin/dashboard.html" class="menu-item"><i class="fas fa-tachometer-alt"></i><span>仪表盘</span></a>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+                    <label for="toggle-user-menu"><i class="fas fa-users"></i><span>用户管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu">
+                        <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                        <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                        <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+                    </div>
+                </div>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+                    <label for="toggle-content-menu"><i class="fas fa-film"></i><span>内容管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu">
+                        <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                        <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                        <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                        <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+                    </div>
+                </div>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+                    <label for="toggle-operation-menu"><i class="fas fa-chart-line"></i><span>运营分析</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu">
+                        <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                        <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                        <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+                    </div>
+                </div>
+
+                <a href="/admin/admin-manage.html" class="menu-item"><i class="fas fa-user-shield"></i><span>管理员管理</span></a>
+                <a href="/admin/region-language.html" class="menu-item"><i class="fas fa-language"></i><span>区域语言</span></a>
+                <a href="/admin/payment-interface.html" class="menu-item"><i class="fas fa-credit-card"></i><span>支付接口</span></a>
+                <a href="/admin/vip-plans.html" class="menu-item"><i class="fas fa-crown"></i><span>VIP套餐管理</span></a>
+                <a href="/admin/coin-packages.html" class="menu-item"><i class="fas fa-coins"></i><span>金币套餐</span></a>
+                <a href="/admin/ad-positions.html" class="menu-item"><i class="fas fa-ad"></i><span>广告位管理</span></a>
+                <a href="/admin/system-settings.html" class="menu-item"><i class="fas fa-cog"></i><span>系统设置</span></a>
+                <a href="/admin/frontend-manage.html" class="menu-item"><i class="fas fa-paint-brush"></i><span>前台管理</span></a>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <h1 class="page-title">个人资料</h1>
+                <p class="page-description">查看和编辑您的个人信息</p>
+            </div>
+
+            <div class="profile-header">
+                <div class="avatar-container">
+                    <div class="profile-avatar" id="profileAvatar">
+                        <div id="avatarText">AD</div>
+                        <img id="avatarImage" src="" style="display:none;">
+                    </div>
+                    <div class="avatar-upload-btn" id="changeAvatarBtn">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <div>
+                    <h2 style="margin-bottom:8px;" id="profileName">管理员</h2>
+                    <p style="color:var(--gray);" id="profileRole">超级管理员</p>
+                    <p style="color:var(--gray); font-size:13px;">上次登录: 2024-03-24 14:30</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">基本信息</h3>
+                    <button class="btn btn-primary" id="editProfileBtn">编辑资料</button>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <div class="info-label">用户名</div>
+                        <div class="info-value" id="displayUsername">admin</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">姓名</div>
+                        <div class="info-value" id="displayFullName">系统管理员</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">邮箱</div>
+                        <div class="info-value" id="displayEmail">admin@globalshorts.com</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">手机号</div>
+                        <div class="info-value" id="displayPhone">+86 138 1234 5678</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">部门</div>
+                        <div class="info-value" id="displayDepartment">技术部</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">职位</div>
+                        <div class="info-value" id="displayPosition">系统管理员</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">入职时间</div>
+                        <div class="info-value" id="displayJoinDate">2024-01-01</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 编辑资料模态框 -->
+    <div class="modal-overlay" id="editProfileModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑个人资料</h3>
+                <button class="modal-close" id="closeEditModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="form-group">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-control" id="editFullName" value="系统管理员">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="editEmail" value="admin@globalshorts.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">手机号</label>
+                        <input type="text" class="form-control" id="editPhone" value="+86 138 1234 5678">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">部门</label>
+                        <input type="text" class="form-control" id="editDepartment" value="技术部">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">职位</label>
+                        <input type="text" class="form-control" id="editPosition" value="系统管理员">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEditBtn">取消</button>
+                <button class="btn btn-primary" id="saveProfileBtn">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改头像模态框 -->
+    <div class="modal-overlay" id="avatarModal">
+        <div class="modal" style="max-width:450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">修改头像</h3>
+                <button class="modal-close" id="closeAvatarModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="avatar-preview" id="avatarPreview">
+                    <div class="placeholder" id="previewPlaceholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <img id="previewImage" src="" style="display:none;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">上传新头像</label>
+                    <input type="file" class="form-control" id="avatarFile" accept="image/*">
+                    <small style="color:var(--gray);">支持 JPG、PNG、GIF，最大2MB</small>
+                </div>
+                <div class="form-group" style="margin-top:16px;">
+                    <label class="form-label">或输入头像链接</label>
+                    <input type="text" class="form-control" id="avatarUrl" placeholder="https://example.com/avatar.jpg">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelAvatarBtn">取消</button>
+                <button class="btn btn-primary" id="saveAvatarBtn">保存头像</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin-core.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取真实用户信息
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            if (userInfo.name) {
+                document.getElementById('adminName').textContent = userInfo.name;
+                document.getElementById('userAvatar').textContent = userInfo.name.charAt(0).toUpperCase();
+                document.getElementById('profileName').textContent = userInfo.name;
+                document.getElementById('avatarText').textContent = userInfo.name.charAt(0).toUpperCase();
+            }
+            if (userInfo.role) {
+                document.getElementById('adminRole').textContent = userInfo.role;
+                document.getElementById('profileRole').textContent = userInfo.role;
+            }
+            if (userInfo.avatar) {
+                showAvatarImage(userInfo.avatar);
+            }
+
+            // 点击头像显示下拉菜单
+            const trigger = document.getElementById('userMenuTrigger');
+            const dropdown = document.getElementById('userDropdown');
+            
+            trigger?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.style.display = 'none';
+            });
+
+            // 退出登录
+            document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('userInfo');
+                window.location.href = '/login.html';
+            });
+
+            // 编辑资料
+            document.getElementById('editProfileBtn')?.addEventListener('click', () => {
+                document.getElementById('editProfileModal').classList.add('active');
+            });
+
+            document.getElementById('closeEditModal')?.addEventListener('click', () => {
+                document.getElementById('editProfileModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelEditBtn')?.addEventListener('click', () => {
+                document.getElementById('editProfileModal').classList.remove('active');
+            });
+
+            document.getElementById('saveProfileBtn')?.addEventListener('click', () => {
+                document.getElementById('displayFullName').textContent = document.getElementById('editFullName').value;
+                document.getElementById('displayEmail').textContent = document.getElementById('editEmail').value;
+                document.getElementById('displayPhone').textContent = document.getElementById('editPhone').value;
+                document.getElementById('displayDepartment').textContent = document.getElementById('editDepartment').value;
+                document.getElementById('displayPosition').textContent = document.getElementById('editPosition').value;
+                
+                alert('资料更新成功（演示）');
+                document.getElementById('editProfileModal').classList.remove('active');
+            });
+
+            // 修改头像
+            document.getElementById('changeAvatarBtn')?.addEventListener('click', () => {
+                document.getElementById('avatarModal').classList.add('active');
+                resetAvatarPreview();
+            });
+
+            document.getElementById('closeAvatarModal')?.addEventListener('click', () => {
+                document.getElementById('avatarModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelAvatarBtn')?.addEventListener('click', () => {
+                document.getElementById('avatarModal').classList.remove('active');
+            });
+
+            // 头像文件预览
+            document.getElementById('avatarFile')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        showPreview(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // 头像链接预览
+            document.getElementById('avatarUrl')?.addEventListener('input', (e) => {
+                if (e.target.value) {
+                    showPreview(e.target.value);
+                }
+            });
+
+            // 保存头像
+            document.getElementById('saveAvatarBtn')?.addEventListener('click', () => {
+                const file = document.getElementById('avatarFile').files[0];
+                const url = document.getElementById('avatarUrl').value;
+                
+                if (file) {
+                    // 模拟上传文件
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        showAvatarImage(e.target.result);
+                        saveAvatarToStorage(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                } else if (url) {
+                    showAvatarImage(url);
+                    saveAvatarToStorage(url);
+                } else {
+                    alert('请选择图片或输入链接');
+                    return;
+                }
+                
+                alert('头像更新成功（演示）');
+                document.getElementById('avatarModal').classList.remove('active');
+            });
+
+            function showPreview(src) {
+                const previewPlaceholder = document.getElementById('previewPlaceholder');
+                const previewImage = document.getElementById('previewImage');
+                
+                previewPlaceholder.style.display = 'none';
+                previewImage.style.display = 'block';
+                previewImage.src = src;
+            }
+
+            function resetAvatarPreview() {
+                const previewPlaceholder = document.getElementById('previewPlaceholder');
+                const previewImage = document.getElementById('previewImage');
+                
+                previewPlaceholder.style.display = 'flex';
+                previewImage.style.display = 'none';
+                previewImage.src = '';
+                document.getElementById('avatarFile').value = '';
+                document.getElementById('avatarUrl').value = '';
+            }
+
+            function showAvatarImage(src) {
+                const avatarText = document.getElementById('avatarText');
+                const avatarImage = document.getElementById('avatarImage');
+                
+                avatarText.style.display = 'none';
+                avatarImage.style.display = 'block';
+                avatarImage.src = src;
+                
+                // 同时更新顶部导航的头像
+                document.getElementById('userAvatar').style.background = 'transparent';
+                document.getElementById('userAvatar').innerHTML = `<img src="${src}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            }
+
+            function saveAvatarToStorage(src) {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.avatar = src;
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+            }
+        });
+    </script>
+</body>
+</html>

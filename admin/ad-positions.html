@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广告位管理 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <style>
+        .ad-preview {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        .ad-card {
+            transition: all 0.3s;
+        }
+        .ad-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .ad-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 12px 0;
+            padding: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+        }
+        .metric-item {
+            text-align: center;
+        }
+        .metric-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .metric-label {
+            font-size: 12px;
+            color: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo"><i class="fas fa-globe-americas"></i><span>Global Shorts 后台</span></div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i><span id="currentLanguage">中文</span><i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 👇 用户菜单（每个页面都要加） -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 👇 下拉菜单（每个页面都要加） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+   <div class="admin-container">
+        <!-- 侧边栏：所有菜单改为真实链接，广告位管理激活 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <div class="page-content active" id="adPositionsPage">
+                <div class="page-header">
+                    <h1 class="page-title">广告位管理</h1>
+                    <p class="page-description">配置各个位置的广告位尺寸、状态和内容</p>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div style="margin-bottom:20px; display:flex; gap:12px; justify-content:space-between;">
+                    <div>
+                        <button class="btn btn-primary" id="addAdPositionBtn">
+                            <i class="fas fa-plus"></i>新增广告位
+                        </button>
+                        <button class="btn btn-secondary" id="refreshAdStats">
+                            <i class="fas fa-sync-alt"></i>刷新统计
+                        </button>
+                    </div>
+                    <div>
+                        <select class="form-control" style="width:150px;" id="adStatsPeriod">
+                            <option value="today">今日</option>
+                            <option value="week" selected>本周</option>
+                            <option value="month">本月</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 广告位统计卡片 -->
+                <div class="stats-grid" style="margin-bottom:30px;" id="adStatsCards">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #1890ff, #096dd9);">
+                            <i class="fas fa-ad"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalAdPositions">0</h3>
+                            <p>总广告位</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #52c41a, #389e0d);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="activeAdPositions">0</h3>
+                            <p>启用中</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #faad14, #d48806);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todayImpressions">0</h3>
+                            <p>今日展示</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f5222d, #cf1322);">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="todayRevenue">$0</h3>
+                            <p>今日收入</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 广告位列表 (卡片视图) -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(350px, 1fr)); gap:20px;" id="adPositionsList">
+                    <!-- 动态加载广告位卡片 -->
+                    <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">
+                        <i class="fas fa-spinner fa-spin" style="font-size:32px;"></i>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+
+                <!-- 广告位配置说明 -->
+                <div class="card" style="margin-top:30px;">
+                    <div class="card-header">
+                        <h3 class="card-title">广告位配置说明</h3>
+                    </div>
+                    <div class="card-content">
+                        <ul style="margin-left:20px; color:var(--gray);">
+                            <li>视频前贴广告：支持 MP4/WebM 视频格式，建议时长15秒</li>
+                            <li>横幅广告：支持 JPG/PNG/GIF 图片格式，尺寸需严格匹配</li>
+                            <li>剧集间广告：可在剧集切换时展示，支持跳过的配置</li>
+                            <li>每个广告位可设置多个广告进行轮播</li>
+                            <li>广告统计数据每小时更新一次</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 新增/编辑广告位模态框 -->
+    <div class="modal-overlay" id="addAdModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="adModalTitle">新增广告位</h3>
+                <button class="modal-close" id="closeAdModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="adForm">
+                    <input type="hidden" id="adId">
+                    <div class="form-group">
+                        <label class="form-label">广告位名称 <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="adName" placeholder="例：视频前贴广告" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">广告位代码 <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="adCode" placeholder="例：preroll" required>
+                        <small style="color:var(--gray);">唯一标识，程序中调用</small>
+                    </div>
+                    <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="form-group">
+                            <label class="form-label">宽度 <span style="color:var(--error);">*</span></label>
+                            <input type="number" class="form-control" id="adWidth" value="1920" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">高度 <span style="color:var(--error);">*</span></label>
+                            <input type="number" class="form-control" id="adHeight" value="1080" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">时长 (秒, 视频广告)</label>
+                        <input type="number" class="form-control" id="adDuration" value="15">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">广告类型</label>
+                        <select class="form-control" id="adType">
+                            <option value="video">视频广告</option>
+                            <option value="image">图片广告</option>
+                            <option value="flash">Flash广告</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" id="adDescription" rows="2" placeholder="广告位说明"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">定价模式</label>
+                        <select class="form-control" id="adPricing">
+                            <option value="cpm">CPM (千次展示)</option>
+                            <option value="cpc">CPC (点击)</option>
+                            <option value="cpa">CPA (转化)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">单价 ($)</label>
+                        <input type="number" class="form-control" id="adPrice" value="2.5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="adActive" checked> 立即启用
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelAdBtn">取消</button>
+                <button class="btn btn-primary" id="saveAdBtn">保存广告位</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 广告统计详情模态框 -->
+    <div class="modal-overlay" id="adStatsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="adStatsTitle">广告统计 - 视频前贴广告</h3>
+                <button class="modal-close" id="closeStatsModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:20px;">
+                    <div style="text-align:center; padding:16px; background:var(--gray-light); border-radius:8px;">
+                        <div style="font-size:28px; font-weight:700; color:var(--primary);" id="statImpressions">12,345</div>
+                        <div style="color:var(--gray);">展示次数</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:var(--gray-light); border-radius:8px;">
+                        <div style="font-size:28px; font-weight:700; color:var(--primary);" id="statClicks">456</div>
+                        <div style="color:var(--gray);">点击次数</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:var(--gray-light); border-radius:8px;">
+                        <div style="font-size:28px; font-weight:700; color:var(--primary);" id="statCtr">3.7%</div>
+                        <div style="color:var(--gray);">点击率</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:var(--gray-light); border-radius:8px;">
+                        <div style="font-size:28px; font-weight:700; color:var(--primary);" id="statRevenue">$1,234</div>
+                        <div style="color:var(--gray);">收入</div>
+                    </div>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>展示</th>
+                            <th>点击</th>
+                            <th>CTR</th>
+                            <th>收入</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adStatsDetailBody">
+                        <tr>
+                            <td>2024-03-23</td>
+                            <td>5,234</td>
+                            <td>189</td>
+                            <td>3.6%</td>
+                            <td>$523.4</td>
+                        </tr>
+                        <tr>
+                            <td>2024-03-22</td>
+                            <td>4,890</td>
+                            <td>167</td>
+                            <td>3.4%</td>
+                            <td>$489</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 加载广告位数据
+            await loadAdPositions();
+
+            // 绑定事件
+            document.getElementById('addAdPositionBtn').addEventListener('click', () => {
+                document.getElementById('adId').value = '';
+                document.getElementById('adForm').reset();
+                document.getElementById('adModalTitle').textContent = '新增广告位';
+                document.getElementById('adActive').checked = true;
+                adminCore.openModal('addAdModal');
+            });
+
+            document.getElementById('closeAdModal').addEventListener('click', () => {
+                adminCore.closeModal('addAdModal');
+            });
+
+            document.getElementById('cancelAdBtn').addEventListener('click', () => {
+                adminCore.closeModal('addAdModal');
+            });
+
+            document.getElementById('saveAdBtn').addEventListener('click', saveAdPosition);
+
+            document.getElementById('refreshAdStats').addEventListener('click', () => {
+                loadAdPositions();
+            });
+
+            document.getElementById('adStatsPeriod').addEventListener('change', (e) => {
+                loadAdStats(e.target.value);
+            });
+
+            document.getElementById('closeStatsModal').addEventListener('click', () => {
+                adminCore.closeModal('adStatsModal');
+            });
+        });
+
+        // 加载广告位
+        async function loadAdPositions() {
+            const container = document.getElementById('adPositionsList');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/ad-positions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderAdPositions(data.data);
+                    updateAdStats(data.data);
+                } else {
+                    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">暂无广告位，点击"新增广告位"创建</div>';
+                }
+            } catch (error) {
+                console.error('加载广告位失败:', error);
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">加载失败</div>';
+            }
+        }
+
+        // 渲染广告位
+        function renderAdPositions(positions) {
+            const container = document.getElementById('adPositionsList');
+            container.innerHTML = '';
+
+            positions.forEach(pos => {
+                const card = document.createElement('div');
+                card.className = `card ad-card`;
+                card.style.borderLeft = `4px solid ${pos.is_active ? 'var(--primary)' : 'var(--gray)'}`;
+                
+                const statusClass = pos.is_active ? 'status-active' : 'status-inactive';
+                const statusText = pos.is_active ? '启用' : '禁用';
+                
+                // 预览样式
+                let previewIcon = '';
+                if (pos.type === 'video') {
+                    previewIcon = '<i class="fas fa-play-circle" style="font-size:24px; margin-right:8px;"></i>';
+                } else if (pos.type === 'image') {
+                    previewIcon = '<i class="fas fa-image" style="font-size:24px; margin-right:8px;"></i>';
+                } else {
+                    previewIcon = '<i class="fas fa-code" style="font-size:24px; margin-right:8px;"></i>';
+                }
+
+                card.innerHTML = `
+                    <div class="card-header" style="justify-content:space-between;">
+                        <div>
+                            <i class="fas fa-${pos.type === 'video' ? 'video' : (pos.type === 'image' ? 'image' : 'code')}" 
+                               style="color:${pos.is_active ? 'var(--primary)' : 'var(--gray)'}; margin-right:8px;"></i>
+                            <span class="card-title">${pos.name}</span>
+                        </div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="card-content">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span style="color:var(--gray);">广告位代码：</span>
+                            <code>${pos.code}</code>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span style="color:var(--gray);">尺寸：</span>
+                            <span>${pos.width}x${pos.height}</span>
+                        </div>
+                        ${pos.duration ? `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span style="color:var(--gray);">时长：</span>
+                            <span>${pos.duration}秒</span>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- 广告指标 -->
+                        <div class="ad-metrics">
+                            <div class="metric-item">
+                                <div class="metric-value">${formatNumber(pos.impressions || 1234)}</div>
+                                <div class="metric-label">展示</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${formatNumber(pos.clicks || 56)}</div>
+                                <div class="metric-label">点击</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">${pos.ctr || '3.7%'}</div>
+                                <div class="metric-label">CTR</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value">$${pos.revenue || '12.3'}</div>
+                                <div class="metric-label">收入</div>
+                            </div>
+                        </div>
+
+                        <div class="ad-preview" style="background: linear-gradient(135deg, ${pos.is_active ? 'var(--primary)' : '#8c8c8c'}, ${pos.is_active ? 'var(--primary-dark)' : '#5c5c5c'});">
+                            ${previewIcon}
+                            ${pos.is_active ? (pos.type === 'video' ? '广告预览 ('+pos.duration+'s)' : pos.name) : '已禁用'}
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; margin-top:16px;">
+                            <button class="btn btn-sm btn-secondary" onclick="editAdPosition('${pos.id}')">
+                                <i class="fas fa-edit"></i>编辑
+                            </button>
+                            <button class="btn btn-sm btn-${pos.is_active ? 'warning' : 'success'}" onclick="toggleAdPosition('${pos.id}')">
+                                <i class="fas fa-${pos.is_active ? 'ban' : 'check-circle'}"></i>
+                                ${pos.is_active ? '禁用' : '启用'}
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="viewAdStats('${pos.id}')">
+                                <i class="fas fa-chart-bar"></i>统计
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // 更新统计卡片
+        function updateAdStats(positions) {
+            const total = positions.length;
+            const active = positions.filter(p => p.is_active).length;
+            
+            // 模拟统计数据
+            document.getElementById('totalAdPositions').textContent = total;
+            document.getElementById('activeAdPositions').textContent = active;
+            document.getElementById('todayImpressions').textContent = '1.2k';
+            document.getElementById('todayRevenue').textContent = '$45.20';
+        }
+
+        // 编辑广告位
+        window.editAdPosition = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/ad-positions/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const pos = data.data;
+                    document.getElementById('adId').value = pos.id;
+                    document.getElementById('adName').value = pos.name;
+                    document.getElementById('adCode').value = pos.code;
+                    document.getElementById('adWidth').value = pos.width;
+                    document.getElementById('adHeight').value = pos.height;
+                    document.getElementById('adDuration').value = pos.duration || 15;
+                    document.getElementById('adType').value = pos.type || 'video';
+                    document.getElementById('adDescription').value = pos.description || '';
+                    document.getElementById('adPricing').value = pos.pricing || 'cpm';
+                    document.getElementById('adPrice').value = pos.price || 2.5;
+                    document.getElementById('adActive').checked = pos.is_active;
+                    
+                    document.getElementById('adModalTitle').textContent = '编辑广告位';
+                    adminCore.openModal('addAdModal');
+                }
+            } catch (error) {
+                alert('加载广告位失败');
+            }
+        };
+
+        // 切换广告位状态
+        window.toggleAdPosition = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/ad-positions/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const pos = data.data;
+                    const action = pos.is_active ? '禁用' : '启用';
+                    
+                    if (!confirm(`确定要${action}此广告位吗？`)) return;
+
+                    const updateRes = await fetch(`${API_BASE}/ad-positions/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ is_active: !pos.is_active })
+                    });
+                    const updateData = await updateRes.json();
+
+                    if (updateData.success) {
+                        loadAdPositions();
+                    } else {
+                        alert('操作失败：' + updateData.error);
+                    }
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        // 查看广告统计
+        window.viewAdStats = function(id) {
+            document.getElementById('adStatsTitle').textContent = '广告统计';
+            adminCore.openModal('adStatsModal');
+        };
+
+        // 保存广告位
+        async function saveAdPosition() {
+            const token = localStorage.getItem('token');
+            const adId = document.getElementById('adId').value;
+
+            const formData = {
+                name: document.getElementById('adName').value,
+                code: document.getElementById('adCode').value,
+                width: parseInt(document.getElementById('adWidth').value),
+                height: parseInt(document.getElementById('adHeight').value),
+                duration: parseInt(document.getElementById('adDuration').value) || null,
+                type: document.getElementById('adType').value,
+                description: document.getElementById('adDescription').value,
+                pricing: document.getElementById('adPricing').value,
+                price: parseFloat(document.getElementById('adPrice').value),
+                is_active: document.getElementById('adActive').checked
+            };
+
+            if (!formData.name || !formData.code || !formData.width || !formData.height) {
+                alert('请填写必填字段');
+                return;
+            }
+
+            const url = adId ? `${API_BASE}/ad-positions/${adId}` : `${API_BASE}/ad-positions`;
+            const method = adId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('addAdModal');
+                    loadAdPositions();
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 加载广告统计
+        async function loadAdStats(period) {
+            // 模拟数据
+            console.log('加载广告统计，周期:', period);
+        }
+
+        // 格式化数字
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+    </script>
+</body>
+</html>

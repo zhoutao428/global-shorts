@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付接口 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <style>
+        /* 支付渠道卡片样式 */
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .payment-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .payment-card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .payment-card.disabled {
+            opacity: 0.7;
+            background: var(--gray-light);
+        }
+        .payment-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 16px;
+        }
+        .payment-icon.alipay { background: #1677ff; }
+        .payment-icon.wechat { background: #07c160; }
+        .payment-icon.paypal { background: #003087; }
+        .payment-icon.stripe { background: #635bff; }
+        .payment-icon.default { background: var(--primary); }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active {
+            background: rgba(82, 196, 26, 0.1);
+            color: var(--success);
+        }
+        .status-inactive {
+            background: rgba(250, 173, 20, 0.1);
+            color: var(--warning);
+        }
+        .secret-mask {
+            font-family: monospace;
+            background: var(--gray-light);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            <span>Global Shorts 后台</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i>
+            <span id="currentLanguage">中文</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 用户下拉菜单（放在header外面，但紧随其后） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+
+    <div class="admin-container">
+        <!-- 侧边栏：所有菜单改为真实链接，支付接口激活 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <!-- 页面标题 -->
+            <div class="page-header">
+                <h1 class="page-title">支付接口管理</h1>
+                <p class="page-description">配置支付网关、密钥及开关</p>
+            </div>
+
+            <!-- 支付统计卡片 -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:20px; margin-bottom:24px;">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #1890ff, #096dd9);">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalGateways">0</h3>
+                        <p>支付渠道总数</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #52c41a, #389e0d);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activeGateways">0</h3>
+                        <p>已启用</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #faad14, #d48806);">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todayTransactions">0</h3>
+                        <p>今日交易</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #f5222d, #cf1322);">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="todayAmount">$0</h3>
+                        <p>今日交易额</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 支付渠道卡片列表 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">支付渠道</h3>
+                    <div>
+                        <button class="btn btn-secondary" id="refreshGatewaysBtn">
+                            <i class="fas fa-sync-alt"></i>刷新
+                        </button>
+                        <button class="btn btn-primary" id="addPaymentBtn">
+                            <i class="fas fa-plus"></i>添加接口
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="payment-grid" id="paymentGatewayList">
+                        <!-- 动态加载支付渠道卡片 -->
+                        <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">
+                            <i class="fas fa-spinner fa-spin" style="font-size:32px;"></i>
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 支付全局设置卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">全局支付设置</h3>
+                    <button class="btn btn-primary" id="saveGlobalSettings">保存设置</button>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label class="form-label">默认支付方式</label>
+                        <select class="form-control" id="defaultPayment">
+                            <option value="">请选择</option>
+                            <option value="alipay">支付宝</option>
+                            <option value="wechat">微信支付</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="stripe">Stripe</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">支付超时时间（分钟）</label>
+                        <input type="number" class="form-control" id="paymentTimeout" value="30">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">货币符号</label>
+                        <select class="form-control" id="currencySymbol">
+                            <option value="$">美元 $</option>
+                            <option value="¥">人民币 ¥</option>
+                            <option value="€">欧元 €</option>
+                            <option value="£">英镑 £</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="enableCallback" checked> 启用支付成功回调
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">异步通知地址</label>
+                        <input type="text" class="form-control" id="notifyUrl" value="https://api.globalshorts.com/payment/notify">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">同步跳转地址</label>
+                        <input type="text" class="form-control" id="returnUrl" value="https://globalshorts.com/payment/success">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">支付成功页面</label>
+                        <input type="text" class="form-control" id="successUrl" value="https://globalshorts.com/payment/success">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">支付失败页面</label>
+                        <input type="text" class="form-control" id="failUrl" value="https://globalshorts.com/payment/fail">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近支付记录表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">最近支付记录</h3>
+                    <div>
+                        <select class="form-control" style="width:120px; display:inline-block; margin-right:8px;" id="paymentStatusFilter">
+                            <option value="">全部状态</option>
+                            <option value="success">成功</option>
+                            <option value="pending">处理中</option>
+                            <option value="failed">失败</option>
+                        </select>
+                        <a href="/payment-records.html" style="color:var(--primary);">查看全部</a>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>订单号</th>
+                                <th>用户</th>
+                                <th>金额</th>
+                                <th>支付方式</th>
+                                <th>状态</th>
+                                <th>时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentRecordsBody">
+                            <tr><td colspan="7" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="pagination" id="paymentPagination" style="margin-top:20px;">
+                        <div class="page-item active" data-page="1">1</div>
+                        <div class="page-item" data-page="2">2</div>
+                        <div class="page-item" data-page="3">3</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑支付接口模态框 -->
+    <div class="modal-overlay" id="addPaymentModal">
+        <div class="modal" style="max-width:600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="paymentModalTitle">添加支付接口</h3>
+                <button class="modal-close" id="closePaymentModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <input type="hidden" id="paymentId">
+                    <div class="form-group">
+                        <label class="form-label">支付方式 <span style="color:var(--error);">*</span></label>
+                        <select class="form-control" id="paymentType" required>
+                            <option value="">请选择</option>
+                            <option value="alipay">支付宝</option>
+                            <option value="wechat">微信支付</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="stripe">Stripe</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">商户号/应用ID <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="paymentMerchantId" placeholder="例如：2088********1234" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">应用名称</label>
+                        <input type="text" class="form-control" id="paymentAppName" placeholder="例如：Global Shorts">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密钥/私钥 <span style="color:var(--error);">*</span></label>
+                        <textarea class="form-control" id="paymentSecret" rows="3" placeholder="请输入密钥" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">公钥/证书</label>
+                        <textarea class="form-control" id="paymentPublicKey" rows="2" placeholder="可选"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">支付网关地址</label>
+                        <input type="text" class="form-control" id="paymentGatewayUrl" value="https://api.payment.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Webhook 签名密钥</label>
+                        <input type="text" class="form-control" id="paymentWebhookSecret" placeholder="用于验证回调请求">
+                    </div>
+                    <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="form-group">
+                            <label class="form-label">排序</label>
+                            <input type="number" class="form-control" id="paymentSort" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">状态</label>
+                            <select class="form-control" id="paymentStatus">
+                                <option value="active">启用</option>
+                                <option value="inactive">禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="paymentIsDefault"> 设为默认支付方式
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelPaymentBtn">取消</button>
+                <button class="btn btn-primary" id="savePaymentBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 测试支付模态框 -->
+    <div class="modal-overlay" id="testPaymentModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">测试支付接口</h3>
+                <button class="modal-close" id="closeTestModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align:center; padding:20px;">
+                    <i class="fas fa-credit-card" style="font-size:48px; color:var(--primary); margin-bottom:16px;"></i>
+                    <h4 style="margin-bottom:8px;">支付宝</h4>
+                    <p style="color:var(--gray); margin-bottom:20px;">测试支付1分钱，验证接口是否正常</p>
+                    <div style="background:var(--gray-light); padding:12px; border-radius:8px; margin-bottom:20px; text-align:left;">
+                        <div style="margin-bottom:8px;">测试金额：<strong>¥0.01</strong></div>
+                        <div style="margin-bottom:8px;">订单号：<code>TEST_20240323123456</code></div>
+                        <div>回调地址：<code>https://api.globalshorts.com/payment/test/callback</code></div>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;">发起测试支付</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        let gateways = [];
+        let currentPage = 1;
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 加载数据
+            await loadPaymentGateways();
+            await loadPaymentRecords();
+            await loadGlobalSettings();
+
+            // 绑定事件
+            document.getElementById('addPaymentBtn').addEventListener('click', () => {
+                document.getElementById('paymentId').value = '';
+                document.getElementById('paymentForm').reset();
+                document.getElementById('paymentStatus').value = 'active';
+                document.getElementById('paymentModalTitle').textContent = '添加支付接口';
+                adminCore.openModal('addPaymentModal');
+            });
+
+            document.getElementById('closePaymentModal').addEventListener('click', () => {
+                adminCore.closeModal('addPaymentModal');
+            });
+
+            document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
+                adminCore.closeModal('addPaymentModal');
+            });
+
+            document.getElementById('savePaymentBtn').addEventListener('click', savePaymentGateway);
+
+            document.getElementById('refreshGatewaysBtn').addEventListener('click', () => {
+                loadPaymentGateways();
+            });
+
+            document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalSettings);
+
+            // 分页点击
+            document.querySelectorAll('#paymentPagination .page-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page && page !== currentPage) {
+                        currentPage = page;
+                        loadPaymentRecords();
+                        
+                        document.querySelectorAll('#paymentPagination .page-item').forEach(p => p.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+            });
+
+            // 状态筛选
+            document.getElementById('paymentStatusFilter').addEventListener('change', () => {
+                currentPage = 1;
+                loadPaymentRecords();
+            });
+        });
+
+        // 加载支付渠道
+        async function loadPaymentGateways() {
+            const container = document.getElementById('paymentGatewayList');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/payment-gateways`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    gateways = data.data;
+                    renderPaymentGateways(gateways);
+                    updatePaymentStats(gateways);
+                } else {
+                    container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
+                }
+            } catch (error) {
+                console.error('加载支付接口失败:', error);
+                container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
+            }
+        }
+
+        // 渲染支付渠道卡片
+        function renderPaymentGateways(gateways) {
+            const container = document.getElementById('paymentGatewayList');
+            
+            if (!gateways || gateways.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">
+                        <i class="fas fa-credit-card" style="font-size:48px; margin-bottom:16px;"></i>
+                        <p>暂无支付接口配置，点击"添加接口"创建</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            gateways.forEach(gateway => {
+                const card = document.createElement('div');
+                card.className = `payment-card ${!gateway.is_active ? 'disabled' : ''}`;
+                
+                // 根据支付方式设置图标颜色
+                let iconClass = 'default';
+                if (gateway.type === 'alipay') iconClass = 'alipay';
+                else if (gateway.type === 'wechat') iconClass = 'wechat';
+                else if (gateway.type === 'paypal') iconClass = 'paypal';
+                else if (gateway.type === 'stripe') iconClass = 'stripe';
+
+                // 支付方式名称
+                let typeName = '未知';
+                if (gateway.type === 'alipay') typeName = '支付宝';
+                else if (gateway.type === 'wechat') typeName = '微信支付';
+                else if (gateway.type === 'paypal') typeName = 'PayPal';
+                else if (gateway.type === 'stripe') typeName = 'Stripe';
+
+                // 状态徽章
+                const statusBadge = gateway.is_active ? 
+                    '<span class="status-badge status-active">已启用</span>' : 
+                    '<span class="status-badge status-inactive">已禁用</span>';
+
+                // 默认徽章
+                const defaultBadge = gateway.is_default ? 
+                    '<span style="margin-left:8px; background:var(--primary); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">默认</span>' : '';
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:16px;">
+                        <div>
+                            <div class="payment-icon ${iconClass}">
+                                <i class="fas fa-${gateway.type === 'alipay' ? 'alipay' : (gateway.type === 'wechat' ? 'weixin' : 'credit-card')}"></i>
+                            </div>
+                            <h4 style="font-size:16px; margin:0;">${typeName}${defaultBadge}</h4>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    
+                    <div style="margin-bottom:12px;">
+                        <div style="color:var(--gray); font-size:13px; margin-bottom:4px;">商户号</div>
+                        <div class="secret-mask">${gateway.merchant_id || '-'}</div>
+                    </div>
+                    
+                    <div style="margin-bottom:16px;">
+                        <div style="color:var(--gray); font-size:13px; margin-bottom:4px;">密钥</div>
+                        <div class="secret-mask">${gateway.secret_key ? '••••••••' + gateway.secret_key.slice(-4) : '-'}</div>
+                    </div>
+                    
+                    <div style="display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--border); padding-top:16px;">
+                        <button class="btn btn-sm btn-secondary" onclick="testPaymentGateway('${gateway.id}')">
+                            <i class="fas fa-play"></i>测试
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="editPaymentGateway('${gateway.id}')">
+                            <i class="fas fa-edit"></i>编辑
+                        </button>
+                        <button class="btn btn-sm btn-${gateway.is_active ? 'warning' : 'success'}" onclick="togglePaymentGateway('${gateway.id}')">
+                            <i class="fas fa-${gateway.is_active ? 'ban' : 'check'}"></i>
+                            ${gateway.is_active ? '禁用' : '启用'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deletePaymentGateway('${gateway.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // 更新支付统计
+        function updatePaymentStats(gateways) {
+            const total = gateways.length;
+            const active = gateways.filter(g => g.is_active).length;
+            
+            document.getElementById('totalGateways').textContent = total;
+            document.getElementById('activeGateways').textContent = active;
+            
+            // 交易统计可以从另一个API获取
+            document.getElementById('todayTransactions').textContent = '128';
+            document.getElementById('todayAmount').textContent = '$3,245';
+        }
+
+        // 编辑支付接口
+        window.editPaymentGateway = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/payment-gateways/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const gateway = data.data;
+                    document.getElementById('paymentId').value = gateway.id;
+                    document.getElementById('paymentType').value = gateway.type;
+                    document.getElementById('paymentMerchantId').value = gateway.merchant_id || '';
+                    document.getElementById('paymentAppName').value = gateway.app_name || '';
+                    document.getElementById('paymentSecret').value = '';
+                    document.getElementById('paymentPublicKey').value = gateway.public_key || '';
+                    document.getElementById('paymentGatewayUrl').value = gateway.gateway_url || 'https://api.payment.com';
+                    document.getElementById('paymentWebhookSecret').value = gateway.webhook_secret || '';
+                    document.getElementById('paymentSort').value = gateway.sort_order || 1;
+                    document.getElementById('paymentStatus').value = gateway.is_active ? 'active' : 'inactive';
+                    document.getElementById('paymentIsDefault').checked = gateway.is_default || false;
+                    
+                    document.getElementById('paymentModalTitle').textContent = '编辑支付接口';
+                    adminCore.openModal('addPaymentModal');
+                }
+            } catch (error) {
+                alert('加载支付接口失败');
+            }
+        };
+
+        // 切换支付接口状态
+        window.togglePaymentGateway = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/payment-gateways/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const gateway = data.data;
+                    const action = gateway.is_active ? '禁用' : '启用';
+                    
+                    if (!confirm(`确定要${action}该支付接口吗？`)) return;
+
+                    const updateRes = await fetch(`${API_BASE}/payment-gateways/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ is_active: !gateway.is_active })
+                    });
+                    const updateData = await updateRes.json();
+
+                    if (updateData.success) {
+                        loadPaymentGateways();
+                    } else {
+                        alert('操作失败：' + updateData.error);
+                    }
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        // 删除支付接口
+        window.deletePaymentGateway = async function(id) {
+            if (!confirm('确定要删除该支付接口吗？此操作不可撤销。')) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/payment-gateways/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    loadPaymentGateways();
+                } else {
+                    alert('删除失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        // 测试支付接口
+        window.testPaymentGateway = function(id) {
+            adminCore.openModal('testPaymentModal');
+        };
+
+        // 保存支付接口
+        async function savePaymentGateway() {
+            const token = localStorage.getItem('token');
+            const gatewayId = document.getElementById('paymentId').value;
+
+            const formData = {
+                type: document.getElementById('paymentType').value,
+                merchant_id: document.getElementById('paymentMerchantId').value,
+                app_name: document.getElementById('paymentAppName').value,
+                secret_key: document.getElementById('paymentSecret').value,
+                public_key: document.getElementById('paymentPublicKey').value,
+                gateway_url: document.getElementById('paymentGatewayUrl').value,
+                webhook_secret: document.getElementById('paymentWebhookSecret').value,
+                sort_order: parseInt(document.getElementById('paymentSort').value) || 1,
+                is_active: document.getElementById('paymentStatus').value === 'active',
+                is_default: document.getElementById('paymentIsDefault').checked
+            };
+
+            if (!formData.type || !formData.merchant_id) {
+                alert('请填写必填字段');
+                return;
+            }
+
+            // 新增时必须填写密钥
+            if (!gatewayId && !formData.secret_key) {
+                alert('密钥不能为空');
+                return;
+            }
+
+            const url = gatewayId ? `${API_BASE}/payment-gateways/${gatewayId}` : `${API_BASE}/payment-gateways`;
+            const method = gatewayId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('addPaymentModal');
+                    loadPaymentGateways();
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 加载支付记录
+        async function loadPaymentRecords() {
+            const tbody = document.getElementById('paymentRecordsBody');
+            const token = localStorage.getItem('token');
+            const statusFilter = document.getElementById('paymentStatusFilter').value;
+
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 5,
+                    status: statusFilter
+                });
+
+                const response = await fetch(`${API_BASE}/payment-records?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderPaymentRecords(data.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-placeholder">暂无支付记录</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载支付记录失败:', error);
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        // 渲染支付记录
+        function renderPaymentRecords(records) {
+            const tbody = document.getElementById('paymentRecordsBody');
+            tbody.innerHTML = '';
+
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                
+                let statusClass = '';
+                let statusText = '';
+                if (record.status === 'success') {
+                    statusClass = 'status-active';
+                    statusText = '成功';
+                } else if (record.status === 'pending') {
+                    statusClass = 'status-inactive';
+                    statusText = '处理中';
+                } else {
+                    statusClass = 'status-suspended';
+                    statusText = '失败';
+                }
+
+                row.innerHTML = `
+                    <td><code>${record.order_no}</code></td>
+                    <td>${record.username || '-'}</td>
+                    <td><strong>$${record.amount}</strong></td>
+                    <td>${record.payment_method}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${record.created_at}</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="viewPaymentDetail('${record.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 查看支付详情
+        window.viewPaymentDetail = function(id) {
+            alert('查看支付详情 ID: ' + id);
+        };
+
+        // 加载全局设置
+        async function loadGlobalSettings() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/settings/payment`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const settings = data.data;
+                    document.getElementById('defaultPayment').value = settings.default_payment || '';
+                    document.getElementById('paymentTimeout').value = settings.timeout || 30;
+                    document.getElementById('currencySymbol').value = settings.currency || '$';
+                    document.getElementById('enableCallback').checked = settings.enable_callback !== false;
+                    document.getElementById('notifyUrl').value = settings.notify_url || 'https://api.globalshorts.com/payment/notify';
+                    document.getElementById('returnUrl').value = settings.return_url || 'https://globalshorts.com/payment/success';
+                    document.getElementById('successUrl').value = settings.success_url || 'https://globalshorts.com/payment/success';
+                    document.getElementById('failUrl').value = settings.fail_url || 'https://globalshorts.com/payment/fail';
+                }
+            } catch (error) {
+                console.error('加载全局设置失败:', error);
+            }
+        }
+
+        // 保存全局设置
+        async function saveGlobalSettings() {
+            const token = localStorage.getItem('token');
+            
+            const settings = {
+                default_payment: document.getElementById('defaultPayment').value,
+                timeout: parseInt(document.getElementById('paymentTimeout').value) || 30,
+                currency: document.getElementById('currencySymbol').value,
+                enable_callback: document.getElementById('enableCallback').checked,
+                notify_url: document.getElementById('notifyUrl').value,
+                return_url: document.getElementById('returnUrl').value,
+                success_url: document.getElementById('successUrl').value,
+                fail_url: document.getElementById('failUrl').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/settings/payment`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(settings)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('全局设置保存成功');
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 关闭测试模态框
+        document.getElementById('closeTestModal')?.addEventListener('click', () => {
+            adminCore.closeModal('testPaymentModal');
+        });
+    </script>
+</body>
+</html>

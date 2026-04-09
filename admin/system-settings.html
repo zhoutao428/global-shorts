@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            <span>Global Shorts 后台</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i>
+            <span id="currentLanguage">中文</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 用户下拉菜单（放在header外面，但紧随其后） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+
+    <div class="admin-container">
+        <!-- 侧边栏：所有菜单改为真实链接，系统设置激活 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <!-- 页面内容 -->
+            <div class="page-header">
+                <h1 class="page-title">系统设置</h1>
+                <p class="page-description">配置系统参数、上传限制、邮件服务等</p>
+            </div>
+
+            <!-- 系统状态卡片 -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:20px; margin-bottom:24px;">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #1890ff, #096dd9);">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="systemVersion">v2.3.0</h3>
+                        <p>系统版本</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #52c41a, #389e0d);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="lastBackup">2024-03-23</h3>
+                        <p>最近备份</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #faad14, #d48806);">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="dbSize">2.3 GB</h3>
+                        <p>数据库大小</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #f5222d, #cf1322);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="onlineUsers">128</h3>
+                        <p>当前在线</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页导航 -->
+            <div class="tabs" style="margin-bottom:24px;">
+                <div class="tab-item active" data-tab="basic">基础设置</div>
+                <div class="tab-item" data-tab="upload">上传设置</div>
+                <div class="tab-item" data-tab="mail">邮件服务</div>
+                <div class="tab-item" data-tab="cache">缓存与性能</div>
+                <div class="tab-item" data-tab="security">安全设置</div>
+                <div class="tab-item" data-tab="backup">备份与维护</div>
+            </div>
+
+            <!-- 基础设置标签页 -->
+            <div class="tab-content active" id="basicTab">
+                <!-- 站点信息卡片 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">站点信息</h3>
+                        <button class="btn btn-sm btn-secondary" onclick="loadSiteInfo()">刷新</button>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">站点名称</label>
+                            <input type="text" class="form-control" id="siteName" value="Global Shorts" placeholder="站点名称">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">站点域名</label>
+                            <input type="text" class="form-control" id="siteUrl" value="https://globalshorts.com" placeholder="https://example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">站点描述</label>
+                            <textarea class="form-control" id="siteDescription" rows="3" placeholder="短剧平台">全球领先的短剧平台</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">站点关键词</label>
+                            <input type="text" class="form-control" id="siteKeywords" value="短剧, mini剧, 连续短剧, 海外短剧" placeholder="SEO关键词">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">站点 Logo</label>
+                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                <div style="width:50px; height:50px; background:var(--primary); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white;">
+                                    <i class="fas fa-globe-americas"></i>
+                                </div>
+                                <button class="btn btn-sm btn-secondary" id="uploadLogoBtn">上传新 Logo</button>
+                                <span style="color:var(--gray);">推荐尺寸: 200x200px</span>
+                                <input type="text" class="form-control" style="width:300px;" id="logoUrl" placeholder="或输入图片URL">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 注册与登录设置 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">注册与登录</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="allowRegister" checked> 允许新用户注册
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="emailVerification" checked> 邮箱验证
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="phoneVerification"> 手机号验证
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="rememberMe" checked> 自动登录（记住我）
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">登录超时时间（分钟）</label>
+                            <input type="number" class="form-control" id="loginTimeout" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 界面设置 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">界面设置</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">默认主题</label>
+                            <select class="form-control" id="defaultTheme">
+                                <option value="light" selected>浅色</option>
+                                <option value="dark">深色</option>
+                                <option value="auto">跟随系统</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">每页显示条数</label>
+                            <input type="number" class="form-control" id="pageSize" value="20">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="showWatermark" checked> 显示水印
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传设置标签页 -->
+            <div class="tab-content" id="uploadTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">上传设置</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">允许的文件类型</label>
+                            <input type="text" class="form-control" id="allowedFileTypes" value="mp4,avi,mov,mkv,webm">
+                            <small style="color:var(--gray);">用逗号分隔，例如：mp4,avi,mov</small>
+                        </div>
+                        <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div class="form-group">
+                                <label class="form-label">单个文件最大 (MB)</label>
+                                <input type="number" class="form-control" id="maxFileSize" value="2048">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">并发上传数</label>
+                                <input type="number" class="form-control" id="concurrentUploads" value="3">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">视频允许的分辨率</label>
+                            <select class="form-control" id="allowedResolutions" multiple style="height:120px;">
+                                <option value="480p" selected>480p (标清)</option>
+                                <option value="720p" selected>720p (高清)</option>
+                                <option value="1080p" selected>1080p (全高清)</option>
+                                <option value="2k">2K (超高清)</option>
+                                <option value="4k">4K (超高清+)</option>
+                            </select>
+                            <small style="color:var(--gray);">按住 Ctrl 多选</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">视频编码格式</label>
+                            <select class="form-control" id="videoCodec">
+                                <option value="h264" selected>H.264</option>
+                                <option value="h265">H.265/HEVC</option>
+                                <option value="vp9">VP9</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="autoTranscode" checked> 自动转码
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="generateThumbnail" checked> 自动生成缩略图
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 存储设置 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">存储设置</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">存储驱动</label>
+                            <select class="form-control" id="storageDriver">
+                                <option value="local" selected>本地存储</option>
+                                <option value="s3">Amazon S3</option>
+                                <option value="oss">阿里云OSS</option>
+                                <option value="cos">腾讯云COS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">存储路径</label>
+                            <input type="text" class="form-control" id="storagePath" value="/uploads">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CDN 加速域名</label>
+                            <input type="text" class="form-control" id="cdnUrl" value="https://cdn.globalshorts.com">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 邮件服务标签页 -->
+            <div class="tab-content" id="mailTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">邮件服务器</h3>
+                        <button class="btn btn-sm btn-secondary" id="testMailBtn">发送测试邮件</button>
+                    </div>
+                    <div class="card-content">
+                        <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div class="form-group">
+                                <label class="form-label">SMTP 服务器</label>
+                                <input type="text" class="form-control" id="smtpHost" value="smtp.gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">端口</label>
+                                <input type="number" class="form-control" id="smtpPort" value="587">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">加密方式</label>
+                            <select class="form-control" id="smtpEncryption">
+                                <option value="tls" selected>TLS</option>
+                                <option value="ssl">SSL</option>
+                                <option value="none">无</option>
+                            </select>
+                        </div>
+                        <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div class="form-group">
+                                <label class="form-label">发件人邮箱</label>
+                                <input type="email" class="form-control" id="smtpFrom" value="noreply@globalshorts.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">发件人名称</label>
+                                <input type="text" class="form-control" id="smtpFromName" value="Global Shorts">
+                            </div>
+                        </div>
+                        <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div class="form-group">
+                                <label class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="smtpUser" value="noreply@globalshorts.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">密码</label>
+                                <input type="password" class="form-control" id="smtpPass" value="********">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 邮件模板 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">邮件模板</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">欢迎邮件模板</label>
+                            <textarea class="form-control" id="welcomeEmail" rows="3">欢迎注册 Global Shorts！</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">密码重置模板</label>
+                            <textarea class="form-control" id="resetEmail" rows="3">点击链接重置密码</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 缓存与性能标签页 -->
+            <div class="tab-content" id="cacheTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">缓存设置</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">缓存驱动</label>
+                            <select class="form-control" id="cacheDriver">
+                                <option value="file" selected>文件缓存</option>
+                                <option value="redis">Redis</option>
+                                <option value="memcached">Memcached</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="redisSettings">
+                            <label class="form-label">Redis 连接地址</label>
+                            <input type="text" class="form-control" id="redisHost" value="127.0.0.1:6379">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">缓存时间 (分钟)</label>
+                            <input type="number" class="form-control" id="cacheTtl" value="60">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enablePageCache" checked> 启用页面缓存
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enableQueryCache" checked> 启用查询缓存
+                            </label>
+                        </div>
+                        <button class="btn btn-secondary" id="clearCacheBtn">清空所有缓存</button>
+                    </div>
+                </div>
+
+                <!-- 性能优化 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">性能优化</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enableCompression" checked> 启用页面压缩
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enableCdn" checked> 启用 CDN
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enableLazyLoad" checked> 启用图片懒加载
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 安全设置标签页 -->
+            <div class="tab-content" id="securityTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">登录安全</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div class="form-group">
+                                <label class="form-label">登录失败限制次数</label>
+                                <input type="number" class="form-control" id="maxLoginAttempts" value="5">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">锁定时间（分钟）</label>
+                                <input type="number" class="form-control" id="lockoutTime" value="30">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enable2fa" checked> 启用双因素认证 (2FA)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="enableCaptcha"> 启用 reCAPTCHA
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">reCAPTCHA 站点密钥</label>
+                            <input type="text" class="form-control" id="recaptchaSiteKey">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">reCAPTCHA 密钥</label>
+                            <input type="text" class="form-control" id="recaptchaSecretKey">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">会话安全</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">会话安全级别</label>
+                            <select class="form-control" id="sessionSecurity">
+                                <option value="strict">严格（同 IP 同设备）</option>
+                                <option value="medium" selected>中等（同设备）</option>
+                                <option value="loose">宽松（仅验证登录）</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">会话超时（分钟）</label>
+                            <input type="number" class="form-control" id="sessionTimeout" value="120">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="forceHttps" checked> 强制 HTTPS
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 备份与维护标签页 -->
+            <div class="tab-content" id="backupTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">数据库备份</h3>
+                        <button class="btn btn-primary" id="backupNowBtn">立即备份</button>
+                    </div>
+                    <div class="card-content">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>备份文件名</th>
+                                    <th>大小</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="backupListBody">
+                                <tr>
+                                    <td>backup_20240323_1230.sql.gz</td>
+                                    <td>256 MB</td>
+                                    <td>2024-03-23 12:30</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary">下载</button>
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>backup_20240322_0000.sql.gz</td>
+                                    <td>251 MB</td>
+                                    <td>2024-03-22 00:00</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary">下载</button>
+                                        <button class="btn btn-sm btn-danger">删除</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">系统维护</h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary" id="optimizeDbBtn">优化数据库</button>
+                            <button class="btn btn-secondary" id="clearLogsBtn">清理日志</button>
+                            <button class="btn btn-secondary" id="checkUpdatesBtn">检查更新</button>
+                            <button class="btn btn-danger" id="systemRestartBtn">重启系统</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作日志卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">系统操作日志</h3>
+                    <div>
+                        <select class="form-control" style="width:120px; display:inline-block; margin-right:8px;" id="logLevel">
+                            <option value="all">全部级别</option>
+                            <option value="info">信息</option>
+                            <option value="warning">警告</option>
+                            <option value="error">错误</option>
+                        </select>
+                        <button class="btn btn-sm btn-secondary" id="viewLogsBtn">
+                            <i class="fas fa-eye"></i>查看全部
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>级别</th>
+                                <th>管理员</th>
+                                <th>操作</th>
+                                <th>IP地址</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="systemLogsBody">
+                            <tr>
+                                <td>2024-03-23 10:30:25</td>
+                                <td><span class="status-badge status-active">INFO</span></td>
+                                <td>admin</td>
+                                <td>修改站点信息</td>
+                                <td>192.168.1.100</td>
+                                <td><span class="status-badge status-active">成功</span></td>
+                            </tr>
+                            <tr>
+                                <td>2024-03-23 09:15:10</td>
+                                <td><span class="status-badge status-active">INFO</span></td>
+                                <td>system</td>
+                                <td>备份数据库</td>
+                                <td>127.0.0.1</td>
+                                <td><span class="status-badge status-active">成功</span></td>
+                            </tr>
+                            <tr>
+                                <td>2024-03-22 23:45:33</td>
+                                <td><span class="status-badge status-warning">WARN</span></td>
+                                <td>admin</td>
+                                <td>清空缓存</td>
+                                <td>192.168.1.100</td>
+                                <td><span class="status-badge status-active">成功</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 保存按钮 -->
+            <div style="display: flex; justify-content: flex-end; gap:12px; margin-top:24px;">
+                <button class="btn btn-secondary" id="resetSettingsBtn">恢复默认</button>
+                <button class="btn btn-primary" id="saveSettingsBtn">保存所有设置</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 加载系统设置
+            await loadSystemSettings();
+
+            // 选项卡切换
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                });
+            });
+
+            // 缓存驱动切换显示Redis设置
+            document.getElementById('cacheDriver').addEventListener('change', (e) => {
+                const redisSettings = document.getElementById('redisSettings');
+                redisSettings.style.display = e.target.value === 'redis' ? 'block' : 'none';
+            });
+
+            // 按钮事件
+            document.getElementById('testMailBtn')?.addEventListener('click', testMail);
+            document.getElementById('viewLogsBtn')?.addEventListener('click', () => {
+                window.location.href = '/system-logs.html';
+            });
+            document.getElementById('resetSettingsBtn')?.addEventListener('click', resetSettings);
+            document.getElementById('saveSettingsBtn')?.addEventListener('click', saveAllSettings);
+            document.getElementById('uploadLogoBtn')?.addEventListener('click', uploadLogo);
+            document.getElementById('clearCacheBtn')?.addEventListener('click', clearCache);
+            document.getElementById('backupNowBtn')?.addEventListener('click', backupNow);
+            document.getElementById('optimizeDbBtn')?.addEventListener('click', optimizeDb);
+            document.getElementById('clearLogsBtn')?.addEventListener('click', clearLogs);
+            document.getElementById('checkUpdatesBtn')?.addEventListener('click', checkUpdates);
+            document.getElementById('systemRestartBtn')?.addEventListener('click', systemRestart);
+        });
+
+        // 加载系统设置
+        async function loadSystemSettings() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/settings`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const settings = data.data;
+                    
+                    // 基础设置
+                    document.getElementById('siteName').value = settings.site_name || 'Global Shorts';
+                    document.getElementById('siteUrl').value = settings.site_url || 'https://globalshorts.com';
+                    document.getElementById('siteDescription').value = settings.site_description || '';
+                    document.getElementById('siteKeywords').value = settings.site_keywords || '';
+                    document.getElementById('logoUrl').value = settings.logo_url || '';
+                    
+                    // 注册设置
+                    document.getElementById('allowRegister').checked = settings.allow_register !== false;
+                    document.getElementById('emailVerification').checked = settings.email_verification !== false;
+                    document.getElementById('phoneVerification').checked = settings.phone_verification || false;
+                    document.getElementById('rememberMe').checked = settings.remember_me !== false;
+                    document.getElementById('loginTimeout').value = settings.login_timeout || 30;
+                    
+                    // 上传设置
+                    document.getElementById('allowedFileTypes').value = settings.allowed_file_types || 'mp4,avi,mov,mkv,webm';
+                    document.getElementById('maxFileSize').value = settings.max_file_size || 2048;
+                    document.getElementById('concurrentUploads').value = settings.concurrent_uploads || 3;
+                    document.getElementById('autoTranscode').checked = settings.auto_transcode !== false;
+                    
+                    // 邮件设置
+                    document.getElementById('smtpHost').value = settings.smtp_host || 'smtp.gmail.com';
+                    document.getElementById('smtpPort').value = settings.smtp_port || 587;
+                    document.getElementById('smtpEncryption').value = settings.smtp_encryption || 'tls';
+                    document.getElementById('smtpFrom').value = settings.smtp_from || 'noreply@globalshorts.com';
+                    document.getElementById('smtpFromName').value = settings.smtp_from_name || 'Global Shorts';
+                    document.getElementById('smtpUser').value = settings.smtp_user || '';
+                    
+                    // 缓存设置
+                    document.getElementById('cacheDriver').value = settings.cache_driver || 'file';
+                    document.getElementById('redisHost').value = settings.redis_host || '127.0.0.1:6379';
+                    document.getElementById('cacheTtl').value = settings.cache_ttl || 60;
+                    document.getElementById('enablePageCache').checked = settings.enable_page_cache !== false;
+                    
+                    // 安全设置
+                    document.getElementById('maxLoginAttempts').value = settings.max_login_attempts || 5;
+                    document.getElementById('lockoutTime').value = settings.lockout_time || 30;
+                    document.getElementById('enable2fa').checked = settings.enable_2fa || false;
+                    document.getElementById('sessionSecurity').value = settings.session_security || 'medium';
+                    document.getElementById('sessionTimeout').value = settings.session_timeout || 120;
+                }
+            } catch (error) {
+                console.error('加载系统设置失败:', error);
+            }
+        }
+
+        // 保存所有设置
+        async function saveAllSettings() {
+            const token = localStorage.getItem('token');
+            
+            const settings = {
+                // 基础设置
+                site_name: document.getElementById('siteName').value,
+                site_url: document.getElementById('siteUrl').value,
+                site_description: document.getElementById('siteDescription').value,
+                site_keywords: document.getElementById('siteKeywords').value,
+                logo_url: document.getElementById('logoUrl').value,
+                
+                // 注册设置
+                allow_register: document.getElementById('allowRegister').checked,
+                email_verification: document.getElementById('emailVerification').checked,
+                phone_verification: document.getElementById('phoneVerification').checked,
+                remember_me: document.getElementById('rememberMe').checked,
+                login_timeout: parseInt(document.getElementById('loginTimeout').value),
+                
+                // 上传设置
+                allowed_file_types: document.getElementById('allowedFileTypes').value,
+                max_file_size: parseInt(document.getElementById('maxFileSize').value),
+                concurrent_uploads: parseInt(document.getElementById('concurrentUploads').value),
+                auto_transcode: document.getElementById('autoTranscode').checked,
+                
+                // 邮件设置
+                smtp_host: document.getElementById('smtpHost').value,
+                smtp_port: parseInt(document.getElementById('smtpPort').value),
+                smtp_encryption: document.getElementById('smtpEncryption').value,
+                smtp_from: document.getElementById('smtpFrom').value,
+                smtp_from_name: document.getElementById('smtpFromName').value,
+                smtp_user: document.getElementById('smtpUser').value,
+                smtp_pass: document.getElementById('smtpPass').value,
+                
+                // 缓存设置
+                cache_driver: document.getElementById('cacheDriver').value,
+                redis_host: document.getElementById('redisHost').value,
+                cache_ttl: parseInt(document.getElementById('cacheTtl').value),
+                enable_page_cache: document.getElementById('enablePageCache').checked,
+                
+                // 安全设置
+                max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value),
+                lockout_time: parseInt(document.getElementById('lockoutTime').value),
+                enable_2fa: document.getElementById('enable2fa').checked,
+                session_security: document.getElementById('sessionSecurity').value,
+                session_timeout: parseInt(document.getElementById('sessionTimeout').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(settings)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('设置保存成功');
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 测试邮件
+        async function testMail() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/settings/test-mail`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        to: document.getElementById('smtpFrom').value
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('测试邮件发送成功，请检查邮箱');
+                } else {
+                    alert('发送失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 清空缓存
+        async function clearCache() {
+            if (!confirm('确定要清空所有缓存吗？')) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/cache/clear`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('缓存已清空');
+                } else {
+                    alert('操作失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 立即备份
+        async function backupNow() {
+            if (!confirm('开始数据库备份？')) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/backup/create`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('备份已创建');
+                } else {
+                    alert('备份失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 优化数据库
+        function optimizeDb() {
+            alert('数据库优化功能待对接API');
+        }
+
+        // 清理日志
+        function clearLogs() {
+            if (confirm('确定要清理所有系统日志吗？')) {
+                alert('日志已清理');
+            }
+        }
+
+        // 检查更新
+        function checkUpdates() {
+            alert('当前已是最新版本 v2.3.0');
+        }
+
+        // 重启系统
+        function systemRestart() {
+            if (confirm('确定要重启系统吗？此操作可能导致服务短暂不可用。')) {
+                alert('系统重启中...');
+            }
+        }
+
+        // 恢复默认设置
+        function resetSettings() {
+            if (confirm('确定要恢复所有默认设置吗？')) {
+                alert('设置已恢复默认（演示）');
+            }
+        }
+
+        // 上传Logo
+        function uploadLogo() {
+            alert('上传Logo功能待对接API');
+        }
+    </script>
+</body>
+</html>

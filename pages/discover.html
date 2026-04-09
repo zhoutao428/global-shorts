@@ -1,80 +1,4 @@
-<!-- 发现页内容 - 不包含公共导航栏 -->
-
-<!-- 页面头部 -->
-<div class="discover-header">
-    <h1 class="page-title">发现精彩内容</h1>
-    <p class="page-subtitle">探索全球热门短剧，发现你的最爱</p>
-</div>
-
-<!-- 搜索栏 -->
-<div class="search-section">
-    <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="discoverSearch" placeholder="搜索剧集、演员或标签...">
-        <button class="btn btn-primary" id="searchBtn">搜索</button>
-    </div>
-</div>
-
-<!-- 热门标签 -->
-<div class="trending-section">
-    <h2 class="section-title">
-        <i class="fas fa-fire"></i>
-        热门标签
-    </h2>
-    <div class="trending-tags">
-        <span class="trending-tag">#总裁</span>
-        <span class="trending-tag">#先婚后爱</span>
-        <span class="trending-tag">#穿越</span>
-        <span class="trending-tag">#重生</span>
-        <span class="trending-tag">#悬疑</span>
-        <span class="trending-tag">#甜宠</span>
-        <span class="trending-tag">#虐恋</span>
-        <span class="trending-tag">#古装</span>
-    </div>
-</div>
-
-<!-- 选项卡 -->
-<div class="discover-tabs">
-    <button class="discover-tab active" data-tab="recommended">
-        <i class="fas fa-star"></i>
-        为你推荐
-    </button>
-    <button class="discover-tab" data-tab="latest">
-        <i class="fas fa-clock"></i>
-        最新上线
-    </button>
-    <button class="discover-tab" data-tab="popular">
-        <i class="fas fa-fire"></i>
-        热门排行
-    </button>
-</div>
-
-<!-- 分类筛选 -->
-<div class="category-filter">
-    <button class="category-chip active" data-category="all">全部</button>
-    <button class="category-chip" data-category="romance">爱情</button>
-    <button class="category-chip" data-category="ceo">总裁</button>
-    <button class="category-chip" data-category="fantasy">玄幻</button>
-    <button class="category-chip" data-category="suspense">悬疑</button>
-    <button class="category-chip" data-category="comedy">喜剧</button>
-    <button class="category-chip" data-category="action">动作</button>
-    <button class="category-chip" data-category="historical">古装</button>
-</div>
-
-<!-- 内容网格 -->
-<div class="content-grid" id="contentGrid">
-    <!-- 内容卡片将通过JS动态生成 -->
-</div>
-
-<!-- 加载中动画 -->
-<div class="content-loading" id="contentLoading">
-    <div class="loading-spinner"></div>
-    <p>加载中...</p>
-</div>
-
-<!-- 页面特定样式 -->
-<style>
-    /* 发现页特有样式 */
+<div class="discover-header"><h1 class="page-title">发现精彩内容</h1><p class="page-subtitle">探索全球热门短剧，发现你的最爱</p></div><div class="search-section"><div class="search-box"><i class="fas fa-search"></i> <input id="discoverSearch" placeholder="搜索剧集、演员或标签..."> <button class="btn btn-primary" id="searchBtn">搜索</button></div></div><div class="trending-section"><h2 class="section-title"><i class="fas fa-fire"></i> 热门标签</h2><div class="trending-tags"><span class="trending-tag">#总裁</span> <span class="trending-tag">#先婚后爱</span> <span class="trending-tag">#穿越</span> <span class="trending-tag">#重生</span> <span class="trending-tag">#悬疑</span> <span class="trending-tag">#甜宠</span> <span class="trending-tag">#虐恋</span> <span class="trending-tag">#古装</span></div></div><div class="discover-tabs"><button class="discover-tab active" data-tab="recommended"><i class="fas fa-star"></i> 为你推荐</button> <button class="discover-tab" data-tab="latest"><i class="fas fa-clock"></i> 最新上线</button> <button class="discover-tab" data-tab="popular"><i class="fas fa-fire"></i> 热门排行</button></div><div class="category-filter"><button class="category-chip active" data-category="all">全部</button> <button class="category-chip" data-category="romance">爱情</button> <button class="category-chip" data-category="ceo">总裁</button> <button class="category-chip" data-category="fantasy">玄幻</button> <button class="category-chip" data-category="suspense">悬疑</button> <button class="category-chip" data-category="comedy">喜剧</button> <button class="category-chip" data-category="action">动作</button> <button class="category-chip" data-category="historical">古装</button></div><div class="content-grid" id="contentGrid"></div><div class="content-loading" id="contentLoading"><div class="loading-spinner"></div><p>加载中...</p></div><style>/* 发现页特有样式 */
     .discover-header {
         text-align: center;
         padding: 30px 0 20px;
@@ -454,5 +378,4 @@
         .page-title {
             font-size: 24px;
         }
-    }
-</style>
+    }</style><script defer="defer" src="/scripts/main.5761f584ebfc900d3c25.js"></script><script defer="defer" src="/scripts/discover.87333caeb7d2920ce4a8.js"></script>

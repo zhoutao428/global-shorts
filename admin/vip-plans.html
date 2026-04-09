@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP套餐管理 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <style>
+        /* 页面专用样式 */
+        .benefits-list {
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px;
+            background: var(--gray-light);
+        }
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .benefit-item:last-child {
+            border-bottom: none;
+        }
+        .price-tag {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .original-price {
+            text-decoration: line-through;
+            color: var(--gray);
+            font-size: 13px;
+            margin-left: 8px;
+        }
+        .vip-plan-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo"><i class="fas fa-globe-americas"></i><span>Global Shorts 后台</span></div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i><span id="currentLanguage">中文</span><i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 👇 用户菜单（每个页面都要加） -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 👇 下拉菜单（每个页面都要加） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+
+    <div class="admin-container">
+        <!-- 侧边栏：所有菜单改为真实链接，VIP套餐管理激活 -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+
+        <main class="admin-main">
+            <!-- 页面内容（移除page-content包装） -->
+            <div class="page-header">
+                <h1 class="page-title">VIP套餐管理</h1>
+                <p class="page-description">管理月度/季度/年度VIP价格及权益</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div style="margin-bottom:20px;">
+                <button class="btn btn-primary" id="addVipPlanBtn">
+                    <i class="fas fa-plus"></i>新增VIP套餐
+                </button>
+                <button class="btn btn-secondary" id="sortVipPlansBtn">
+                    <i class="fas fa-sort-amount-down"></i>调整排序
+                </button>
+            </div>
+
+            <!-- VIP套餐卡片列表（动态加载） -->
+            <div class="vip-plan-grid" id="vipPlanList">
+                <!-- 加载中提示 -->
+                <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">
+                    <i class="fas fa-spinner fa-spin" style="font-size:24px;"></i>
+                    <p>加载中...</p>
+                </div>
+            </div>
+
+            <!-- VIP权益全局设置 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">VIP权益全局设置</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label class="form-label">默认VIP权益列表（所有套餐通用）</label>
+                        <div style="border:1px solid var(--border); border-radius:4px; padding:16px;" id="globalBenefitsList">
+                            <!-- 动态加载 -->
+                            <div class="empty-placeholder">加载中...</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button class="btn btn-primary" id="saveGlobalSettings">保存全局设置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 购买记录简要表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">最近VIP购买记录</h3>
+                    <a href="/vip-purchases.html" style="color:var(--primary);">查看全部</a>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>套餐</th>
+                                <th>金额</th>
+                                <th>购买时间</th>
+                                <th>到期时间</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchaseHistoryBody">
+                            <tr><td colspan="6" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑VIP套餐模态框 -->
+    <div class="modal-overlay" id="addVipPlanModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="vipPlanModalTitle">添加VIP套餐</h3>
+                <button class="modal-close" id="closeVipPlanModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="vipPlanForm">
+                    <input type="hidden" id="planId">
+                    <div class="form-group">
+                        <label class="form-label">套餐名称 <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="planName" placeholder="例：月度VIP" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">时长（天） <span style="color:var(--error);">*</span></label>
+                        <input type="number" class="form-control" id="planDays" value="30" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">原价（美元）</label>
+                        <input type="number" class="form-control" id="planOriginalPrice" value="12.99" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">售价（美元） <span style="color:var(--error);">*</span></label>
+                        <input type="number" class="form-control" id="planPrice" value="9.99" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">标签（如：热销、推荐）</label>
+                        <input type="text" class="form-control" id="planTag" placeholder="热销">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">排序</label>
+                        <input type="number" class="form-control" id="planSort" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">状态</label>
+                        <select class="form-control" id="planStatus">
+                            <option value="active">启用</option>
+                            <option value="inactive">禁用</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">专属权益（每行一个）</label>
+                        <textarea class="form-control" id="planBenefits" rows="4" placeholder="例如：无广告观看&#10;高清画质&#10;专属剧集"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelVipPlanBtn">取消</button>
+                <button class="btn btn-primary" id="saveVipPlanBtn">保存套餐</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 加载VIP套餐列表
+            await loadVipPlans();
+            // 加载全局权益设置
+            await loadGlobalBenefits();
+            // 加载最近购买记录
+            await loadPurchaseHistory();
+
+            // 绑定新增按钮事件
+            document.getElementById('addVipPlanBtn').addEventListener('click', () => {
+                document.getElementById('planId').value = '';
+                document.getElementById('vipPlanForm').reset();
+                document.getElementById('vipPlanModalTitle').textContent = '添加VIP套餐';
+                adminCore.openModal('addVipPlanModal');
+            });
+
+            // 绑定模态框关闭事件
+            document.getElementById('closeVipPlanModal').addEventListener('click', () => {
+                adminCore.closeModal('addVipPlanModal');
+            });
+            document.getElementById('cancelVipPlanBtn').addEventListener('click', () => {
+                adminCore.closeModal('addVipPlanModal');
+            });
+
+            // 保存套餐
+            document.getElementById('saveVipPlanBtn').addEventListener('click', saveVipPlan);
+
+            // 保存全局设置
+            document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalBenefits);
+
+            // 排序按钮
+            document.getElementById('sortVipPlansBtn').addEventListener('click', () => {
+                alert('排序功能待对接API');
+            });
+        });
+
+        // 加载VIP套餐列表
+        async function loadVipPlans() {
+            const container = document.getElementById('vipPlanList');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/vip-plans`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderVipPlans(data.data);
+                } else {
+                    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">暂无VIP套餐，点击"新增VIP套餐"创建</div>';
+                }
+            } catch (error) {
+                console.error('加载VIP套餐失败:', error);
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--error);">加载失败，请重试</div>';
+            }
+        }
+
+        // 渲染VIP套餐卡片
+        function renderVipPlans(plans) {
+            const container = document.getElementById('vipPlanList');
+            container.innerHTML = '';
+
+            plans.forEach(plan => {
+                const features = plan.features ? plan.features.split('\n') : [];
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // 根据套餐类型设置边框颜色
+                let borderColor = 'var(--primary)';
+                if (plan.name.includes('季度')) borderColor = 'var(--purple)';
+                if (plan.name.includes('年度')) borderColor = 'var(--success)';
+                
+                card.style.borderTop = `4px solid ${borderColor}`;
+
+                const header = document.createElement('div');
+                header.className = 'card-header';
+                header.innerHTML = `
+                    <h3 class="card-title">${plan.name}</h3>
+                    <div>
+                        ${plan.is_popular ? '<span class="status-badge status-active">热门</span>' : ''}
+                        ${plan.is_recommended ? '<span class="status-badge status-vip">推荐</span>' : ''}
+                    </div>
+                `;
+
+                const content = document.createElement('div');
+                content.className = 'card-content';
+                
+                let benefitsHtml = '';
+                if (features.length > 0) {
+                    benefitsHtml = '<div class="benefits-list">';
+                    features.forEach(f => {
+                        benefitsHtml += `<div class="benefit-item"><i class="fas fa-check-circle" style="color:var(--success);"></i><span>${f}</span></div>`;
+                    });
+                    benefitsHtml += '</div>';
+                }
+
+                content.innerHTML = `
+                    <div style="margin-bottom:16px;">
+                        <span class="price-tag">$${plan.price_usd}</span>
+                        ${plan.original_price ? `<span class="original-price">$${plan.original_price}</span>` : ''}
+                        <span style="margin-left:12px; color:var(--success);">${plan.duration_days}天</span>
+                        ${plan.discount ? `<span style="margin-left:12px; background:var(--warning); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">省${plan.discount}</span>` : ''}
+                    </div>
+                    
+                    ${benefitsHtml}
+                    
+                    <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
+                        <button class="btn btn-sm btn-secondary" onclick="editVipPlan('${plan.id}')">
+                            <i class="fas fa-edit"></i>编辑
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="toggleVipPlan('${plan.id}')">
+                            <i class="fas fa-ban"></i>${plan.is_active ? '禁用' : '启用'}
+                        </button>
+                    </div>
+                `;
+
+                card.appendChild(header);
+                card.appendChild(content);
+                container.appendChild(card);
+            });
+        }
+
+        // 编辑VIP套餐
+        window.editVipPlan = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/vip-plans/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const plan = data.data;
+                    document.getElementById('planId').value = plan.id;
+                    document.getElementById('planName').value = plan.name;
+                    document.getElementById('planDays').value = plan.duration_days;
+                    document.getElementById('planPrice').value = plan.price_usd;
+                    document.getElementById('planOriginalPrice').value = plan.original_price || '';
+                    document.getElementById('planTag').value = plan.tag || '';
+                    document.getElementById('planSort').value = plan.sort_order || 1;
+                    document.getElementById('planStatus').value = plan.is_active ? 'active' : 'inactive';
+                    document.getElementById('planBenefits').value = plan.features || '';
+                    
+                    document.getElementById('vipPlanModalTitle').textContent = '编辑VIP套餐';
+                    adminCore.openModal('addVipPlanModal');
+                }
+            } catch (error) {
+                alert('加载VIP套餐失败');
+            }
+        };
+
+        // 切换VIP套餐状态
+        window.toggleVipPlan = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                // 先获取当前状态
+                const getRes = await fetch(`${API_BASE}/vip-plans/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const getData = await getRes.json();
+
+                if (getData.success) {
+                    const currentStatus = getData.data.is_active;
+                    const action = currentStatus ? '禁用' : '启用';
+                    
+                    if (!confirm(`确定要${action}该套餐吗？`)) return;
+
+                    const response = await fetch(`${API_BASE}/vip-plans/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ is_active: !currentStatus })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        loadVipPlans();
+                    } else {
+                        alert('操作失败：' + data.error);
+                    }
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        // 保存VIP套餐
+        async function saveVipPlan() {
+            const token = localStorage.getItem('token');
+            const planId = document.getElementById('planId').value;
+
+            const formData = {
+                name: document.getElementById('planName').value,
+                duration_days: parseInt(document.getElementById('planDays').value),
+                price_usd: parseFloat(document.getElementById('planPrice').value),
+                original_price: document.getElementById('planOriginalPrice').value ? parseFloat(document.getElementById('planOriginalPrice').value) : null,
+                tag: document.getElementById('planTag').value,
+                sort_order: parseInt(document.getElementById('planSort').value),
+                is_active: document.getElementById('planStatus').value === 'active',
+                features: document.getElementById('planBenefits').value
+            };
+
+            const url = planId ? `${API_BASE}/vip-plans/${planId}` : `${API_BASE}/vip-plans`;
+            const method = planId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('addVipPlanModal');
+                    loadVipPlans();
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 加载全局权益设置
+        async function loadGlobalBenefits() {
+            const container = document.getElementById('globalBenefitsList');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/settings/vip-benefits`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const benefits = data.data || [
+                        { name: '无广告观看', enabled: true },
+                        { name: '高清画质 (1080p)', enabled: true },
+                        { name: '专属VIP剧集', enabled: true },
+                        { name: '离线下载', enabled: false },
+                        { name: '多设备同时观看', enabled: false }
+                    ];
+
+                    container.innerHTML = '';
+                    benefits.forEach(b => {
+                        const div = document.createElement('div');
+                        div.className = 'benefit-item';
+                        div.innerHTML = `
+                            <input type="checkbox" class="global-benefit" data-name="${b.name}" ${b.enabled ? 'checked' : ''}>
+                            <span>${b.name}</span>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error('加载全局权益失败:', error);
+                container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
+            }
+        }
+
+        // 保存全局权益设置
+        async function saveGlobalBenefits() {
+            const token = localStorage.getItem('token');
+            const checkboxes = document.querySelectorAll('.global-benefit');
+            const benefits = Array.from(checkboxes).map(cb => ({
+                name: cb.dataset.name,
+                enabled: cb.checked
+            }));
+
+            try {
+                const response = await fetch(`${API_BASE}/settings/vip-benefits`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ benefits })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('全局设置保存成功');
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 加载最近购买记录
+        async function loadPurchaseHistory() {
+            const tbody = document.getElementById('purchaseHistoryBody');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/vip-purchases?limit=5`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    tbody.innerHTML = '';
+                    data.data.forEach(purchase => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${purchase.username || '-'}</td>
+                            <td>${purchase.plan_name}</td>
+                            <td>$${purchase.amount}</td>
+                            <td>${purchase.created_at}</td>
+                            <td>${purchase.expires_at || '永久'}</td>
+                            <td><span class="status-badge ${purchase.status === 'active' ? 'status-active' : 'status-inactive'}">${purchase.status === 'active' ? '有效' : '已过期'}</span></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">暂无购买记录</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载购买记录失败:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP用户管理 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+</head>
+<body>
+    <header class="admin-header">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+            <div class="logo">
+                <i class="fas fa-globe-americas"></i>
+                <span>Global Shorts 后台</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="language-switcher" id="languageSwitcher">
+                <i class="fas fa-language"></i>
+                <span id="currentLanguage">中文</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+                <div class="user-avatar" id="userAvatar">AD</div>
+                <div>
+                    <div id="adminName">管理员</div>
+                    <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+        <a href="/admin/profile.html"><i class="fas fa-user"></i>个人资料</a>
+        <a href="/admin/settings.html"><i class="fas fa-cog"></i>账户设置</a>
+        <a href="/admin/change-password.html"><i class="fas fa-key"></i>修改密码</a>
+        <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+        <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i>退出登录</a>
+    </div>
+
+    <div class="admin-container">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-menu">
+                <a href="/admin/dashboard.html" class="menu-item"><i class="fas fa-tachometer-alt"></i><span>仪表盘</span></a>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-user-menu" class="submenu-toggle" checked>
+                    <label for="toggle-user-menu"><i class="fas fa-users"></i><span>用户管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu" id="userSubmenu">
+                        <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                        <a href="/admin/vip-users.html" class="submenu-item active">VIP用户</a>
+                        <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+                    </div>
+                </div>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+                    <label for="toggle-content-menu"><i class="fas fa-film"></i><span>内容管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu" id="contentSubmenu">
+                        <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                        <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                        <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                        <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+                    </div>
+                </div>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+                    <label for="toggle-operation-menu"><i class="fas fa-chart-line"></i><span>运营分析</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu" id="analyticsSubmenu">
+                        <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                        <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                        <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+                    </div>
+                </div>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+                    <label for="toggle-system-menu"><i class="fas fa-cog"></i><span>系统管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu" id="systemSubmenu">
+                        <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                        <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                        <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                        <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                        <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                        <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                        <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                        <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+                    </div>
+                </div>
+                
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+                    <label for="toggle-personal-menu"><i class="fas fa-user-cog"></i><span>个人设置</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu" id="personalSubmenu">
+                        <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                        <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                        <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <h1 class="page-title">VIP用户管理</h1>
+                <p class="page-description">管理所有VIP会员用户，查看VIP状态和到期时间</p>
+            </div>
+
+            <!-- VIP统计卡片 -->
+            <div class="stats-grid" style="margin-bottom:24px;">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #722ed1, #531dab);">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalVip">0</h3>
+                        <p>VIP总数</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #52c41a, #389e0d);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="activeVip">0</h3>
+                        <p>有效VIP</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #faad14, #d48806);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="expiringSoon">0</h3>
+                        <p>即将到期（7天内）</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:linear-gradient(135deg, #f5222d, #cf1322);">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="expiredVip">0</h3>
+                        <p>已过期</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 搜索/筛选栏 -->
+            <div class="search-filter">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" id="vipSearch" placeholder="搜索用户名或邮箱">
+                </div>
+                <select class="form-control" style="width:150px;" id="vipStatusFilter">
+                    <option value="all">全部状态</option>
+                    <option value="active">有效</option>
+                    <option value="expiring">即将到期</option>
+                    <option value="expired">已过期</option>
+                </select>
+                <button class="btn btn-primary" id="exportVipBtn">
+                    <i class="fas fa-download"></i>导出数据
+                </button>
+            </div>
+
+            <!-- VIP用户列表表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">VIP用户列表</h3>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>开通时间</th>
+                                <th>到期时间</th>
+                                <th>剩余天数</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vipTableBody">
+                            <tr><td colspan="8" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="pagination" id="vipPagination" style="margin-top:20px;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑VIP用户模态框 -->
+    <div class="modal-overlay" id="editVipModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑VIP用户</h3>
+                <button class="modal-close" id="closeEditVipModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="editVipForm">
+                    <input type="hidden" id="editUserId">
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="editUsername" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="editEmail" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">VIP状态</label>
+                        <select class="form-control" id="editVipStatus">
+                            <option value="0">普通用户</option>
+                            <option value="1">VIP会员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">到期时间</label>
+                        <input type="datetime-local" class="form-control" id="editExpiresAt">
+                        <small>留空表示永久VIP</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEditVipBtn">取消</button>
+                <button class="btn btn-primary" id="updateVipBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin-core.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        let currentPage = 1;
+        let currentFilters = { search: '', status: 'all' };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            await loadVipUsers();
+
+            // 绑定事件
+            document.getElementById('vipSearch').addEventListener('input', debounce(() => {
+                currentFilters.search = document.getElementById('vipSearch').value;
+                currentPage = 1;
+                loadVipUsers();
+            }, 500));
+
+            document.getElementById('vipStatusFilter').addEventListener('change', () => {
+                currentFilters.status = document.getElementById('vipStatusFilter').value;
+                currentPage = 1;
+                loadVipUsers();
+            });
+
+            document.getElementById('exportVipBtn').addEventListener('click', exportVipUsers);
+
+            document.getElementById('closeEditVipModal').addEventListener('click', () => {
+                adminCore.closeModal('editVipModal');
+            });
+            document.getElementById('cancelEditVipBtn').addEventListener('click', () => {
+                adminCore.closeModal('editVipModal');
+            });
+            document.getElementById('updateVipBtn').addEventListener('click', updateVipUser);
+        });
+
+        async function loadVipUsers() {
+            const tbody = document.getElementById('vipTableBody');
+            const token = localStorage.getItem('token');
+
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载中...</td></tr>';
+
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: 10,
+                    search: currentFilters.search,
+                    status: currentFilters.status
+                });
+
+                const response = await fetch(`${API_BASE}/users/vip?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    renderVipUsers(data.data);
+                    updateVipStats(data.stats);
+                    if (data.pagination) {
+                        updatePagination(data.pagination);
+                    }
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载VIP用户失败:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        function renderVipUsers(users) {
+            const tbody = document.getElementById('vipTableBody');
+            
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无VIP用户</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                
+                // 计算剩余天数
+                let remainingDays = '永久';
+                let statusClass = 'status-active';
+                let statusText = '有效';
+                
+                if (user.vip_expires_at) {
+                    const expires = new Date(user.vip_expires_at);
+                    const today = new Date();
+                    const diffTime = expires - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= 0) {
+                        remainingDays = '已过期';
+                        statusClass = 'status-inactive';
+                        statusText = '已过期';
+                    } else if (diffDays <= 7) {
+                        remainingDays = `${diffDays}天`;
+                        statusClass = 'status-warning';
+                        statusText = '即将到期';
+                    } else {
+                        remainingDays = `${diffDays}天`;
+                    }
+                }
+
+                row.innerHTML = `
+                    <td>${user.id.substring(0, 8)}...</td>
+                    <td>${user.nickname || user.username || '-'}</td>
+                    <td>${user.email}</td>
+                    <td>${user.created_at ? user.created_at.substring(0, 10) : '-'}</td>
+                    <td>${user.vip_expires_at ? user.vip_expires_at.substring(0, 10) : '永久'}</td>
+                    <td>${remainingDays}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="editVipUser('${user.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        ${user.is_vip ? 
+                            `<button class="btn btn-sm btn-warning" onclick="cancelVip('${user.id}')">取消VIP</button>` : 
+                            `<button class="btn btn-sm btn-success" onclick="setVip('${user.id}')">设为VIP</button>`
+                        }
+                     </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateVipStats(stats) {
+            document.getElementById('totalVip').textContent = stats?.total || 0;
+            document.getElementById('activeVip').textContent = stats?.active || 0;
+            document.getElementById('expiringSoon').textContent = stats?.expiringSoon || 0;
+            document.getElementById('expiredVip').textContent = stats?.expired || 0;
+        }
+
+        window.editVipUser = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const user = data.data;
+                    document.getElementById('editUserId').value = user.id;
+                    document.getElementById('editUsername').value = user.nickname || user.username;
+                    document.getElementById('editEmail').value = user.email;
+                    document.getElementById('editVipStatus').value = user.is_vip ? '1' : '0';
+                    
+                    if (user.vip_expires_at) {
+                        document.getElementById('editExpiresAt').value = user.vip_expires_at.slice(0, 16);
+                    } else {
+                        document.getElementById('editExpiresAt').value = '';
+                    }
+                    
+                    adminCore.openModal('editVipModal');
+                }
+            } catch (error) {
+                alert('加载用户失败');
+            }
+        };
+
+        window.setVip = async function(id) {
+            const expiresAt = prompt('设置VIP到期时间 (YYYY-MM-DD HH:MM:SS)，留空为永久', '');
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        is_vip: true, 
+                        vip_expires_at: expiresAt || null 
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    await loadVipUsers();
+                    alert('设置成功！');
+                } else {
+                    alert('操作失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        window.cancelVip = async function(id) {
+            if (!confirm('确定要取消该用户的VIP资格吗？')) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        is_vip: false, 
+                        vip_expires_at: null 
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    await loadVipUsers();
+                    alert('取消成功！');
+                } else {
+                    alert('操作失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        async function updateVipUser() {
+            const token = localStorage.getItem('token');
+            const userId = document.getElementById('editUserId').value;
+
+            const formData = {
+                is_vip: document.getElementById('editVipStatus').value === '1',
+                vip_expires_at: document.getElementById('editExpiresAt').value || null
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('editVipModal');
+                    await loadVipUsers();
+                    alert('更新成功！');
+                } else {
+                    alert('更新失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        async function exportVipUsers() {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/users/vip/export?status=${currentFilters.status}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `vip_users_${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('导出失败');
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        function updatePagination(pagination) {
+            const container = document.getElementById('vipPagination');
+            if (!container) return;
+
+            if (pagination.total_pages <= 1) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'flex';
+            let html = '';
+            for (let i = 1; i <= pagination.total_pages; i++) {
+                const activeClass = i === pagination.current_page ? 'active' : '';
+                html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
+            }
+            container.innerHTML = html;
+
+            container.querySelectorAll('.page-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page && page !== pagination.current_page) {
+                        currentPage = page;
+                        loadVipUsers();
+                        
+                        container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

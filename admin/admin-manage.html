@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员管理 - Global Shorts 后台</title>
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 后台公共样式 -->
+    <link rel="stylesheet" href="css/admin-common.css">
+    <style>
+        /* 权限树样式 */
+        .permission-tree {
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .permission-group {
+            margin-bottom: 20px;
+        }
+        .group-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 4px 8px;
+        }
+        .permission-item:hover {
+            background: var(--gray-light);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="admin-header">
+    <div class="header-left">
+        <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            <span>Global Shorts 后台</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="language-switcher" id="languageSwitcher">
+            <i class="fas fa-language"></i>
+            <span id="currentLanguage">中文</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        
+        <!-- 用户菜单 -->
+        <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+            <div class="user-avatar" id="userAvatar">AD</div>
+            <div>
+                <div id="adminName">管理员</div>
+                <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 用户下拉菜单（放在header外面，但紧随其后） -->
+<div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+    <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-user" style="margin-right:8px;"></i>个人资料
+    </a>
+    <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-cog" style="margin-right:8px;"></i>账户设置
+    </a>
+    <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;">
+        <i class="fas fa-key" style="margin-right:8px;"></i>修改密码
+    </a>
+    <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+    <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;">
+        <i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录
+    </a>
+</div>
+
+    <div class="admin-container">
+        <!-- 侧边栏菜单（完整版，所有菜单改为真实链接） -->
+        <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-menu">
+        <!-- 仪表盘 -->
+        <a href="/admin/dashboard.html" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
+        </a>
+        
+        <!-- ===== 用户管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+            <label for="toggle-user-menu">
+                <i class="fas fa-users"></i>
+                <span>用户管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="userSubmenu">
+                <a href="/admin/users.html" class="submenu-item">用户列表</a>
+                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
+                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            </div>
+        </div>
+        
+        <!-- ===== 内容管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+            <label for="toggle-content-menu">
+                <i class="fas fa-film"></i>
+                <span>内容管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="contentSubmenu">
+                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
+                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
+                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
+                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 运营分析（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+            <label for="toggle-operation-menu">
+                <i class="fas fa-chart-line"></i>
+                <span>运营分析</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="analyticsSubmenu">
+                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
+                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
+                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
+            </div>
+        </div>
+        
+        <!-- ===== 系统管理（子菜单）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+            <label for="toggle-system-menu">
+                <i class="fas fa-cog"></i>
+                <span>系统管理</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="systemSubmenu">
+                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
+                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
+                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
+                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
+                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
+                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
+                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
+                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
+                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
+            </div>
+        </div>
+        
+        <!-- ===== 个人设置（子菜单，可选）===== -->
+        <div class="menu-item has-submenu">
+            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+            <label for="toggle-personal-menu">
+                <i class="fas fa-user-cog"></i>
+                <span>个人设置</span>
+                <i class="fas fa-chevron-down arrow"></i>
+            </label>
+            <div class="submenu" id="personalSubmenu">
+                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
+                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
+                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
+            </div>
+        </div>
+        
+        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
+        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
+    </div>
+</aside>
+        <!-- 主内容区 -->
+        <main class="admin-main">
+            <!-- 页面标题 -->
+            <div class="page-header">
+                <h1 class="page-title">管理员管理</h1>
+                <p class="page-description">系统管理员账户、角色和权限</p>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon total"><i class="fas fa-users"></i></div>
+                    <div class="stat-info"><h3 id="totalAdmins">0</h3><p>管理员总数</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-info"><h3 id="activeAdmins">0</h3><p>活跃管理员</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon superadmin"><i class="fas fa-crown"></i></div>
+                    <div class="stat-info"><h3 id="superAdmins">0</h3><p>超级管理员</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon inactive"><i class="fas fa-user-slash"></i></div>
+                    <div class="stat-info"><h3 id="inactiveAdmins">0</h3><p>未激活/禁用</p></div>
+                </div>
+            </div>
+
+            <!-- 搜索/操作栏 -->
+            <div class="search-filter">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" id="adminSearch" placeholder="搜索用户名、姓名或邮箱...">
+                </div>
+                <select class="form-control" style="width:150px;" id="adminStatusFilter">
+                    <option value="">所有状态</option>
+                    <option value="active">活跃</option>
+                    <option value="inactive">禁用</option>
+                </select>
+                <select class="form-control" style="width:150px;" id="adminRoleFilter">
+                    <option value="">所有角色</option>
+                    <option value="superadmin">超级管理员</option>
+                    <option value="admin">管理员</option>
+                </select>
+                <button class="btn btn-primary" id="addAdminBtn"><i class="fas fa-plus"></i>添加管理员</button>
+            </div>
+
+            <!-- 管理员表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">管理员列表</h3>
+                    <div>
+                        <button class="btn btn-secondary btn-sm" id="exportAdminsBtn">
+                            <i class="fas fa-download"></i>导出列表
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>姓名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>最后登录</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <tr><td colspan="8" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="pagination" id="adminPagination" style="margin-top:20px;">
+                        <div class="page-item active" data-page="1">1</div>
+                        <div class="page-item" data-page="2">2</div>
+                        <div class="page-item" data-page="3">3</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 角色与权限卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">角色与权限</h3>
+                    <button class="btn btn-secondary" id="addRoleBtn"><i class="fas fa-plus"></i>添加角色</button>
+                </div>
+                <div class="card-content">
+                    <div id="roleListContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap:20px;">
+                        <!-- 动态加载角色卡片 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录历史 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">最近管理员登录历史</h3>
+                    <button class="btn btn-sm btn-secondary" id="refreshLogsBtn">
+                        <i class="fas fa-sync-alt"></i>刷新
+                    </button>
+                </div>
+                <div class="card-content">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>管理员</th>
+                                <th>登录时间</th>
+                                <th>IP地址</th>
+                                <th>登录方式</th>
+                                <th>状态</th>
+                                <th>地理位置</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loginHistoryBody">
+                            <tr><td colspan="6" class="empty-placeholder">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- 分页 -->
+                    <div class="pagination" id="logPagination" style="margin-top:20px;">
+                        <div class="page-item active" data-page="1">1</div>
+                        <div class="page-item" data-page="2">2</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑管理员模态框 -->
+    <div class="modal-overlay" id="addAdminModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="adminModalTitle">添加管理员</h3>
+                <button class="modal-close" id="closeAddAdminModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="adminForm">
+                    <input type="hidden" id="adminId">
+                    <div class="form-group">
+                        <label class="form-label">用户名 <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="adminUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">邮箱 <span style="color:var(--error);">*</span></label>
+                        <input type="email" class="form-control" id="adminEmail" required>
+                    </div>
+                    <div class="form-group" id="passwordField">
+                        <label class="form-label">密码 <span style="color:var(--error);">*</span></label>
+                        <input type="password" class="form-control" id="adminPassword">
+                        <small style="color:var(--gray);">添加新管理员时必须填写，编辑时可留空</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-control" id="adminFullName">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">角色</label>
+                        <select class="form-control" id="adminRole">
+                            <option value="admin">管理员</option>
+                            <option value="superadmin">超级管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">状态</label>
+                        <select class="form-control" id="adminStatus">
+                            <option value="active">启用</option>
+                            <option value="inactive">禁用</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelAddAdminBtn">取消</button>
+                <button class="btn btn-primary" id="saveAdminBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑权限模态框 -->
+    <div class="modal-overlay" id="editPermissionsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="permissionModalTitle">编辑权限 - 管理员</h3>
+                <button class="modal-close" id="closePermissionsModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="permission-tree" id="permissionTree">
+                    <!-- 动态加载权限树 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelPermissionsBtn">取消</button>
+                <button class="btn btn-primary" id="savePermissionsBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加角色模态框 -->
+    <div class="modal-overlay" id="addRoleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">添加角色</h3>
+                <button class="modal-close" id="closeRoleModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="roleForm">
+                    <div class="form-group">
+                        <label class="form-label">角色名称 <span style="color:var(--error);">*</span></label>
+                        <input type="text" class="form-control" id="roleName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" id="roleDescription" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRoleBtn">取消</button>
+                <button class="btn btn-primary" id="saveRoleBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">
+        <div class="modal" style="max-width:400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择语言</h3>
+                <button class="modal-close" id="closeLanguageModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="language-option active" data-lang="zh"><i class="fas fa-check"></i> 中文</div>
+                <div class="language-option" data-lang="en">English</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS 脚本 -->
+    <script src="js/admin-core.js"></script>
+    <script src="js/admin-system.js"></script>
+    <script>
+        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        let currentAdminPage = 1;
+        let currentLogPage = 1;
+        let searchTimer = null;
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // 加载数据
+            await loadAdmins();
+            await loadRoles();
+            await loadLoginHistory();
+
+            // 绑定事件
+            document.getElementById('addAdminBtn').addEventListener('click', () => {
+                document.getElementById('adminId').value = '';
+                document.getElementById('adminForm').reset();
+                document.getElementById('passwordField').style.display = 'block';
+                document.getElementById('adminModalTitle').textContent = '添加管理员';
+                adminCore.openModal('addAdminModal');
+            });
+
+            document.getElementById('closeAddAdminModal').addEventListener('click', () => {
+                adminCore.closeModal('addAdminModal');
+            });
+
+            document.getElementById('cancelAddAdminBtn').addEventListener('click', () => {
+                adminCore.closeModal('addAdminModal');
+            });
+
+            document.getElementById('saveAdminBtn').addEventListener('click', saveAdmin);
+
+            document.getElementById('addRoleBtn').addEventListener('click', () => {
+                adminCore.openModal('addRoleModal');
+            });
+
+            document.getElementById('closeRoleModal').addEventListener('click', () => {
+                adminCore.closeModal('addRoleModal');
+            });
+
+            document.getElementById('cancelRoleBtn').addEventListener('click', () => {
+                adminCore.closeModal('addRoleModal');
+            });
+
+            document.getElementById('saveRoleBtn').addEventListener('click', saveRole);
+
+            document.getElementById('closePermissionsModal').addEventListener('click', () => {
+                adminCore.closeModal('editPermissionsModal');
+            });
+
+            document.getElementById('cancelPermissionsBtn').addEventListener('click', () => {
+                adminCore.closeModal('editPermissionsModal');
+            });
+
+            document.getElementById('savePermissionsBtn').addEventListener('click', savePermissions);
+
+            document.getElementById('exportAdminsBtn').addEventListener('click', exportAdmins);
+
+            document.getElementById('refreshLogsBtn').addEventListener('click', () => {
+                currentLogPage = 1;
+                loadLoginHistory();
+            });
+
+            // 搜索功能
+            document.getElementById('adminSearch').addEventListener('input', (e) => {
+                if (searchTimer) clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    currentAdminPage = 1;
+                    loadAdmins();
+                }, 300);
+            });
+
+            // 筛选
+            document.getElementById('adminStatusFilter').addEventListener('change', () => {
+                currentAdminPage = 1;
+                loadAdmins();
+            });
+
+            document.getElementById('adminRoleFilter').addEventListener('change', () => {
+                currentAdminPage = 1;
+                loadAdmins();
+            });
+
+            // 分页点击
+            setupPagination();
+        });
+
+        // 加载管理员列表
+        async function loadAdmins() {
+            const tbody = document.getElementById('adminTableBody');
+            const token = localStorage.getItem('token');
+
+            try {
+                // 构建查询参数
+                const params = new URLSearchParams({
+                    page: currentAdminPage,
+                    limit: 10,
+                    search: document.getElementById('adminSearch').value,
+                    status: document.getElementById('adminStatusFilter').value,
+                    role: document.getElementById('adminRoleFilter').value
+                });
+
+                const response = await fetch(`${API_BASE}/admins?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    renderAdmins(data.data);
+                    updateAdminStats(data.data);
+                    if (data.pagination) {
+                        updatePagination('adminPagination', data.pagination, (page) => {
+                            currentAdminPage = page;
+                            loadAdmins();
+                        });
+                    }
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载管理员失败:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        // 渲染管理员列表
+        function renderAdmins(admins) {
+            const tbody = document.getElementById('adminTableBody');
+            
+            if (!admins || admins.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无管理员</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            
+            admins.forEach(admin => {
+                const row = document.createElement('tr');
+                
+                // 角色徽章
+                let roleBadge = '';
+                if (admin.role === 'superadmin') {
+                    roleBadge = '<span class="role-badge role-superadmin">超级管理员</span>';
+                } else {
+                    roleBadge = '<span class="role-badge role-admin">管理员</span>';
+                }
+
+                // 状态徽章
+                const statusBadge = admin.is_active ? 
+                    '<span class="status-badge status-active">活跃</span>' : 
+                    '<span class="status-badge status-inactive">禁用</span>';
+
+                row.innerHTML = `
+                    <td>${admin.username}</td>
+                    <td>${admin.full_name || '-'}</td>
+                    <td>${admin.email}</td>
+                    <td>${roleBadge}</td>
+                    <td>${statusBadge}</td>
+                    <td>${admin.last_login || '-'}</td>
+                    <td>${admin.created_at ? admin.created_at.substring(0,10) : '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="editAdmin('${admin.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteAdmin('${admin.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="editPermissions('${admin.id}')">
+                            <i class="fas fa-key"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 更新统计卡片
+        function updateAdminStats(admins) {
+            const total = admins.length;
+            const active = admins.filter(a => a.is_active).length;
+            const superAdmins = admins.filter(a => a.role === 'superadmin').length;
+            const inactive = total - active;
+            
+            document.getElementById('totalAdmins').textContent = total;
+            document.getElementById('activeAdmins').textContent = active;
+            document.getElementById('superAdmins').textContent = superAdmins;
+            document.getElementById('inactiveAdmins').textContent = inactive;
+        }
+
+        // 编辑管理员
+        window.editAdmin = async function(id) {
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admins/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const admin = data.data;
+                    document.getElementById('adminId').value = admin.id;
+                    document.getElementById('adminUsername').value = admin.username;
+                    document.getElementById('adminEmail').value = admin.email;
+                    document.getElementById('adminFullName').value = admin.full_name || '';
+                    document.getElementById('adminRole').value = admin.role;
+                    document.getElementById('adminStatus').value = admin.is_active ? 'active' : 'inactive';
+                    
+                    document.getElementById('passwordField').style.display = 'none';
+                    document.getElementById('adminModalTitle').textContent = '编辑管理员';
+                    adminCore.openModal('addAdminModal');
+                }
+            } catch (error) {
+                alert('加载管理员失败');
+            }
+        };
+
+        // 删除管理员
+        window.deleteAdmin = async function(id) {
+            if (!confirm('确定要删除该管理员吗？')) return;
+            
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/admins/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    await loadAdmins();
+                } else {
+                    alert('删除失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        };
+
+        // 保存管理员
+        async function saveAdmin() {
+            const token = localStorage.getItem('token');
+            const adminId = document.getElementById('adminId').value;
+
+            const formData = {
+                username: document.getElementById('adminUsername').value,
+                email: document.getElementById('adminEmail').value,
+                full_name: document.getElementById('adminFullName').value,
+                role: document.getElementById('adminRole').value,
+                is_active: document.getElementById('adminStatus').value === 'active'
+            };
+
+            // 如果是新增，需要密码
+            if (!adminId) {
+                const password = document.getElementById('adminPassword').value;
+                if (!password) {
+                    alert('密码不能为空');
+                    return;
+                }
+                formData.password = password;
+            }
+
+            const url = adminId ? `${API_BASE}/admins/${adminId}` : `${API_BASE}/admins`;
+            const method = adminId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('addAdminModal');
+                    await loadAdmins();
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('网络错误，请重试');
+            }
+        }
+
+        // 加载角色列表
+        async function loadRoles() {
+            const container = document.getElementById('roleListContainer');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/roles`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderRoles(data.data);
+                } else {
+                    container.innerHTML = '<div class="empty-placeholder">暂无角色，点击"添加角色"创建</div>';
+                }
+            } catch (error) {
+                console.error('加载角色失败:', error);
+                container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
+            }
+        }
+
+        // 渲染角色卡片
+        function renderRoles(roles) {
+            const container = document.getElementById('roleListContainer');
+            container.innerHTML = '';
+
+            roles.forEach(role => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border:1px solid var(--border); border-radius:8px; padding:16px; background:white;';
+                
+                let roleClass = 'role-admin';
+                if (role.name.includes('超级')) roleClass = 'role-superadmin';
+                
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h4 style="font-weight:600;">${role.name}</h4>
+                        <span class="role-badge ${roleClass}">${role.admin_count || 0}人</span>
+                    </div>
+                    <p style="color:var(--gray); font-size:13px; margin-bottom:16px;">${role.description || '暂无描述'}</p>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-sm btn-secondary" onclick="editRole('${role.id}')">
+                            <i class="fas fa-edit"></i>编辑权限
+                        </button>
+                        ${!role.is_system ? 
+                            `<button class="btn btn-sm btn-danger" onclick="deleteRole('${role.id}')">
+                                <i class="fas fa-trash"></i>删除
+                            </button>` : ''
+                        }
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 编辑权限
+        window.editPermissions = function(adminId) {
+            // 加载权限树
+            const tree = document.getElementById('permissionTree');
+            tree.innerHTML = generatePermissionTree();
+            document.getElementById('permissionModalTitle').textContent = '编辑权限 - 管理员';
+            adminCore.openModal('editPermissionsModal');
+        };
+
+        window.editRole = function(roleId) {
+            // 加载权限树
+            const tree = document.getElementById('permissionTree');
+            tree.innerHTML = generatePermissionTree();
+            document.getElementById('permissionModalTitle').textContent = '编辑权限 - 角色';
+            adminCore.openModal('editPermissionsModal');
+        };
+
+        // 生成权限树（示例）
+        function generatePermissionTree() {
+            return `
+                <div class="permission-group">
+                    <h4 class="group-title">用户管理</h4>
+                    <div class="permission-item"><input type="checkbox" checked> 查看用户</div>
+                    <div class="permission-item"><input type="checkbox" checked> 编辑用户</div>
+                    <div class="permission-item"><input type="checkbox"> 删除用户</div>
+                    <div class="permission-item"><input type="checkbox" checked> 管理VIP</div>
+                </div>
+                <div class="permission-group">
+                    <h4 class="group-title">内容管理</h4>
+                    <div class="permission-item"><input type="checkbox" checked> 查看剧集</div>
+                    <div class="permission-item"><input type="checkbox" checked> 编辑剧集</div>
+                    <div class="permission-item"><input type="checkbox"> 删除剧集</div>
+                    <div class="permission-item"><input type="checkbox"> 发布剧集</div>
+                </div>
+                <div class="permission-group">
+                    <h4 class="group-title">系统管理</h4>
+                    <div class="permission-item"><input type="checkbox"> 管理员管理</div>
+                    <div class="permission-item"><input type="checkbox"> 系统设置</div>
+                    <div class="permission-item"><input type="checkbox"> 查看日志</div>
+                </div>
+            `;
+        }
+
+        // 保存权限
+        async function savePermissions() {
+            alert('权限保存成功（演示）');
+            adminCore.closeModal('editPermissionsModal');
+        }
+
+        // 删除角色
+        window.deleteRole = async function(id) {
+            if (!confirm('确定要删除该角色吗？')) return;
+            alert('删除角色功能待对接API');
+        };
+
+        // 保存角色
+        async function saveRole() {
+            const roleName = document.getElementById('roleName').value;
+            if (!roleName) {
+                alert('角色名称不能为空');
+                return;
+            }
+            alert('角色保存成功（演示）');
+            adminCore.closeModal('addRoleModal');
+        }
+
+        // 加载登录历史
+        async function loadLoginHistory() {
+            const tbody = document.getElementById('loginHistoryBody');
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${API_BASE}/admin-logins?page=${currentLogPage}&limit=5`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    renderLoginHistory(data.data);
+                    if (data.pagination) {
+                        updatePagination('logPagination', data.pagination, (page) => {
+                            currentLogPage = page;
+                            loadLoginHistory();
+                        });
+                    }
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">暂无登录记录</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载登录历史失败:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">加载失败</td></tr>';
+            }
+        }
+
+        // 渲染登录历史
+        function renderLoginHistory(logs) {
+            const tbody = document.getElementById('loginHistoryBody');
+            tbody.innerHTML = '';
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${log.username}</td>
+                    <td>${log.login_time}</td>
+                    <td>${log.ip}</td>
+                    <td>${log.method}</td>
+                    <td><span class="status-badge ${log.status === 'success' ? 'status-active' : 'status-inactive'}">${log.status}</span></td>
+                    <td>${log.location}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 导出管理员列表
+        function exportAdmins() {
+            alert('导出管理员列表功能待对接API');
+        }
+
+        // 设置分页
+        function setupPagination() {
+            document.querySelectorAll('.page-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page && page !== currentAdminPage) {
+                        currentAdminPage = page;
+                        loadAdmins();
+                        
+                        // 更新激活状态
+                        document.querySelectorAll('#adminPagination .page-item').forEach(p => p.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // 更新分页（通用）
+        function updatePagination(containerId, pagination, callback) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (pagination.total_pages <= 1) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'flex';
+            let html = '';
+            for (let i = 1; i <= pagination.total_pages; i++) {
+                const activeClass = i === pagination.current_page ? 'active' : '';
+                html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
+            }
+            container.innerHTML = html;
+
+            // 重新绑定事件
+            container.querySelectorAll('.page-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const page = parseInt(e.target.dataset.page);
+                    if (page && page !== pagination.current_page) {
+                        callback(page);
+                        
+                        container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

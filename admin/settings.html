@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账户设置 - Global Shorts 后台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin-common.css">
+</head>
+<body>
+    <header class="admin-header">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+            <div class="logo"><i class="fas fa-globe-americas"></i><span>Global Shorts 后台</span></div>
+        </div>
+        <div class="header-right">
+            <div class="language-switcher" id="languageSwitcher">
+                <i class="fas fa-language"></i><span id="currentLanguage">中文</span><i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="admin-user" id="userMenuTrigger" style="position:relative; cursor:pointer;">
+                <div class="user-avatar" id="userAvatar">AD</div>
+                <div>
+                    <div id="adminName">管理员</div>
+                    <div style="font-size:12px;color:var(--gray)" id="adminRole">超级管理员</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 用户下拉菜单 -->
+    <div class="user-dropdown" id="userDropdown" style="display:none; position:absolute; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 8px 16px rgba(0,0,0,0.1); z-index:1000; min-width:180px;">
+        <a href="/admin/profile.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;"><i class="fas fa-user" style="margin-right:8px;"></i>个人资料</a>
+        <a href="/admin/settings.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;"><i class="fas fa-cog" style="margin-right:8px;"></i>账户设置</a>
+        <a href="/admin/change-password.html" style="display:block; padding:12px 16px; color:rgba(0,0,0,0.85); text-decoration:none;"><i class="fas fa-key" style="margin-right:8px;"></i>修改密码</a>
+        <div style="height:1px; background:var(--border); margin:4px 0;"></div>
+        <a href="#" id="logoutBtn" style="display:block; padding:12px 16px; color:#f5222d; text-decoration:none;"><i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>退出登录</a>
+    </div>
+
+    <div class="admin-container">
+        <!-- 侧边栏（同上，略） -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <!-- ... 侧边栏内容与profile.html相同 ... -->
+        </aside>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <h1 class="page-title">账户设置</h1>
+                <p class="page-description">配置您的账户偏好和安全设置</p>
+            </div>
+
+            <!-- 选项卡 -->
+            <div class="tabs" style="margin-bottom:24px;">
+                <div class="tab-item active" data-tab="preferences">偏好设置</div>
+                <div class="tab-item" data-tab="notifications">通知设置</div>
+                <div class="tab-item" data-tab="security">安全设置</div>
+                <div class="tab-item" data-tab="sessions">登录设备</div>
+            </div>
+
+            <!-- 偏好设置 -->
+            <div class="tab-content active" id="preferencesTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">界面偏好</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">语言</label>
+                            <select class="form-control" style="width:300px;">
+                                <option value="zh-CN" selected>简体中文</option>
+                                <option value="en-US">English</option>
+                                <option value="es-ES">Español</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">主题</label>
+                            <div style="display:flex; gap:16px;">
+                                <label><input type="radio" name="theme" checked> 浅色主题</label>
+                                <label><input type="radio" name="theme"> 深色主题</label>
+                                <label><input type="radio" name="theme"> 跟随系统</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">每页显示条数</label>
+                            <select class="form-control" style="width:150px;">
+                                <option>10</option>
+                                <option selected>20</option>
+                                <option>50</option>
+                                <option>100</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">时区与日期</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label class="form-label">时区</label>
+                            <select class="form-control" style="width:300px;">
+                                <option value="UTC+8" selected>北京时间 (UTC+8)</option>
+                                <option value="UTC+0">伦敦时间 (UTC+0)</option>
+                                <option value="UTC-5">纽约时间 (UTC-5)</option>
+                                <option value="UTC-8">洛杉矶时间 (UTC-8)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">日期格式</label>
+                            <select class="form-control" style="width:300px;">
+                                <option value="Y-m-d" selected>2024-03-24</option>
+                                <option value="m/d/Y">03/24/2024</option>
+                                <option value="d/m/Y">24/03/2024</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">时间格式</label>
+                            <select class="form-control" style="width:300px;">
+                                <option value="24h" selected>14:30 (24小时制)</option>
+                                <option value="12h">2:30 PM (12小时制)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通知设置 -->
+            <div class="tab-content" id="notificationsTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">邮件通知</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label><input type="checkbox" checked> 新用户注册通知</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" checked> 新剧集上传通知</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox"> 支付成功通知</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" checked> 系统错误通知</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox"> 每日数据报告</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">系统通知</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label><input type="checkbox" checked> 版本更新通知</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" checked> 维护公告</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" checked> 安全提醒</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 安全设置 -->
+            <div class="tab-content" id="securityTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">双因素认证 (2FA)</h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <span class="status-badge status-inactive">未启用</span>
+                            <span style="color:var(--gray);">开启双因素认证可以提高账户安全性</span>
+                            <button class="btn btn-primary">立即启用</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">登录历史</h3>
+                    </div>
+                    <div class="card-content">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>IP地址</th>
+                                    <th>设备</th>
+                                    <th>位置</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2024-03-24 14:30</td>
+                                    <td>192.168.1.100</td>
+                                    <td>Chrome / Windows</td>
+                                    <td>中国, 北京</td>
+                                    <td><span class="status-badge status-active">成功</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2024-03-23 09:15</td>
+                                    <td>192.168.1.100</td>
+                                    <td>Chrome / Windows</td>
+                                    <td>中国, 北京</td>
+                                    <td><span class="status-badge status-active">成功</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录设备 -->
+            <div class="tab-content" id="sessionsTab">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">当前登录设备</h3>
+                        <button class="btn btn-danger">退出所有设备</button>
+                    </div>
+                    <div class="card-content">
+                        <div style="border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px; background:var(--gray-light);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <i class="fas fa-laptop" style="font-size:20px; margin-right:8px;"></i>
+                                    <strong>当前设备</strong> - Chrome / Windows
+                                </div>
+                                <span class="status-badge status-active">当前会话</span>
+                            </div>
+                            <div style="color:var(--gray); font-size:13px; margin-top:8px;">
+                                IP: 192.168.1.100 | 登录时间: 2024-03-24 14:30
+                            </div>
+                        </div>
+                        
+                        <div style="border:1px solid var(--border); border-radius:8px; padding:16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <i class="fas fa-mobile-alt" style="font-size:20px; margin-right:8px;"></i>
+                                    <strong>iPhone 15</strong> - iOS / Safari
+                                </div>
+                                <button class="btn btn-sm btn-danger">退出</button>
+                            </div>
+                            <div style="color:var(--gray); font-size:13px; margin-top:8px;">
+                                IP: 192.168.1.101 | 最后活跃: 2024-03-23 22:15
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 保存按钮 -->
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+                <button class="btn btn-secondary">取消</button>
+                <button class="btn btn-primary" id="saveSettingsBtn">保存设置</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- 语言选择模态框 -->
+    <div class="modal-overlay" id="languageModal">...</div>
+
+    <script src="/js/admin-core.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 用户下拉菜单逻辑
+            const trigger = document.getElementById('userMenuTrigger');
+            const dropdown = document.getElementById('userDropdown');
+            
+            trigger?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            });
+
+            document.addEventListener('click', () => {
+                dropdown.style.display = 'none';
+            });
+
+            // 退出登录
+            document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('userInfo');
+                window.location.href = '/login.html';
+            });
+
+            // 选项卡切换
+            const tabs = document.querySelectorAll('.tab-item');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                });
+            });
+
+            // 保存设置
+            document.getElementById('saveSettingsBtn')?.addEventListener('click', () => {
+                alert('设置已保存（演示）');
+            });
+        });
+    </script>
+</body>
+</html>
