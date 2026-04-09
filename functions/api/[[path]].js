@@ -7,7 +7,18 @@ import { handleAdmin } from './admin/index.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
+    const url = new URL(request.url);
     
+    // 测试端点 - 放在最前面
+    if (url.pathname === '/api/test-db') {
+        return new Response(JSON.stringify({
+            hasMY_DB: !!env.MY_DB,
+            dbType: typeof env.MY_DB,
+            envKeys: Object.keys(env)
+        }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }    
     // 处理 OPTIONS 预检请求
     if (request.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders });
