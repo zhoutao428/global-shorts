@@ -9,6 +9,7 @@ export async function onRequest(context) {
     const { request, env } = context;
     const url = new URL(request.url);
     const path = url.pathname;
+    const method = request.method;
     
     // ========== 测试端点 ==========
     if (path === '/api/test') {
