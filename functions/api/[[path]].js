@@ -20,33 +20,36 @@ export async function onRequest(context) {
     const path = url.pathname;
     const method = request.method;
     
-    // ========== 测试端点 ==========
-    if (path === '/api/test') {
-        return new Response(JSON.stringify({ 
-            message: 'OK', 
-            hasDB: !!env.MY_DB,
-            dbType: typeof env.MY_DB
-        }), {
-            headers: { 'Content-Type': 'application/json' }
-        });
-    }
-    
-    // ========== 测试 D1 查询 ==========
-    if (path === '/api/test-db') {
+    // ========== R2 连接测试端点 ==========
+    if (path === '/api/test-r2' && method === 'GET') {
         try {
-            const result = await env.MY_DB.prepare('SELECT 1 as test').first();
-            return new Response(JSON.stringify({ success: true, result }), {
+            // 测试写入
+            await env.MY_BUCKET.put('test.txt', 'Hello R2!');
+            // 测试读取
+            const object = await env.MY_BUCKET.get('test.txt');
+            const text = await object.text();
+            // 测试删除
+            await env.MY_BUCKET.delete('test.txt');
+            
+            return new Response(JSON.stringify({ 
+                success: true, 
+                message: 'R2 连接成功！',
+                testData: text 
+            }), {
                 headers: { 'Content-Type': 'application/json' }
             });
-        } catch (err) {
-            return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
+        } catch (error) {
+            return new Response(JSON.stringify({ 
+                success: false, 
+                error: error.message 
+            }), {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
     }
     
-    // ========== 原有代码用 try-catch 包裹 ==========
+    // ========== 原有代码 ==========
     try {
         // 处理 OPTIONS 预检请求
         if (request.method === 'OPTIONS') {
