@@ -1,6 +1,6 @@
 // admin-content.js
 (function() {
-    const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+    const API_BASE = 'api/admin';
 
     // ---------- 剧集管理 ----------
     async function loadDramas() {

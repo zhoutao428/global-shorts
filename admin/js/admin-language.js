@@ -8,7 +8,7 @@ function escapeHtml(text) {
 }
 
 (function() {
-    const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+    const API_BASE = '/api';
     let languages = [];
     let translationKeys = [];
     let currentLanguageFilter = 'all';

@@ -1,7 +1,7 @@
 // admin-users.js
 (function() {
     // ---------- 用户管理 ----------
-    const API_BASE_URL = 'https://global-shorts-api.z17756037070.workers.dev/api';
+    const API_BASE_URL = '/api';
 
     async function loadUsers() {
         const tbody = document.getElementById('userTableBody');
