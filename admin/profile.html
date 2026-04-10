@@ -330,165 +330,288 @@
 
     <script src="/js/admin-core.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // 获取真实用户信息
-            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-            if (userInfo.name) {
-                document.getElementById('adminName').textContent = userInfo.name;
-                document.getElementById('userAvatar').textContent = userInfo.name.charAt(0).toUpperCase();
-                document.getElementById('profileName').textContent = userInfo.name;
-                document.getElementById('avatarText').textContent = userInfo.name.charAt(0).toUpperCase();
-            }
-            if (userInfo.role) {
-                document.getElementById('adminRole').textContent = userInfo.role;
-                document.getElementById('profileRole').textContent = userInfo.role;
-            }
-            if (userInfo.avatar) {
-                showAvatarImage(userInfo.avatar);
-            }
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
 
-            // 点击头像显示下拉菜单
-            const trigger = document.getElementById('userMenuTrigger');
-            const dropdown = document.getElementById('userDropdown');
-            
-            trigger?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            });
+    document.addEventListener('DOMContentLoaded', () => {
+        // 获取真实用户信息
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        if (userInfo.name) {
+            document.getElementById('adminName').textContent = userInfo.name;
+            document.getElementById('userAvatar').textContent = userInfo.name.charAt(0).toUpperCase();
+            document.getElementById('profileName').textContent = userInfo.name;
+            document.getElementById('avatarText').textContent = userInfo.name.charAt(0).toUpperCase();
+        }
+        if (userInfo.role) {
+            document.getElementById('adminRole').textContent = userInfo.role;
+            document.getElementById('profileRole').textContent = userInfo.role;
+        }
+        if (userInfo.avatar) {
+            showAvatarImage(userInfo.avatar);
+        }
 
-            document.addEventListener('click', () => {
-                dropdown.style.display = 'none';
-            });
+        // 加载用户资料到编辑表单
+        await loadUserProfileToForm();
 
-            // 退出登录
-            document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('userInfo');
-                window.location.href = '/login.html';
-            });
+        // 点击头像显示下拉菜单
+        const trigger = document.getElementById('userMenuTrigger');
+        const dropdown = document.getElementById('userDropdown');
+        
+        trigger?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
 
-            // 编辑资料
-            document.getElementById('editProfileBtn')?.addEventListener('click', () => {
-                document.getElementById('editProfileModal').classList.add('active');
-            });
+        document.addEventListener('click', () => {
+            dropdown.style.display = 'none';
+        });
 
-            document.getElementById('closeEditModal')?.addEventListener('click', () => {
-                document.getElementById('editProfileModal').classList.remove('active');
-            });
+        // 退出登录
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/login.html';
+        });
 
-            document.getElementById('cancelEditBtn')?.addEventListener('click', () => {
-                document.getElementById('editProfileModal').classList.remove('active');
-            });
+        // 编辑资料
+        document.getElementById('editProfileBtn')?.addEventListener('click', () => {
+            loadUserProfileToForm();  // 加载最新数据到表单
+            document.getElementById('editProfileModal').classList.add('active');
+        });
 
-            document.getElementById('saveProfileBtn')?.addEventListener('click', () => {
-                document.getElementById('displayFullName').textContent = document.getElementById('editFullName').value;
-                document.getElementById('displayEmail').textContent = document.getElementById('editEmail').value;
-                document.getElementById('displayPhone').textContent = document.getElementById('editPhone').value;
-                document.getElementById('displayDepartment').textContent = document.getElementById('editDepartment').value;
-                document.getElementById('displayPosition').textContent = document.getElementById('editPosition').value;
-                
-                alert('资料更新成功（演示）');
-                document.getElementById('editProfileModal').classList.remove('active');
-            });
+        document.getElementById('closeEditModal')?.addEventListener('click', () => {
+            document.getElementById('editProfileModal').classList.remove('active');
+        });
 
-            // 修改头像
-            document.getElementById('changeAvatarBtn')?.addEventListener('click', () => {
-                document.getElementById('avatarModal').classList.add('active');
-                resetAvatarPreview();
-            });
+        document.getElementById('cancelEditBtn')?.addEventListener('click', () => {
+            document.getElementById('editProfileModal').classList.remove('active');
+        });
 
-            document.getElementById('closeAvatarModal')?.addEventListener('click', () => {
-                document.getElementById('avatarModal').classList.remove('active');
-            });
+        document.getElementById('saveProfileBtn')?.addEventListener('click', saveUserProfile);
 
-            document.getElementById('cancelAvatarBtn')?.addEventListener('click', () => {
-                document.getElementById('avatarModal').classList.remove('active');
-            });
+        // 修改头像
+        document.getElementById('changeAvatarBtn')?.addEventListener('click', () => {
+            document.getElementById('avatarModal').classList.add('active');
+            resetAvatarPreview();
+        });
 
-            // 头像文件预览
-            document.getElementById('avatarFile')?.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        showPreview(e.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
+        document.getElementById('closeAvatarModal')?.addEventListener('click', () => {
+            document.getElementById('avatarModal').classList.remove('active');
+        });
 
-            // 头像链接预览
-            document.getElementById('avatarUrl')?.addEventListener('input', (e) => {
-                if (e.target.value) {
-                    showPreview(e.target.value);
-                }
-            });
+        document.getElementById('cancelAvatarBtn')?.addEventListener('click', () => {
+            document.getElementById('avatarModal').classList.remove('active');
+        });
 
-            // 保存头像
-            document.getElementById('saveAvatarBtn')?.addEventListener('click', () => {
-                const file = document.getElementById('avatarFile').files[0];
-                const url = document.getElementById('avatarUrl').value;
-                
-                if (file) {
-                    // 模拟上传文件
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        showAvatarImage(e.target.result);
-                        saveAvatarToStorage(e.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                } else if (url) {
-                    showAvatarImage(url);
-                    saveAvatarToStorage(url);
-                } else {
-                    alert('请选择图片或输入链接');
-                    return;
-                }
-                
-                alert('头像更新成功（演示）');
-                document.getElementById('avatarModal').classList.remove('active');
-            });
-
-            function showPreview(src) {
-                const previewPlaceholder = document.getElementById('previewPlaceholder');
-                const previewImage = document.getElementById('previewImage');
-                
-                previewPlaceholder.style.display = 'none';
-                previewImage.style.display = 'block';
-                previewImage.src = src;
-            }
-
-            function resetAvatarPreview() {
-                const previewPlaceholder = document.getElementById('previewPlaceholder');
-                const previewImage = document.getElementById('previewImage');
-                
-                previewPlaceholder.style.display = 'flex';
-                previewImage.style.display = 'none';
-                previewImage.src = '';
-                document.getElementById('avatarFile').value = '';
-                document.getElementById('avatarUrl').value = '';
-            }
-
-            function showAvatarImage(src) {
-                const avatarText = document.getElementById('avatarText');
-                const avatarImage = document.getElementById('avatarImage');
-                
-                avatarText.style.display = 'none';
-                avatarImage.style.display = 'block';
-                avatarImage.src = src;
-                
-                // 同时更新顶部导航的头像
-                document.getElementById('userAvatar').style.background = 'transparent';
-                document.getElementById('userAvatar').innerHTML = `<img src="${src}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-            }
-
-            function saveAvatarToStorage(src) {
-                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-                userInfo.avatar = src;
-                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        // 头像文件预览
+        document.getElementById('avatarFile')?.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    showPreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
             }
         });
-    </script>
+
+        // 头像链接预览
+        document.getElementById('avatarUrl')?.addEventListener('input', (e) => {
+            if (e.target.value) {
+                showPreview(e.target.value);
+            }
+        });
+
+        // 保存头像
+        document.getElementById('saveAvatarBtn')?.addEventListener('click', saveUserAvatar);
+    });
+
+    // 加载用户资料到编辑表单
+    async function loadUserProfileToForm() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const profile = data.data;
+                document.getElementById('editFullName').value = profile.full_name || profile.username || '';
+                document.getElementById('editEmail').value = profile.email || '';
+                document.getElementById('editPhone').value = profile.phone || '';
+                document.getElementById('editDepartment').value = profile.department || '';
+                document.getElementById('editPosition').value = profile.position || '';
+                
+                // 更新显示区域
+                document.getElementById('displayFullName').textContent = profile.full_name || profile.username || '-';
+                document.getElementById('displayEmail').textContent = profile.email || '-';
+                document.getElementById('displayPhone').textContent = profile.phone || '-';
+                document.getElementById('displayDepartment').textContent = profile.department || '-';
+                document.getElementById('displayPosition').textContent = profile.position || '-';
+            }
+        } catch (error) {
+            console.error('加载用户资料失败:', error);
+        }
+    }
+
+    // 保存用户资料
+    async function saveUserProfile() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const formData = {
+            full_name: document.getElementById('editFullName').value,
+            email: document.getElementById('editEmail').value,
+            phone: document.getElementById('editPhone').value,
+            department: document.getElementById('editDepartment').value,
+            position: document.getElementById('editPosition').value
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // 更新显示区域
+                document.getElementById('displayFullName').textContent = formData.full_name;
+                document.getElementById('displayEmail').textContent = formData.email;
+                document.getElementById('displayPhone').textContent = formData.phone;
+                document.getElementById('displayDepartment').textContent = formData.department;
+                document.getElementById('displayPosition').textContent = formData.position;
+                
+                // 更新顶部导航的用户名
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.name = formData.full_name;
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                document.getElementById('adminName').textContent = formData.full_name;
+                document.getElementById('profileName').textContent = formData.full_name;
+                document.getElementById('userAvatar').textContent = formData.full_name.charAt(0).toUpperCase();
+                document.getElementById('avatarText').textContent = formData.full_name.charAt(0).toUpperCase();
+                
+                alert('资料更新成功！');
+                document.getElementById('editProfileModal').classList.remove('active');
+            } else {
+                alert('更新失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    // 保存用户头像
+    async function saveUserAvatar() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const file = document.getElementById('avatarFile').files[0];
+        const url = document.getElementById('avatarUrl').value;
+        
+        if (!file && !url) {
+            alert('请选择图片或输入链接');
+            return;
+        }
+
+        try {
+            let avatarUrl = url;
+            
+            if (file) {
+                // 上传文件到服务器
+                const formData = new FormData();
+                formData.append('avatar', file);
+                
+                // 修改：使用 window.API_BASE 或独立的 UPLOAD_BASE
+                const uploadRes = await fetch(`${window.API_BASE}/upload/avatar`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                
+                if (!uploadData.success) {
+                    alert('头像上传失败：' + uploadData.error);
+                    return;
+                }
+                avatarUrl = uploadData.url;
+            }
+            
+            // 更新用户头像
+            const response = await fetch(`${window.API_BASE}/profile/avatar`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ avatar_url: avatarUrl })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showAvatarImage(avatarUrl);
+                
+                // 更新 localStorage
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.avatar = avatarUrl;
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                alert('头像更新成功！');
+                document.getElementById('avatarModal').classList.remove('active');
+            } else {
+                alert('更新失败：' + data.error);
+            }
+        } catch (error) {
+            console.error('保存头像失败:', error);
+            alert('网络错误，请重试');
+        }
+    }
+
+    function showPreview(src) {
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const previewImage = document.getElementById('previewImage');
+        
+        previewPlaceholder.style.display = 'none';
+        previewImage.style.display = 'block';
+        previewImage.src = src;
+    }
+
+    function resetAvatarPreview() {
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const previewImage = document.getElementById('previewImage');
+        
+        previewPlaceholder.style.display = 'flex';
+        previewImage.style.display = 'none';
+        previewImage.src = '';
+        document.getElementById('avatarFile').value = '';
+        document.getElementById('avatarUrl').value = '';
+    }
+
+    function showAvatarImage(src) {
+        const avatarText = document.getElementById('avatarText');
+        const avatarImage = document.getElementById('avatarImage');
+        
+        avatarText.style.display = 'none';
+        avatarImage.style.display = 'block';
+        avatarImage.src = src;
+        
+        // 同时更新顶部导航的头像
+        const userAvatar = document.getElementById('userAvatar');
+        if (userAvatar) {
+            userAvatar.style.background = 'transparent';
+            userAvatar.innerHTML = `<img src="${src}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        }
+    }
+</script>
 </body>
 </html>

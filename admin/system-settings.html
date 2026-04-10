@@ -717,290 +717,267 @@
     <script src="js/admin-core.js"></script>
     <script src="js/admin-system.js"></script>
     <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载系统设置
-            await loadSystemSettings();
+        await loadSystemSettings();
 
-            // 选项卡切换
-            document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    const tabId = tab.getAttribute('data-tab');
-                    document.getElementById(tabId + 'Tab').classList.add('active');
-                });
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId + 'Tab').classList.add('active');
             });
-
-            // 缓存驱动切换显示Redis设置
-            document.getElementById('cacheDriver').addEventListener('change', (e) => {
-                const redisSettings = document.getElementById('redisSettings');
-                redisSettings.style.display = e.target.value === 'redis' ? 'block' : 'none';
-            });
-
-            // 按钮事件
-            document.getElementById('testMailBtn')?.addEventListener('click', testMail);
-            document.getElementById('viewLogsBtn')?.addEventListener('click', () => {
-                window.location.href = '/system-logs.html';
-            });
-            document.getElementById('resetSettingsBtn')?.addEventListener('click', resetSettings);
-            document.getElementById('saveSettingsBtn')?.addEventListener('click', saveAllSettings);
-            document.getElementById('uploadLogoBtn')?.addEventListener('click', uploadLogo);
-            document.getElementById('clearCacheBtn')?.addEventListener('click', clearCache);
-            document.getElementById('backupNowBtn')?.addEventListener('click', backupNow);
-            document.getElementById('optimizeDbBtn')?.addEventListener('click', optimizeDb);
-            document.getElementById('clearLogsBtn')?.addEventListener('click', clearLogs);
-            document.getElementById('checkUpdatesBtn')?.addEventListener('click', checkUpdates);
-            document.getElementById('systemRestartBtn')?.addEventListener('click', systemRestart);
         });
 
-        // 加载系统设置
-        async function loadSystemSettings() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/settings`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('cacheDriver').addEventListener('change', (e) => {
+            const redisSettings = document.getElementById('redisSettings');
+            redisSettings.style.display = e.target.value === 'redis' ? 'block' : 'none';
+        });
 
-                if (data.success) {
-                    const settings = data.data;
-                    
-                    // 基础设置
-                    document.getElementById('siteName').value = settings.site_name || 'Global Shorts';
-                    document.getElementById('siteUrl').value = settings.site_url || 'https://globalshorts.com';
-                    document.getElementById('siteDescription').value = settings.site_description || '';
-                    document.getElementById('siteKeywords').value = settings.site_keywords || '';
-                    document.getElementById('logoUrl').value = settings.logo_url || '';
-                    
-                    // 注册设置
-                    document.getElementById('allowRegister').checked = settings.allow_register !== false;
-                    document.getElementById('emailVerification').checked = settings.email_verification !== false;
-                    document.getElementById('phoneVerification').checked = settings.phone_verification || false;
-                    document.getElementById('rememberMe').checked = settings.remember_me !== false;
-                    document.getElementById('loginTimeout').value = settings.login_timeout || 30;
-                    
-                    // 上传设置
-                    document.getElementById('allowedFileTypes').value = settings.allowed_file_types || 'mp4,avi,mov,mkv,webm';
-                    document.getElementById('maxFileSize').value = settings.max_file_size || 2048;
-                    document.getElementById('concurrentUploads').value = settings.concurrent_uploads || 3;
-                    document.getElementById('autoTranscode').checked = settings.auto_transcode !== false;
-                    
-                    // 邮件设置
-                    document.getElementById('smtpHost').value = settings.smtp_host || 'smtp.gmail.com';
-                    document.getElementById('smtpPort').value = settings.smtp_port || 587;
-                    document.getElementById('smtpEncryption').value = settings.smtp_encryption || 'tls';
-                    document.getElementById('smtpFrom').value = settings.smtp_from || 'noreply@globalshorts.com';
-                    document.getElementById('smtpFromName').value = settings.smtp_from_name || 'Global Shorts';
-                    document.getElementById('smtpUser').value = settings.smtp_user || '';
-                    
-                    // 缓存设置
-                    document.getElementById('cacheDriver').value = settings.cache_driver || 'file';
-                    document.getElementById('redisHost').value = settings.redis_host || '127.0.0.1:6379';
-                    document.getElementById('cacheTtl').value = settings.cache_ttl || 60;
-                    document.getElementById('enablePageCache').checked = settings.enable_page_cache !== false;
-                    
-                    // 安全设置
-                    document.getElementById('maxLoginAttempts').value = settings.max_login_attempts || 5;
-                    document.getElementById('lockoutTime').value = settings.lockout_time || 30;
-                    document.getElementById('enable2fa').checked = settings.enable_2fa || false;
-                    document.getElementById('sessionSecurity').value = settings.session_security || 'medium';
-                    document.getElementById('sessionTimeout').value = settings.session_timeout || 120;
-                }
-            } catch (error) {
-                console.error('加载系统设置失败:', error);
-            }
-        }
+        document.getElementById('testMailBtn')?.addEventListener('click', testMail);
+        document.getElementById('viewLogsBtn')?.addEventListener('click', () => {
+            window.location.href = '/system-logs.html';
+        });
+        document.getElementById('resetSettingsBtn')?.addEventListener('click', resetSettings);
+        document.getElementById('saveSettingsBtn')?.addEventListener('click', saveAllSettings);
+        document.getElementById('uploadLogoBtn')?.addEventListener('click', uploadLogo);
+        document.getElementById('clearCacheBtn')?.addEventListener('click', clearCache);
+        document.getElementById('backupNowBtn')?.addEventListener('click', backupNow);
+        document.getElementById('optimizeDbBtn')?.addEventListener('click', optimizeDb);
+        document.getElementById('clearLogsBtn')?.addEventListener('click', clearLogs);
+        document.getElementById('checkUpdatesBtn')?.addEventListener('click', checkUpdates);
+        document.getElementById('systemRestartBtn')?.addEventListener('click', systemRestart);
+    });
 
-        // 保存所有设置
-        async function saveAllSettings() {
-            const token = localStorage.getItem('token');
-            
-            const settings = {
-                // 基础设置
-                site_name: document.getElementById('siteName').value,
-                site_url: document.getElementById('siteUrl').value,
-                site_description: document.getElementById('siteDescription').value,
-                site_keywords: document.getElementById('siteKeywords').value,
-                logo_url: document.getElementById('logoUrl').value,
+    async function loadSystemSettings() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const settings = data.data;
                 
-                // 注册设置
-                allow_register: document.getElementById('allowRegister').checked,
-                email_verification: document.getElementById('emailVerification').checked,
-                phone_verification: document.getElementById('phoneVerification').checked,
-                remember_me: document.getElementById('rememberMe').checked,
-                login_timeout: parseInt(document.getElementById('loginTimeout').value),
+                document.getElementById('siteName').value = settings.site_name || 'Global Shorts';
+                document.getElementById('siteUrl').value = settings.site_url || 'https://globalshorts.com';
+                document.getElementById('siteDescription').value = settings.site_description || '';
+                document.getElementById('siteKeywords').value = settings.site_keywords || '';
+                document.getElementById('logoUrl').value = settings.logo_url || '';
                 
-                // 上传设置
-                allowed_file_types: document.getElementById('allowedFileTypes').value,
-                max_file_size: parseInt(document.getElementById('maxFileSize').value),
-                concurrent_uploads: parseInt(document.getElementById('concurrentUploads').value),
-                auto_transcode: document.getElementById('autoTranscode').checked,
+                document.getElementById('allowRegister').checked = settings.allow_register !== false;
+                document.getElementById('emailVerification').checked = settings.email_verification !== false;
+                document.getElementById('phoneVerification').checked = settings.phone_verification || false;
+                document.getElementById('rememberMe').checked = settings.remember_me !== false;
+                document.getElementById('loginTimeout').value = settings.login_timeout || 30;
                 
-                // 邮件设置
-                smtp_host: document.getElementById('smtpHost').value,
-                smtp_port: parseInt(document.getElementById('smtpPort').value),
-                smtp_encryption: document.getElementById('smtpEncryption').value,
-                smtp_from: document.getElementById('smtpFrom').value,
-                smtp_from_name: document.getElementById('smtpFromName').value,
-                smtp_user: document.getElementById('smtpUser').value,
-                smtp_pass: document.getElementById('smtpPass').value,
+                document.getElementById('allowedFileTypes').value = settings.allowed_file_types || 'mp4,avi,mov,mkv,webm';
+                document.getElementById('maxFileSize').value = settings.max_file_size || 2048;
+                document.getElementById('concurrentUploads').value = settings.concurrent_uploads || 3;
+                document.getElementById('autoTranscode').checked = settings.auto_transcode !== false;
                 
-                // 缓存设置
-                cache_driver: document.getElementById('cacheDriver').value,
-                redis_host: document.getElementById('redisHost').value,
-                cache_ttl: parseInt(document.getElementById('cacheTtl').value),
-                enable_page_cache: document.getElementById('enablePageCache').checked,
+                document.getElementById('smtpHost').value = settings.smtp_host || 'smtp.gmail.com';
+                document.getElementById('smtpPort').value = settings.smtp_port || 587;
+                document.getElementById('smtpEncryption').value = settings.smtp_encryption || 'tls';
+                document.getElementById('smtpFrom').value = settings.smtp_from || 'noreply@globalshorts.com';
+                document.getElementById('smtpFromName').value = settings.smtp_from_name || 'Global Shorts';
+                document.getElementById('smtpUser').value = settings.smtp_user || '';
                 
-                // 安全设置
-                max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value),
-                lockout_time: parseInt(document.getElementById('lockoutTime').value),
-                enable_2fa: document.getElementById('enable2fa').checked,
-                session_security: document.getElementById('sessionSecurity').value,
-                session_timeout: parseInt(document.getElementById('sessionTimeout').value)
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/settings`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(settings)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('设置保存成功');
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+                document.getElementById('cacheDriver').value = settings.cache_driver || 'file';
+                document.getElementById('redisHost').value = settings.redis_host || '127.0.0.1:6379';
+                document.getElementById('cacheTtl').value = settings.cache_ttl || 60;
+                document.getElementById('enablePageCache').checked = settings.enable_page_cache !== false;
+                
+                document.getElementById('maxLoginAttempts').value = settings.max_login_attempts || 5;
+                document.getElementById('lockoutTime').value = settings.lockout_time || 30;
+                document.getElementById('enable2fa').checked = settings.enable_2fa || false;
+                document.getElementById('sessionSecurity').value = settings.session_security || 'medium';
+                document.getElementById('sessionTimeout').value = settings.session_timeout || 120;
             }
+        } catch (error) {
+            console.error('加载系统设置失败:', error);
         }
+    }
 
-        // 测试邮件
-        async function testMail() {
-            const token = localStorage.getItem('token');
+    async function saveAllSettings() {
+        const token = localStorage.getItem('token');
+        
+        const settings = {
+            site_name: document.getElementById('siteName').value,
+            site_url: document.getElementById('siteUrl').value,
+            site_description: document.getElementById('siteDescription').value,
+            site_keywords: document.getElementById('siteKeywords').value,
+            logo_url: document.getElementById('logoUrl').value,
             
-            try {
-                const response = await fetch(`${API_BASE}/settings/test-mail`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        to: document.getElementById('smtpFrom').value
-                    })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('测试邮件发送成功，请检查邮箱');
-                } else {
-                    alert('发送失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 清空缓存
-        async function clearCache() {
-            if (!confirm('确定要清空所有缓存吗？')) return;
+            allow_register: document.getElementById('allowRegister').checked,
+            email_verification: document.getElementById('emailVerification').checked,
+            phone_verification: document.getElementById('phoneVerification').checked,
+            remember_me: document.getElementById('rememberMe').checked,
+            login_timeout: parseInt(document.getElementById('loginTimeout').value),
             
-            const token = localStorage.getItem('token');
+            allowed_file_types: document.getElementById('allowedFileTypes').value,
+            max_file_size: parseInt(document.getElementById('maxFileSize').value),
+            concurrent_uploads: parseInt(document.getElementById('concurrentUploads').value),
+            auto_transcode: document.getElementById('autoTranscode').checked,
             
-            try {
-                const response = await fetch(`${API_BASE}/cache/clear`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('缓存已清空');
-                } else {
-                    alert('操作失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 立即备份
-        async function backupNow() {
-            if (!confirm('开始数据库备份？')) return;
+            smtp_host: document.getElementById('smtpHost').value,
+            smtp_port: parseInt(document.getElementById('smtpPort').value),
+            smtp_encryption: document.getElementById('smtpEncryption').value,
+            smtp_from: document.getElementById('smtpFrom').value,
+            smtp_from_name: document.getElementById('smtpFromName').value,
+            smtp_user: document.getElementById('smtpUser').value,
+            smtp_pass: document.getElementById('smtpPass').value,
             
-            const token = localStorage.getItem('token');
+            cache_driver: document.getElementById('cacheDriver').value,
+            redis_host: document.getElementById('redisHost').value,
+            cache_ttl: parseInt(document.getElementById('cacheTtl').value),
+            enable_page_cache: document.getElementById('enablePageCache').checked,
             
-            try {
-                const response = await fetch(`${API_BASE}/backup/create`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+            max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value),
+            lockout_time: parseInt(document.getElementById('lockoutTime').value),
+            enable_2fa: document.getElementById('enable2fa').checked,
+            session_security: document.getElementById('sessionSecurity').value,
+            session_timeout: parseInt(document.getElementById('sessionTimeout').value)
+        };
 
-                if (data.success) {
-                    alert('备份已创建');
-                } else {
-                    alert('备份失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('设置保存成功');
+            } else {
+                alert('保存失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    }
 
-        // 优化数据库
-        function optimizeDb() {
-            alert('数据库优化功能待对接API');
-        }
+    async function testMail() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/test-mail`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    to: document.getElementById('smtpFrom').value
+                })
+            });
+            const data = await response.json();
 
-        // 清理日志
-        function clearLogs() {
-            if (confirm('确定要清理所有系统日志吗？')) {
-                alert('日志已清理');
+            if (data.success) {
+                alert('测试邮件发送成功，请检查邮箱');
+            } else {
+                alert('发送失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    }
 
-        // 检查更新
-        function checkUpdates() {
-            alert('当前已是最新版本 v2.3.0');
-        }
+    async function clearCache() {
+        if (!confirm('确定要清空所有缓存吗？')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/cache/clear`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
 
-        // 重启系统
-        function systemRestart() {
-            if (confirm('确定要重启系统吗？此操作可能导致服务短暂不可用。')) {
-                alert('系统重启中...');
+            if (data.success) {
+                alert('缓存已清空');
+            } else {
+                alert('操作失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    }
 
-        // 恢复默认设置
-        function resetSettings() {
-            if (confirm('确定要恢复所有默认设置吗？')) {
-                alert('设置已恢复默认（演示）');
+    async function backupNow() {
+        if (!confirm('开始数据库备份？')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/backup/create`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('备份已创建');
+            } else {
+                alert('备份失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    }
 
-        // 上传Logo
-        function uploadLogo() {
-            alert('上传Logo功能待对接API');
+    function optimizeDb() {
+        alert('数据库优化功能待对接API');
+    }
+
+    function clearLogs() {
+        if (confirm('确定要清理所有系统日志吗？')) {
+            alert('日志已清理');
         }
-    </script>
+    }
+
+    function checkUpdates() {
+        alert('当前已是最新版本 v2.3.0');
+    }
+
+    function systemRestart() {
+        if (confirm('确定要重启系统吗？此操作可能导致服务短暂不可用。')) {
+            alert('系统重启中...');
+        }
+    }
+
+    function resetSettings() {
+        if (confirm('确定要恢复所有默认设置吗？')) {
+            alert('设置已恢复默认（演示）');
+        }
+    }
+
+    function uploadLogo() {
+        alert('上传Logo功能待对接API');
+    }
+</script>
 </body>
 </html>

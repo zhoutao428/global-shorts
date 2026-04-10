@@ -320,350 +320,336 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载VIP套餐列表
-            await loadVipPlans();
-            // 加载全局权益设置
-            await loadGlobalBenefits();
-            // 加载最近购买记录
-            await loadPurchaseHistory();
+        await loadVipPlans();
+        await loadGlobalBenefits();
+        await loadPurchaseHistory();
 
-            // 绑定新增按钮事件
-            document.getElementById('addVipPlanBtn').addEventListener('click', () => {
-                document.getElementById('planId').value = '';
-                document.getElementById('vipPlanForm').reset();
-                document.getElementById('vipPlanModalTitle').textContent = '添加VIP套餐';
-                adminCore.openModal('addVipPlanModal');
-            });
-
-            // 绑定模态框关闭事件
-            document.getElementById('closeVipPlanModal').addEventListener('click', () => {
-                adminCore.closeModal('addVipPlanModal');
-            });
-            document.getElementById('cancelVipPlanBtn').addEventListener('click', () => {
-                adminCore.closeModal('addVipPlanModal');
-            });
-
-            // 保存套餐
-            document.getElementById('saveVipPlanBtn').addEventListener('click', saveVipPlan);
-
-            // 保存全局设置
-            document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalBenefits);
-
-            // 排序按钮
-            document.getElementById('sortVipPlansBtn').addEventListener('click', () => {
-                alert('排序功能待对接API');
-            });
+        document.getElementById('addVipPlanBtn').addEventListener('click', () => {
+            document.getElementById('planId').value = '';
+            document.getElementById('vipPlanForm').reset();
+            document.getElementById('vipPlanModalTitle').textContent = '添加VIP套餐';
+            adminCore.openModal('addVipPlanModal');
         });
 
-        // 加载VIP套餐列表
-        async function loadVipPlans() {
-            const container = document.getElementById('vipPlanList');
-            const token = localStorage.getItem('token');
+        document.getElementById('closeVipPlanModal').addEventListener('click', () => {
+            adminCore.closeModal('addVipPlanModal');
+        });
+        document.getElementById('cancelVipPlanBtn').addEventListener('click', () => {
+            adminCore.closeModal('addVipPlanModal');
+        });
 
-            try {
-                const response = await fetch(`${API_BASE}/vip-plans`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('saveVipPlanBtn').addEventListener('click', saveVipPlan);
+        document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalBenefits);
+        document.getElementById('sortVipPlansBtn').addEventListener('click', () => {
+            alert('排序功能待对接API');
+        });
+    });
 
-                if (data.success && data.data.length > 0) {
-                    renderVipPlans(data.data);
-                } else {
-                    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">暂无VIP套餐，点击"新增VIP套餐"创建</div>';
-                }
-            } catch (error) {
-                console.error('加载VIP套餐失败:', error);
-                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--error);">加载失败，请重试</div>';
-            }
-        }
+    async function loadVipPlans() {
+        const container = document.getElementById('vipPlanList');
+        const token = localStorage.getItem('token');
 
-        // 渲染VIP套餐卡片
-        function renderVipPlans(plans) {
-            const container = document.getElementById('vipPlanList');
-            container.innerHTML = '';
-
-            plans.forEach(plan => {
-                const features = plan.features ? plan.features.split('\n') : [];
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // 根据套餐类型设置边框颜色
-                let borderColor = 'var(--primary)';
-                if (plan.name.includes('季度')) borderColor = 'var(--purple)';
-                if (plan.name.includes('年度')) borderColor = 'var(--success)';
-                
-                card.style.borderTop = `4px solid ${borderColor}`;
-
-                const header = document.createElement('div');
-                header.className = 'card-header';
-                header.innerHTML = `
-                    <h3 class="card-title">${plan.name}</h3>
-                    <div>
-                        ${plan.is_popular ? '<span class="status-badge status-active">热门</span>' : ''}
-                        ${plan.is_recommended ? '<span class="status-badge status-vip">推荐</span>' : ''}
-                    </div>
-                `;
-
-                const content = document.createElement('div');
-                content.className = 'card-content';
-                
-                let benefitsHtml = '';
-                if (features.length > 0) {
-                    benefitsHtml = '<div class="benefits-list">';
-                    features.forEach(f => {
-                        benefitsHtml += `<div class="benefit-item"><i class="fas fa-check-circle" style="color:var(--success);"></i><span>${f}</span></div>`;
-                    });
-                    benefitsHtml += '</div>';
-                }
-
-                content.innerHTML = `
-                    <div style="margin-bottom:16px;">
-                        <span class="price-tag">$${plan.price_usd}</span>
-                        ${plan.original_price ? `<span class="original-price">$${plan.original_price}</span>` : ''}
-                        <span style="margin-left:12px; color:var(--success);">${plan.duration_days}天</span>
-                        ${plan.discount ? `<span style="margin-left:12px; background:var(--warning); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">省${plan.discount}</span>` : ''}
-                    </div>
-                    
-                    ${benefitsHtml}
-                    
-                    <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
-                        <button class="btn btn-sm btn-secondary" onclick="editVipPlan('${plan.id}')">
-                            <i class="fas fa-edit"></i>编辑
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="toggleVipPlan('${plan.id}')">
-                            <i class="fas fa-ban"></i>${plan.is_active ? '禁用' : '启用'}
-                        </button>
-                    </div>
-                `;
-
-                card.appendChild(header);
-                card.appendChild(content);
-                container.appendChild(card);
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/vip-plans`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-        }
+            const data = await response.json();
 
-        // 编辑VIP套餐
-        window.editVipPlan = async function(id) {
-            const token = localStorage.getItem('token');
+            if (data.success && data.data.length > 0) {
+                renderVipPlans(data.data);
+            } else {
+                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">暂无VIP套餐，点击"新增VIP套餐"创建</div>';
+            }
+        } catch (error) {
+            console.error('加载VIP套餐失败:', error);
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--error);">加载失败，请重试</div>';
+        }
+    }
+
+    function renderVipPlans(plans) {
+        const container = document.getElementById('vipPlanList');
+        container.innerHTML = '';
+
+        plans.forEach(plan => {
+            const features = plan.features ? plan.features.split('\n') : [];
+            const card = document.createElement('div');
+            card.className = 'card';
             
-            try {
-                const response = await fetch(`${API_BASE}/vip-plans/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const plan = data.data;
-                    document.getElementById('planId').value = plan.id;
-                    document.getElementById('planName').value = plan.name;
-                    document.getElementById('planDays').value = plan.duration_days;
-                    document.getElementById('planPrice').value = plan.price_usd;
-                    document.getElementById('planOriginalPrice').value = plan.original_price || '';
-                    document.getElementById('planTag').value = plan.tag || '';
-                    document.getElementById('planSort').value = plan.sort_order || 1;
-                    document.getElementById('planStatus').value = plan.is_active ? 'active' : 'inactive';
-                    document.getElementById('planBenefits').value = plan.features || '';
-                    
-                    document.getElementById('vipPlanModalTitle').textContent = '编辑VIP套餐';
-                    adminCore.openModal('addVipPlanModal');
-                }
-            } catch (error) {
-                alert('加载VIP套餐失败');
-            }
-        };
-
-        // 切换VIP套餐状态
-        window.toggleVipPlan = async function(id) {
-            const token = localStorage.getItem('token');
+            let borderColor = 'var(--primary)';
+            if (plan.name.includes('季度')) borderColor = 'var(--purple)';
+            if (plan.name.includes('年度')) borderColor = 'var(--success)';
             
-            try {
-                // 先获取当前状态
-                const getRes = await fetch(`${API_BASE}/vip-plans/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+            card.style.borderTop = `4px solid ${borderColor}`;
+
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `
+                <h3 class="card-title">${plan.name}</h3>
+                <div>
+                    ${plan.is_popular ? '<span class="status-badge status-active">热门</span>' : ''}
+                    ${plan.is_recommended ? '<span class="status-badge status-vip">推荐</span>' : ''}
+                </div>
+            `;
+
+            const content = document.createElement('div');
+            content.className = 'card-content';
+            
+            let benefitsHtml = '';
+            if (features.length > 0) {
+                benefitsHtml = '<div class="benefits-list">';
+                features.forEach(f => {
+                    benefitsHtml += `<div class="benefit-item"><i class="fas fa-check-circle" style="color:var(--success);"></i><span>${f}</span></div>`;
                 });
-                const getData = await getRes.json();
-
-                if (getData.success) {
-                    const currentStatus = getData.data.is_active;
-                    const action = currentStatus ? '禁用' : '启用';
-                    
-                    if (!confirm(`确定要${action}该套餐吗？`)) return;
-
-                    const response = await fetch(`${API_BASE}/vip-plans/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ is_active: !currentStatus })
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        loadVipPlans();
-                    } else {
-                        alert('操作失败：' + data.error);
-                    }
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+                benefitsHtml += '</div>';
             }
-        };
 
-        // 保存VIP套餐
-        async function saveVipPlan() {
-            const token = localStorage.getItem('token');
-            const planId = document.getElementById('planId').value;
+            content.innerHTML = `
+                <div style="margin-bottom:16px;">
+                    <span class="price-tag">$${plan.price_usd}</span>
+                    ${plan.original_price ? `<span class="original-price">$${plan.original_price}</span>` : ''}
+                    <span style="margin-left:12px; color:var(--success);">${plan.duration_days}天</span>
+                    ${plan.discount ? `<span style="margin-left:12px; background:var(--warning); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">省${plan.discount}</span>` : ''}
+                </div>
+                
+                ${benefitsHtml}
+                
+                <div style="margin-top:16px; display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="btn btn-sm btn-secondary" onclick="editVipPlan('${plan.id}')">
+                        <i class="fas fa-edit"></i>编辑
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="toggleVipPlan('${plan.id}')">
+                        <i class="fas fa-ban"></i>${plan.is_active ? '禁用' : '启用'}
+                    </button>
+                </div>
+            `;
 
-            const formData = {
-                name: document.getElementById('planName').value,
-                duration_days: parseInt(document.getElementById('planDays').value),
-                price_usd: parseFloat(document.getElementById('planPrice').value),
-                original_price: document.getElementById('planOriginalPrice').value ? parseFloat(document.getElementById('planOriginalPrice').value) : null,
-                tag: document.getElementById('planTag').value,
-                sort_order: parseInt(document.getElementById('planSort').value),
-                is_active: document.getElementById('planStatus').value === 'active',
-                features: document.getElementById('planBenefits').value
-            };
+            card.appendChild(header);
+            card.appendChild(content);
+            container.appendChild(card);
+        });
+    }
 
-            const url = planId ? `${API_BASE}/vip-plans/${planId}` : `${API_BASE}/vip-plans`;
-            const method = planId ? 'PUT' : 'POST';
+    window.editVipPlan = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/vip-plans/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
 
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addVipPlanModal');
-                    loadVipPlans();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+            if (data.success) {
+                const plan = data.data;
+                document.getElementById('planId').value = plan.id;
+                document.getElementById('planName').value = plan.name;
+                document.getElementById('planDays').value = plan.duration_days;
+                document.getElementById('planPrice').value = plan.price_usd;
+                document.getElementById('planOriginalPrice').value = plan.original_price || '';
+                document.getElementById('planTag').value = plan.tag || '';
+                document.getElementById('planSort').value = plan.sort_order || 1;
+                document.getElementById('planStatus').value = plan.is_active ? 'active' : 'inactive';
+                document.getElementById('planBenefits').value = plan.features || '';
+                
+                document.getElementById('vipPlanModalTitle').textContent = '编辑VIP套餐';
+                adminCore.openModal('addVipPlanModal');
             }
+        } catch (error) {
+            alert('加载VIP套餐失败');
         }
+    };
 
-        // 加载全局权益设置
-        async function loadGlobalBenefits() {
-            const container = document.getElementById('globalBenefitsList');
-            const token = localStorage.getItem('token');
+    window.toggleVipPlan = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const getRes = await fetch(`${window.API_BASE}/vip-plans/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const getData = await getRes.json();
 
-            try {
-                const response = await fetch(`${API_BASE}/settings/vip-benefits`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+            if (getData.success) {
+                const currentStatus = getData.data.is_active;
+                const action = currentStatus ? '禁用' : '启用';
+                
+                if (!confirm(`确定要${action}该套餐吗？`)) return;
 
-                if (data.success) {
-                    const benefits = data.data || [
-                        { name: '无广告观看', enabled: true },
-                        { name: '高清画质 (1080p)', enabled: true },
-                        { name: '专属VIP剧集', enabled: true },
-                        { name: '离线下载', enabled: false },
-                        { name: '多设备同时观看', enabled: false }
-                    ];
-
-                    container.innerHTML = '';
-                    benefits.forEach(b => {
-                        const div = document.createElement('div');
-                        div.className = 'benefit-item';
-                        div.innerHTML = `
-                            <input type="checkbox" class="global-benefit" data-name="${b.name}" ${b.enabled ? 'checked' : ''}>
-                            <span>${b.name}</span>
-                        `;
-                        container.appendChild(div);
-                    });
-                }
-            } catch (error) {
-                console.error('加载全局权益失败:', error);
-                container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
-            }
-        }
-
-        // 保存全局权益设置
-        async function saveGlobalBenefits() {
-            const token = localStorage.getItem('token');
-            const checkboxes = document.querySelectorAll('.global-benefit');
-            const benefits = Array.from(checkboxes).map(cb => ({
-                name: cb.dataset.name,
-                enabled: cb.checked
-            }));
-
-            try {
-                const response = await fetch(`${API_BASE}/settings/vip-benefits`, {
+                // 修改：使用 window.API_BASE
+                const response = await fetch(`${window.API_BASE}/vip-plans/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ benefits })
+                    body: JSON.stringify({ is_active: !currentStatus })
                 });
                 const data = await response.json();
 
                 if (data.success) {
-                    alert('全局设置保存成功');
+                    loadVipPlans();
                 } else {
-                    alert('保存失败：' + data.error);
+                    alert('操作失败：' + data.error);
                 }
-            } catch (error) {
-                alert('网络错误，请重试');
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    };
 
-        // 加载最近购买记录
-        async function loadPurchaseHistory() {
-            const tbody = document.getElementById('purchaseHistoryBody');
-            const token = localStorage.getItem('token');
+    async function saveVipPlan() {
+        const token = localStorage.getItem('token');
+        const planId = document.getElementById('planId').value;
 
-            try {
-                const response = await fetch(`${API_BASE}/vip-purchases?limit=5`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+        const formData = {
+            name: document.getElementById('planName').value,
+            duration_days: parseInt(document.getElementById('planDays').value),
+            price_usd: parseFloat(document.getElementById('planPrice').value),
+            original_price: document.getElementById('planOriginalPrice').value ? parseFloat(document.getElementById('planOriginalPrice').value) : null,
+            tag: document.getElementById('planTag').value,
+            sort_order: parseInt(document.getElementById('planSort').value),
+            is_active: document.getElementById('planStatus').value === 'active',
+            features: document.getElementById('planBenefits').value
+        };
+
+        const url = planId ? `${window.API_BASE}/vip-plans/${planId}` : `${window.API_BASE}/vip-plans`;
+        const method = planId ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('addVipPlanModal');
+                loadVipPlans();
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    async function loadGlobalBenefits() {
+        const container = document.getElementById('globalBenefitsList');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/vip-benefits`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const benefits = data.data || [
+                    { name: '无广告观看', enabled: true },
+                    { name: '高清画质 (1080p)', enabled: true },
+                    { name: '专属VIP剧集', enabled: true },
+                    { name: '离线下载', enabled: false },
+                    { name: '多设备同时观看', enabled: false }
+                ];
+
+                container.innerHTML = '';
+                benefits.forEach(b => {
+                    const div = document.createElement('div');
+                    div.className = 'benefit-item';
+                    div.innerHTML = `
+                        <input type="checkbox" class="global-benefit" data-name="${b.name}" ${b.enabled ? 'checked' : ''}>
+                        <span>${b.name}</span>
+                    `;
+                    container.appendChild(div);
                 });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    tbody.innerHTML = '';
-                    data.data.forEach(purchase => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${purchase.username || '-'}</td>
-                            <td>${purchase.plan_name}</td>
-                            <td>$${purchase.amount}</td>
-                            <td>${purchase.created_at}</td>
-                            <td>${purchase.expires_at || '永久'}</td>
-                            <td><span class="status-badge ${purchase.status === 'active' ? 'status-active' : 'status-inactive'}">${purchase.status === 'active' ? '有效' : '已过期'}</span></td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">暂无购买记录</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载购买记录失败:', error);
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">加载失败</td></tr>';
             }
+        } catch (error) {
+            console.error('加载全局权益失败:', error);
+            container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
         }
-    </script>
+    }
+
+    async function saveGlobalBenefits() {
+        const token = localStorage.getItem('token');
+        const checkboxes = document.querySelectorAll('.global-benefit');
+        const benefits = Array.from(checkboxes).map(cb => ({
+            name: cb.dataset.name,
+            enabled: cb.checked
+        }));
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/vip-benefits`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ benefits })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('全局设置保存成功');
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    async function loadPurchaseHistory() {
+        const tbody = document.getElementById('purchaseHistoryBody');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/vip-purchases?limit=5`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                tbody.innerHTML = '';
+                data.data.forEach(purchase => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${purchase.username || '-'}</td>
+                        <td>${purchase.plan_name}</td>
+                        <td>$${purchase.amount}</td>
+                        <td>${purchase.created_at}</td>
+                        <td>${purchase.expires_at || '永久'}</td>
+                        <td><span class="status-badge ${purchase.status === 'active' ? 'status-active' : 'status-inactive'}">${purchase.status === 'active' ? '有效' : '已过期'}</span></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">暂无购买记录</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载购买记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+</script>
 </body>
 </html>

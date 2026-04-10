@@ -316,443 +316,420 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-content.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let categories = [];
-        let currentPage = 1;
-        let searchTimer = null;
+<script src="js/admin-content.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let categories = [];
+    let currentPage = 1;
+    let searchTimer = null;
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载分类列表
-            await loadCategories();
+        await loadCategories();
 
-            // 绑定事件
-            document.getElementById('addCategoryBtn').addEventListener('click', () => {
-                document.getElementById('categoryId').value = '';
-                document.getElementById('categoryForm').reset();
-                document.getElementById('categoryModalTitle').textContent = '添加分类';
-                document.getElementById('categoryStatus').value = 'active';
-                adminCore.openModal('addCategoryModal');
-            });
-
-            document.getElementById('closeCategoryModal').addEventListener('click', () => {
-                adminCore.closeModal('addCategoryModal');
-            });
-
-            document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
-                adminCore.closeModal('addCategoryModal');
-            });
-
-            document.getElementById('saveCategoryBtn').addEventListener('click', saveCategory);
-
-            document.getElementById('sortCategoriesBtn').addEventListener('click', openSortModal);
-
-            document.getElementById('closeSortModal').addEventListener('click', () => {
-                adminCore.closeModal('sortCategoryModal');
-            });
-
-            document.getElementById('cancelSortBtn').addEventListener('click', () => {
-                adminCore.closeModal('sortCategoryModal');
-            });
-
-            document.getElementById('saveSortBtn').addEventListener('click', saveSortOrder);
-
-            // 搜索功能
-            document.getElementById('searchCategory').addEventListener('input', (e) => {
-                if (searchTimer) clearTimeout(searchTimer);
-                searchTimer = setTimeout(() => {
-                    filterCategories(e.target.value);
-                }, 300);
-            });
-
-            // 分页点击
-            document.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        renderCategories();
-                        
-                        // 更新分页激活状态
-                        document.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
+        document.getElementById('addCategoryBtn').addEventListener('click', () => {
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryForm').reset();
+            document.getElementById('categoryModalTitle').textContent = '添加分类';
+            document.getElementById('categoryStatus').value = 'active';
+            adminCore.openModal('addCategoryModal');
         });
 
-        // 加载分类列表
-        async function loadCategories() {
-            const tbody = document.getElementById('categoryTableBody');
-            const token = localStorage.getItem('token');
+        document.getElementById('closeCategoryModal').addEventListener('click', () => {
+            adminCore.closeModal('addCategoryModal');
+        });
 
-            try {
-                const response = await fetch(`${API_BASE}/categories`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
+            adminCore.closeModal('addCategoryModal');
+        });
 
-                if (data.success) {
-                    categories = data.data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        document.getElementById('saveCategoryBtn').addEventListener('click', saveCategory);
+        document.getElementById('sortCategoriesBtn').addEventListener('click', openSortModal);
+        document.getElementById('closeSortModal').addEventListener('click', () => {
+            adminCore.closeModal('sortCategoryModal');
+        });
+        document.getElementById('cancelSortBtn').addEventListener('click', () => {
+            adminCore.closeModal('sortCategoryModal');
+        });
+        document.getElementById('saveSortBtn').addEventListener('click', saveSortOrder);
+
+        document.getElementById('searchCategory').addEventListener('input', (e) => {
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                filterCategories(e.target.value);
+            }, 300);
+        });
+
+        document.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
                     renderCategories();
-                    updateCategoryStats();
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+                    
+                    document.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
                 }
-            } catch (error) {
-                console.error('加载分类失败:', error);
+            });
+        });
+    });
+
+    async function loadCategories() {
+        const tbody = document.getElementById('categoryTableBody');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/categories`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                categories = data.data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                renderCategories();
+                updateCategoryStats();
+            } else {
                 tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
             }
+        } catch (error) {
+            console.error('加载分类失败:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderCategories() {
+        const tbody = document.getElementById('categoryTableBody');
+        
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无分类，点击"添加分类"创建</td></tr>';
+            return;
         }
 
-        // 渲染分类列表
-        function renderCategories() {
-            const tbody = document.getElementById('categoryTableBody');
+        const pageSize = 10;
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageData = categories.slice(start, end);
+
+        tbody.innerHTML = '';
+        pageData.forEach((cat, index) => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-id', cat.id);
+            row.setAttribute('data-sort', cat.sort_order || 0);
             
-            if (!categories || categories.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无分类，点击"添加分类"创建</td></tr>';
-                return;
+            row.innerHTML = `
+                <td>
+                    <i class="fas fa-grip-vertical" style="color:var(--gray); cursor:move;" draggable="true"></i>
+                    <span style="margin-left:8px;">${cat.sort_order || start + index + 1}</span>
+                </td>
+                <td>${cat.id.substring(0, 8)}...</td>
+                <td>${cat.name}</td>
+                <td>${cat.slug || '-'}</td>
+                <td>${cat.description || '-'}</td>
+                <td>${cat.drama_count || 0}</td>
+                <td>
+                    <span class="status-badge ${cat.is_active ? 'status-active' : 'status-inactive'}">
+                        ${cat.is_active ? '启用' : '禁用'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editCategory('${cat.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCategory('${cat.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            const dragHandle = row.querySelector('.fa-grip-vertical');
+            dragHandle.addEventListener('dragstart', handleDragStart);
+            dragHandle.addEventListener('dragend', handleDragEnd);
+            row.addEventListener('dragover', handleDragOver);
+            row.addEventListener('drop', handleDrop);
+
+            tbody.appendChild(row);
+        });
+
+        updatePagination();
+    }
+
+    window.editCategory = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/categories/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const cat = data.data;
+                document.getElementById('categoryId').value = cat.id;
+                document.getElementById('categoryName').value = cat.name;
+                document.getElementById('categorySlug').value = cat.slug || '';
+                document.getElementById('categoryDescription').value = cat.description || '';
+                document.getElementById('categorySort').value = cat.sort_order || 0;
+                document.getElementById('categoryStatus').value = cat.is_active ? 'active' : 'inactive';
+                
+                document.getElementById('categoryModalTitle').textContent = '编辑分类';
+                adminCore.openModal('addCategoryModal');
+            }
+        } catch (error) {
+            alert('加载分类失败');
+        }
+    };
+
+    window.deleteCategory = async function(id) {
+        if (!confirm('确定要删除该分类吗？删除后可能影响相关剧集。')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/categories/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadCategories();
+            } else {
+                alert('删除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    async function saveCategory() {
+        const token = localStorage.getItem('token');
+        const categoryId = document.getElementById('categoryId').value;
+
+        const formData = {
+            name: document.getElementById('categoryName').value,
+            slug: document.getElementById('categorySlug').value,
+            description: document.getElementById('categoryDescription').value,
+            sort_order: parseInt(document.getElementById('categorySort').value) || 0,
+            is_active: document.getElementById('categoryStatus').value === 'active'
+        };
+
+        if (!formData.name) {
+            alert('分类名称不能为空');
+            return;
+        }
+
+        const url = categoryId ? `${window.API_BASE}/categories/${categoryId}` : `${window.API_BASE}/categories`;
+        const method = categoryId ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('addCategoryModal');
+                await loadCategories();
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    function updateCategoryStats() {
+        const total = categories.length;
+        const active = categories.filter(c => c.is_active).length;
+        const totalDramas = categories.reduce((sum, c) => sum + (c.drama_count || 0), 0);
+        
+        document.getElementById('totalCategories').textContent = total;
+        document.getElementById('activeCategories').textContent = active;
+        document.getElementById('totalDramasInCategories').textContent = totalDramas;
+    }
+
+    function filterCategories(searchText) {
+        if (!searchText) {
+            renderCategories();
+            return;
+        }
+
+        const filtered = categories.filter(cat => 
+            cat.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            (cat.description && cat.description.toLowerCase().includes(searchText.toLowerCase()))
+        );
+
+        const tbody = document.getElementById('categoryTableBody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">未找到匹配的分类</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        filtered.forEach(cat => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${cat.sort_order || 0}</td>
+                <td>${cat.id.substring(0, 8)}...</td>
+                <td>${cat.name}</td>
+                <td>${cat.slug || '-'}</td>
+                <td>${cat.description || '-'}</td>
+                <td>${cat.drama_count || 0}</td>
+                <td>
+                    <span class="status-badge ${cat.is_active ? 'status-active' : 'status-inactive'}">
+                        ${cat.is_active ? '启用' : '禁用'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editCategory('${cat.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCategory('${cat.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function openSortModal() {
+        const container = document.getElementById('sortableCategoryList');
+        
+        container.innerHTML = '';
+        categories.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(cat => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:move;';
+            item.setAttribute('data-id', cat.id);
+            item.innerHTML = `
+                <i class="fas fa-grip-vertical" style="color:var(--gray);"></i>
+                <span style="flex:1;">${cat.name}</span>
+                <span style="color:var(--gray); font-size:12px;">${cat.drama_count || 0}部剧集</span>
+            `;
+            container.appendChild(item);
+        });
+
+        adminCore.openModal('sortCategoryModal');
+    }
+
+    async function saveSortOrder() {
+        const items = document.querySelectorAll('#sortableCategoryList > div');
+        const updates = [];
+        
+        items.forEach((item, index) => {
+            const id = item.getAttribute('data-id');
+            updates.push({ id, sort_order: index + 1 });
+        });
+
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/categories/batch-sort`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ updates })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('sortCategoryModal');
+                await loadCategories();
+            } else {
+                alert('保存排序失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    let draggedRow = null;
+
+    function handleDragStart(e) {
+        draggedRow = this.closest('tr');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnd(e) {
+        draggedRow = null;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const targetRow = this.closest('tr');
+        if (draggedRow && targetRow && draggedRow !== targetRow) {
+            const tbody = document.getElementById('categoryTableBody');
+            const rows = Array.from(tbody.children);
+            const draggedIndex = rows.indexOf(draggedRow);
+            const targetIndex = rows.indexOf(targetRow);
+            
+            if (draggedIndex < targetIndex) {
+                targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
+            } else {
+                targetRow.parentNode.insertBefore(draggedRow, targetRow);
             }
 
-            // 分页（每页10条）
-            const pageSize = 10;
-            const start = (currentPage - 1) * pageSize;
-            const end = start + pageSize;
-            const pageData = categories.slice(start, end);
-
-            tbody.innerHTML = '';
-            pageData.forEach((cat, index) => {
-                const row = document.createElement('tr');
-                row.setAttribute('data-id', cat.id);
-                row.setAttribute('data-sort', cat.sort_order || 0);
-                
-                row.innerHTML = `
-                    <td>
-                        <i class="fas fa-grip-vertical" style="color:var(--gray); cursor:move;" draggable="true"></i>
-                        <span style="margin-left:8px;">${cat.sort_order || start + index + 1}</span>
-                    </td>
-                    <td>${cat.id.substring(0, 8)}...</td>
-                    <td>${cat.name}</td>
-                    <td>${cat.slug || '-'}</td>
-                    <td>${cat.description || '-'}</td>
-                    <td>${cat.drama_count || 0}</td>
-                    <td>
-                        <span class="status-badge ${cat.is_active ? 'status-active' : 'status-inactive'}">
-                            ${cat.is_active ? '启用' : '禁用'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editCategory('${cat.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteCategory('${cat.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-
-                // 添加拖拽事件
-                const dragHandle = row.querySelector('.fa-grip-vertical');
-                dragHandle.addEventListener('dragstart', handleDragStart);
-                dragHandle.addEventListener('dragend', handleDragEnd);
-                row.addEventListener('dragover', handleDragOver);
-                row.addEventListener('drop', handleDrop);
-
-                tbody.appendChild(row);
+            rows.forEach((row, idx) => {
+                const sortSpan = row.querySelector('td:first-child span');
+                if (sortSpan) {
+                    sortSpan.textContent = idx + 1;
+                }
             });
+        }
+    }
 
-            // 更新分页信息
-            updatePagination();
+    function updatePagination() {
+        const totalPages = Math.ceil(categories.length / 10);
+        const container = document.getElementById('categoryPagination');
+        
+        if (totalPages <= 1) {
+            container.style.display = 'none';
+            return;
         }
 
-        // 编辑分类
-        window.editCategory = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/categories/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        container.style.display = 'flex';
+        let html = '';
+        for (let i = 1; i <= totalPages; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
+        }
+        container.innerHTML = html;
 
-                if (data.success) {
-                    const cat = data.data;
-                    document.getElementById('categoryId').value = cat.id;
-                    document.getElementById('categoryName').value = cat.name;
-                    document.getElementById('categorySlug').value = cat.slug || '';
-                    document.getElementById('categoryDescription').value = cat.description || '';
-                    document.getElementById('categorySort').value = cat.sort_order || 0;
-                    document.getElementById('categoryStatus').value = cat.is_active ? 'active' : 'inactive';
+        container.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
+                    renderCategories();
                     
-                    document.getElementById('categoryModalTitle').textContent = '编辑分类';
-                    adminCore.openModal('addCategoryModal');
+                    document.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
                 }
-            } catch (error) {
-                alert('加载分类失败');
-            }
-        };
-
-        // 删除分类
-        window.deleteCategory = async function(id) {
-            if (!confirm('确定要删除该分类吗？删除后可能影响相关剧集。')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/categories/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadCategories();
-                } else {
-                    alert('删除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 保存分类
-        async function saveCategory() {
-            const token = localStorage.getItem('token');
-            const categoryId = document.getElementById('categoryId').value;
-
-            const formData = {
-                name: document.getElementById('categoryName').value,
-                slug: document.getElementById('categorySlug').value,
-                description: document.getElementById('categoryDescription').value,
-                sort_order: parseInt(document.getElementById('categorySort').value) || 0,
-                is_active: document.getElementById('categoryStatus').value === 'active'
-            };
-
-            if (!formData.name) {
-                alert('分类名称不能为空');
-                return;
-            }
-
-            const url = categoryId ? `${API_BASE}/categories/${categoryId}` : `${API_BASE}/categories`;
-            const method = categoryId ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addCategoryModal');
-                    await loadCategories();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 更新分类统计
-        function updateCategoryStats() {
-            const total = categories.length;
-            const active = categories.filter(c => c.is_active).length;
-            const totalDramas = categories.reduce((sum, c) => sum + (c.drama_count || 0), 0);
-            
-            document.getElementById('totalCategories').textContent = total;
-            document.getElementById('activeCategories').textContent = active;
-            document.getElementById('totalDramasInCategories').textContent = totalDramas;
-        }
-
-        // 筛选分类
-        function filterCategories(searchText) {
-            if (!searchText) {
-                renderCategories();
-                return;
-            }
-
-            const filtered = categories.filter(cat => 
-                cat.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                (cat.description && cat.description.toLowerCase().includes(searchText.toLowerCase()))
-            );
-
-            // 临时渲染筛选结果
-            const tbody = document.getElementById('categoryTableBody');
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">未找到匹配的分类</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '';
-            filtered.forEach(cat => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${cat.sort_order || 0}</td>
-                    <td>${cat.id.substring(0, 8)}...</td>
-                    <td>${cat.name}</td>
-                    <td>${cat.slug || '-'}</td>
-                    <td>${cat.description || '-'}</td>
-                    <td>${cat.drama_count || 0}</td>
-                    <td>
-                        <span class="status-badge ${cat.is_active ? 'status-active' : 'status-inactive'}">
-                            ${cat.is_active ? '启用' : '禁用'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editCategory('${cat.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteCategory('${cat.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
             });
-        }
-
-        // 打开排序模态框
-        function openSortModal() {
-            const container = document.getElementById('sortableCategoryList');
-            
-            container.innerHTML = '';
-            categories.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(cat => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:move;';
-                item.setAttribute('data-id', cat.id);
-                item.innerHTML = `
-                    <i class="fas fa-grip-vertical" style="color:var(--gray);"></i>
-                    <span style="flex:1;">${cat.name}</span>
-                    <span style="color:var(--gray); font-size:12px;">${cat.drama_count || 0}部剧集</span>
-                `;
-                container.appendChild(item);
-            });
-
-            adminCore.openModal('sortCategoryModal');
-        }
-
-        // 保存排序
-        async function saveSortOrder() {
-            const items = document.querySelectorAll('#sortableCategoryList > div');
-            const updates = [];
-            
-            items.forEach((item, index) => {
-                const id = item.getAttribute('data-id');
-                updates.push({ id, sort_order: index + 1 });
-            });
-
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/categories/batch-sort`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ updates })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('sortCategoryModal');
-                    await loadCategories();
-                } else {
-                    alert('保存排序失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 拖拽相关函数
-        let draggedRow = null;
-
-        function handleDragStart(e) {
-            draggedRow = this.closest('tr');
-            e.dataTransfer.effectAllowed = 'move';
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        }
-
-        function handleDragEnd(e) {
-            draggedRow = null;
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            const targetRow = this.closest('tr');
-            if (draggedRow && targetRow && draggedRow !== targetRow) {
-                const tbody = document.getElementById('categoryTableBody');
-                const rows = Array.from(tbody.children);
-                const draggedIndex = rows.indexOf(draggedRow);
-                const targetIndex = rows.indexOf(targetRow);
-                
-                if (draggedIndex < targetIndex) {
-                    targetRow.parentNode.insertBefore(draggedRow, targetRow.nextSibling);
-                } else {
-                    targetRow.parentNode.insertBefore(draggedRow, targetRow);
-                }
-
-                // 更新排序值
-                rows.forEach((row, idx) => {
-                    const sortSpan = row.querySelector('td:first-child span');
-                    if (sortSpan) {
-                        sortSpan.textContent = idx + 1;
-                    }
-                });
-            }
-        }
-
-        // 更新分页
-        function updatePagination() {
-            const totalPages = Math.ceil(categories.length / 10);
-            const container = document.getElementById('categoryPagination');
-            
-            if (totalPages <= 1) {
-                container.style.display = 'none';
-                return;
-            }
-
-            container.style.display = 'flex';
-            let html = '';
-            for (let i = 1; i <= totalPages; i++) {
-                const activeClass = i === currentPage ? 'active' : '';
-                html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
-            }
-            container.innerHTML = html;
-
-            // 重新绑定点击事件
-            container.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        renderCategories();
-                        
-                        document.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
-        }
-    </script>
+        });
+    }
+</script>
 </body>
 </html>

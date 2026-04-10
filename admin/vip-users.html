@@ -252,330 +252,331 @@
 
     <script src="/js/admin-core.js"></script>
     <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let currentPage = 1;
-        let currentFilters = { search: '', status: 'all' };
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let currentPage = 1;
+    let currentFilters = { search: '', status: 'all' };
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            await loadVipUsers();
+        await loadVipUsers();
 
-            // 绑定事件
-            document.getElementById('vipSearch').addEventListener('input', debounce(() => {
-                currentFilters.search = document.getElementById('vipSearch').value;
-                currentPage = 1;
-                loadVipUsers();
-            }, 500));
+        document.getElementById('vipSearch').addEventListener('input', debounce(() => {
+            currentFilters.search = document.getElementById('vipSearch').value;
+            currentPage = 1;
+            loadVipUsers();
+        }, 500));
 
-            document.getElementById('vipStatusFilter').addEventListener('change', () => {
-                currentFilters.status = document.getElementById('vipStatusFilter').value;
-                currentPage = 1;
-                loadVipUsers();
-            });
-
-            document.getElementById('exportVipBtn').addEventListener('click', exportVipUsers);
-
-            document.getElementById('closeEditVipModal').addEventListener('click', () => {
-                adminCore.closeModal('editVipModal');
-            });
-            document.getElementById('cancelEditVipBtn').addEventListener('click', () => {
-                adminCore.closeModal('editVipModal');
-            });
-            document.getElementById('updateVipBtn').addEventListener('click', updateVipUser);
+        document.getElementById('vipStatusFilter').addEventListener('change', () => {
+            currentFilters.status = document.getElementById('vipStatusFilter').value;
+            currentPage = 1;
+            loadVipUsers();
         });
 
-        async function loadVipUsers() {
-            const tbody = document.getElementById('vipTableBody');
-            const token = localStorage.getItem('token');
+        document.getElementById('exportVipBtn').addEventListener('click', exportVipUsers);
+        document.getElementById('closeEditVipModal').addEventListener('click', () => {
+            adminCore.closeModal('editVipModal');
+        });
+        document.getElementById('cancelEditVipBtn').addEventListener('click', () => {
+            adminCore.closeModal('editVipModal');
+        });
+        document.getElementById('updateVipBtn').addEventListener('click', updateVipUser);
+    });
 
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载中...</td></tr>';
+    async function loadVipUsers() {
+        const tbody = document.getElementById('vipTableBody');
+        const token = localStorage.getItem('token');
 
-            try {
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    limit: 10,
-                    search: currentFilters.search,
-                    status: currentFilters.status
-                });
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载中...</td></tr>';
 
-                const response = await fetch(`${API_BASE}/users/vip?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        try {
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 10,
+                search: currentFilters.search,
+                status: currentFilters.status
+            });
 
-                if (data.success) {
-                    renderVipUsers(data.data);
-                    updateVipStats(data.stats);
-                    if (data.pagination) {
-                        updatePagination(data.pagination);
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/vip?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                renderVipUsers(data.data);
+                updateVipStats(data.stats);
+                if (data.pagination) {
+                    updatePagination(data.pagination);
                 }
-            } catch (error) {
-                console.error('加载VIP用户失败:', error);
+            } else {
                 tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
             }
+        } catch (error) {
+            console.error('加载VIP用户失败:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderVipUsers(users) {
+        const tbody = document.getElementById('vipTableBody');
+        
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无VIP用户</td></tr>';
+            return;
         }
 
-        function renderVipUsers(users) {
-            const tbody = document.getElementById('vipTableBody');
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
             
-            if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无VIP用户</td></tr>';
-                return;
+            let remainingDays = '永久';
+            let statusClass = 'status-active';
+            let statusText = '有效';
+            
+            if (user.vip_expires_at) {
+                const expires = new Date(user.vip_expires_at);
+                const today = new Date();
+                const diffTime = expires - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays <= 0) {
+                    remainingDays = '已过期';
+                    statusClass = 'status-inactive';
+                    statusText = '已过期';
+                } else if (diffDays <= 7) {
+                    remainingDays = `${diffDays}天`;
+                    statusClass = 'status-warning';
+                    statusText = '即将到期';
+                } else {
+                    remainingDays = `${diffDays}天`;
+                }
             }
 
-            tbody.innerHTML = '';
-            
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                
-                // 计算剩余天数
-                let remainingDays = '永久';
-                let statusClass = 'status-active';
-                let statusText = '有效';
+            row.innerHTML = `
+                <td>${user.id.substring(0, 8)}...</td>
+                <td>${user.nickname || user.username || '-'}</td>
+                <td>${user.email}</td>
+                <td>${user.created_at ? user.created_at.substring(0, 10) : '-'}</td>
+                <td>${user.vip_expires_at ? user.vip_expires_at.substring(0, 10) : '永久'}</td>
+                <td>${remainingDays}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editVipUser('${user.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    ${user.is_vip ? 
+                        `<button class="btn btn-sm btn-warning" onclick="cancelVip('${user.id}')">取消VIP</button>` : 
+                        `<button class="btn btn-sm btn-success" onclick="setVip('${user.id}')">设为VIP</button>`
+                    }
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateVipStats(stats) {
+        document.getElementById('totalVip').textContent = stats?.total || 0;
+        document.getElementById('activeVip').textContent = stats?.active || 0;
+        document.getElementById('expiringSoon').textContent = stats?.expiringSoon || 0;
+        document.getElementById('expiredVip').textContent = stats?.expired || 0;
+    }
+
+    window.editVipUser = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const user = data.data;
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUsername').value = user.nickname || user.username;
+                document.getElementById('editEmail').value = user.email;
+                document.getElementById('editVipStatus').value = user.is_vip ? '1' : '0';
                 
                 if (user.vip_expires_at) {
-                    const expires = new Date(user.vip_expires_at);
-                    const today = new Date();
-                    const diffTime = expires - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays <= 0) {
-                        remainingDays = '已过期';
-                        statusClass = 'status-inactive';
-                        statusText = '已过期';
-                    } else if (diffDays <= 7) {
-                        remainingDays = `${diffDays}天`;
-                        statusClass = 'status-warning';
-                        statusText = '即将到期';
-                    } else {
-                        remainingDays = `${diffDays}天`;
-                    }
-                }
-
-                row.innerHTML = `
-                    <td>${user.id.substring(0, 8)}...</td>
-                    <td>${user.nickname || user.username || '-'}</td>
-                    <td>${user.email}</td>
-                    <td>${user.created_at ? user.created_at.substring(0, 10) : '-'}</td>
-                    <td>${user.vip_expires_at ? user.vip_expires_at.substring(0, 10) : '永久'}</td>
-                    <td>${remainingDays}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editVipUser('${user.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        ${user.is_vip ? 
-                            `<button class="btn btn-sm btn-warning" onclick="cancelVip('${user.id}')">取消VIP</button>` : 
-                            `<button class="btn btn-sm btn-success" onclick="setVip('${user.id}')">设为VIP</button>`
-                        }
-                     </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function updateVipStats(stats) {
-            document.getElementById('totalVip').textContent = stats?.total || 0;
-            document.getElementById('activeVip').textContent = stats?.active || 0;
-            document.getElementById('expiringSoon').textContent = stats?.expiringSoon || 0;
-            document.getElementById('expiredVip').textContent = stats?.expired || 0;
-        }
-
-        window.editVipUser = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const user = data.data;
-                    document.getElementById('editUserId').value = user.id;
-                    document.getElementById('editUsername').value = user.nickname || user.username;
-                    document.getElementById('editEmail').value = user.email;
-                    document.getElementById('editVipStatus').value = user.is_vip ? '1' : '0';
-                    
-                    if (user.vip_expires_at) {
-                        document.getElementById('editExpiresAt').value = user.vip_expires_at.slice(0, 16);
-                    } else {
-                        document.getElementById('editExpiresAt').value = '';
-                    }
-                    
-                    adminCore.openModal('editVipModal');
-                }
-            } catch (error) {
-                alert('加载用户失败');
-            }
-        };
-
-        window.setVip = async function(id) {
-            const expiresAt = prompt('设置VIP到期时间 (YYYY-MM-DD HH:MM:SS)，留空为永久', '');
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        is_vip: true, 
-                        vip_expires_at: expiresAt || null 
-                    })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadVipUsers();
-                    alert('设置成功！');
+                    document.getElementById('editExpiresAt').value = user.vip_expires_at.slice(0, 16);
                 } else {
-                    alert('操作失败：' + data.error);
+                    document.getElementById('editExpiresAt').value = '';
                 }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        window.cancelVip = async function(id) {
-            if (!confirm('确定要取消该用户的VIP资格吗？')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        is_vip: false, 
-                        vip_expires_at: null 
-                    })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadVipUsers();
-                    alert('取消成功！');
-                } else {
-                    alert('操作失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        async function updateVipUser() {
-            const token = localStorage.getItem('token');
-            const userId = document.getElementById('editUserId').value;
-
-            const formData = {
-                is_vip: document.getElementById('editVipStatus').value === '1',
-                vip_expires_at: document.getElementById('editExpiresAt').value || null
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('editVipModal');
-                    await loadVipUsers();
-                    alert('更新成功！');
-                } else {
-                    alert('更新失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        async function exportVipUsers() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/vip/export?status=${currentFilters.status}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
                 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `vip_users_${new Date().toISOString().split('T')[0]}.csv`;
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    alert('导出失败');
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+                adminCore.openModal('editVipModal');
             }
+        } catch (error) {
+            alert('加载用户失败');
         }
+    };
 
-        function updatePagination(pagination) {
-            const container = document.getElementById('vipPagination');
-            if (!container) return;
-
-            if (pagination.total_pages <= 1) {
-                container.style.display = 'none';
-                return;
-            }
-
-            container.style.display = 'flex';
-            let html = '';
-            for (let i = 1; i <= pagination.total_pages; i++) {
-                const activeClass = i === pagination.current_page ? 'active' : '';
-                html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
-            }
-            container.innerHTML = html;
-
-            container.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== pagination.current_page) {
-                        currentPage = page;
-                        loadVipUsers();
-                        
-                        container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
+    window.setVip = async function(id) {
+        const expiresAt = prompt('设置VIP到期时间 (YYYY-MM-DD HH:MM:SS)，留空为永久', '');
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    is_vip: true, 
+                    vip_expires_at: expiresAt || null 
+                })
             });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadVipUsers();
+                alert('设置成功！');
+            } else {
+                alert('操作失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    window.cancelVip = async function(id) {
+        if (!confirm('确定要取消该用户的VIP资格吗？')) return;
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    is_vip: false, 
+                    vip_expires_at: null 
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadVipUsers();
+                alert('取消成功！');
+            } else {
+                alert('操作失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    async function updateVipUser() {
+        const token = localStorage.getItem('token');
+        const userId = document.getElementById('editUserId').value;
+
+        const formData = {
+            is_vip: document.getElementById('editVipStatus').value === '1',
+            vip_expires_at: document.getElementById('editExpiresAt').value || null
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('editVipModal');
+                await loadVipUsers();
+                alert('更新成功！');
+            } else {
+                alert('更新失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    async function exportVipUsers() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/vip/export?status=${currentFilters.status}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vip_users_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('导出失败');
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    function updatePagination(pagination) {
+        const container = document.getElementById('vipPagination');
+        if (!container) return;
+
+        if (pagination.total_pages <= 1) {
+            container.style.display = 'none';
+            return;
         }
 
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
+        container.style.display = 'flex';
+        let html = '';
+        for (let i = 1; i <= pagination.total_pages; i++) {
+            const activeClass = i === pagination.current_page ? 'active' : '';
+            html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
         }
-    </script>
+        container.innerHTML = html;
+
+        container.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== pagination.current_page) {
+                    currentPage = page;
+                    loadVipUsers();
+                    
+                    container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        });
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+</script>
 </body>
 </html>

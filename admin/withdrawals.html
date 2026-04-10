@@ -231,150 +231,147 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let currentPage = 1;
-        let currentStatus = '';
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let currentPage = 1;
+    let currentStatus = '';
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            await loadWithdrawals();
+        await loadWithdrawals();
 
-            document.getElementById('applyFilterBtn').addEventListener('click', () => {
-                currentStatus = document.getElementById('statusFilter').value;
-                currentPage = 1;
-                loadWithdrawals();
-            });
-
-            // 分页点击委托
-            document.getElementById('withdrawalsPagination').addEventListener('click', (e) => {
-                if (e.target.classList.contains('page-item')) {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        loadWithdrawals();
-                    }
-                }
-            });
-
-            // 审核模态框相关
-            document.getElementById('closeReviewModal').addEventListener('click', () => {
-                document.getElementById('reviewModal').classList.remove('active');
-            });
-            document.getElementById('cancelReviewBtn').addEventListener('click', () => {
-                document.getElementById('reviewModal').classList.remove('active');
-            });
-            document.getElementById('submitReviewBtn').addEventListener('click', submitReview);
+        document.getElementById('applyFilterBtn').addEventListener('click', () => {
+            currentStatus = document.getElementById('statusFilter').value;
+            currentPage = 1;
+            loadWithdrawals();
         });
 
-        async function loadWithdrawals() {
-            const token = localStorage.getItem('token');
-            const params = new URLSearchParams({
-                page: currentPage,
-                limit: 10,
-            });
-            if (currentStatus) params.append('status', currentStatus);
-
-            try {
-                const response = await fetch(`${API_BASE}/withdrawals?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    renderWithdrawals(data.data, data.pagination);
-                } else {
-                    alert('加载失败：' + data.error);
-                }
-            } catch (error) {
-                console.error('加载提现列表失败', error);
-            }
-        }
-
-        function renderWithdrawals(withdrawals, pagination) {
-            const tbody = document.getElementById('withdrawalsTableBody');
-            if (withdrawals.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无提现记录</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = withdrawals.map(w => `
-                <tr>
-                    <td>${w.id.slice(0,8)}...</td>
-                    <td>${w.userNickname || w.userEmail}</td>
-                    <td>${w.amount}</td>
-                    <td>${w.method}</td>
-                    <td>${w.account}</td>
-                    <td>${getStatusBadge(w.status)}</td>
-                    <td>${new Date(w.createdAt).toLocaleString()}</td>
-                    <td>
-                        ${w.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="openReviewModal('${w.id}')">审核</button>` : ''}
-                        <button class="btn btn-sm btn-secondary" onclick="viewDetail('${w.id}')">详情</button>
-                    </td>
-                </tr>
-            `).join('');
-
-            // 渲染分页
-            const paginationDiv = document.getElementById('withdrawalsPagination');
-            let pages = '';
-            for (let i = 1; i <= pagination.pages; i++) {
-                pages += `<div class="page-item ${i === pagination.page ? 'active' : ''}" data-page="${i}">${i}</div>`;
-            }
-            paginationDiv.innerHTML = pages;
-        }
-
-        function getStatusBadge(status) {
-            const map = {
-                'pending': '<span style="color:orange;">待审核</span>',
-                'approved': '<span style="color:green;">已通过</span>',
-                'rejected': '<span style="color:red;">已拒绝</span>',
-                'completed': '<span style="color:blue;">已完成</span>'
-            };
-            return map[status] || status;
-        }
-
-        window.openReviewModal = function(id) {
-            document.getElementById('withdrawalId').value = id;
-            // 可以调用接口获取详情，这里简单起见直接打开模态框
-            document.getElementById('reviewModal').classList.add('active');
-        };
-
-        window.viewDetail = function(id) {
-            // 可跳转到详情页或弹出详情，暂略
-            alert('查看详情：' + id);
-        };
-
-        async function submitReview() {
-            const id = document.getElementById('withdrawalId').value;
-            const status = document.getElementById('reviewStatus').value;
-            const remark = document.getElementById('reviewRemark').value;
-
-            const token = localStorage.getItem('token');
-            try {
-                const response = await fetch(`${API_BASE}/withdrawals/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ status, remark })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    alert('操作成功');
-                    document.getElementById('reviewModal').classList.remove('active');
+        document.getElementById('withdrawalsPagination').addEventListener('click', (e) => {
+            if (e.target.classList.contains('page-item')) {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
                     loadWithdrawals();
-                } else {
-                    alert('操作失败：' + data.error);
                 }
-            } catch (error) {
-                alert('网络错误');
             }
+        });
+
+        document.getElementById('closeReviewModal').addEventListener('click', () => {
+            document.getElementById('reviewModal').classList.remove('active');
+        });
+        document.getElementById('cancelReviewBtn').addEventListener('click', () => {
+            document.getElementById('reviewModal').classList.remove('active');
+        });
+        document.getElementById('submitReviewBtn').addEventListener('click', submitReview);
+    });
+
+    async function loadWithdrawals() {
+        const token = localStorage.getItem('token');
+        const params = new URLSearchParams({
+            page: currentPage,
+            limit: 10,
+        });
+        if (currentStatus) params.append('status', currentStatus);
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/withdrawals?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                renderWithdrawals(data.data, data.pagination);
+            } else {
+                alert('加载失败：' + data.error);
+            }
+        } catch (error) {
+            console.error('加载提现列表失败', error);
         }
-    </script>
+    }
+
+    function renderWithdrawals(withdrawals, pagination) {
+        const tbody = document.getElementById('withdrawalsTableBody');
+        if (withdrawals.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无提现记录</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = withdrawals.map(w => `
+            <tr>
+                <td>${w.id.slice(0,8)}...</td>
+                <td>${w.userNickname || w.userEmail}</td>
+                <td>${w.amount}</td>
+                <td>${w.method}</td>
+                <td>${w.account}</td>
+                <td>${getStatusBadge(w.status)}</td>
+                <td>${new Date(w.createdAt).toLocaleString()}</td>
+                <td>
+                    ${w.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="openReviewModal('${w.id}')">审核</button>` : ''}
+                    <button class="btn btn-sm btn-secondary" onclick="viewDetail('${w.id}')">详情</button>
+                </td>
+            </tr>
+        `).join('');
+
+        const paginationDiv = document.getElementById('withdrawalsPagination');
+        let pages = '';
+        for (let i = 1; i <= pagination.pages; i++) {
+            pages += `<div class="page-item ${i === pagination.page ? 'active' : ''}" data-page="${i}">${i}</div>`;
+        }
+        paginationDiv.innerHTML = pages;
+    }
+
+    function getStatusBadge(status) {
+        const map = {
+            'pending': '<span style="color:orange;">待审核</span>',
+            'approved': '<span style="color:green;">已通过</span>',
+            'rejected': '<span style="color:red;">已拒绝</span>',
+            'completed': '<span style="color:blue;">已完成</span>'
+        };
+        return map[status] || status;
+    }
+
+    window.openReviewModal = function(id) {
+        document.getElementById('withdrawalId').value = id;
+        document.getElementById('reviewModal').classList.add('active');
+    };
+
+    window.viewDetail = function(id) {
+        alert('查看详情：' + id);
+    };
+
+    async function submitReview() {
+        const id = document.getElementById('withdrawalId').value;
+        const status = document.getElementById('reviewStatus').value;
+        const remark = document.getElementById('reviewRemark').value;
+
+        const token = localStorage.getItem('token');
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/withdrawals/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status, remark })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('操作成功');
+                document.getElementById('reviewModal').classList.remove('active');
+                loadWithdrawals();
+            } else {
+                alert('操作失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误');
+        }
+    }
+</script>
 </body>
 </html>

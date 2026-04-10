@@ -488,483 +488,463 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let gateways = [];
-        let currentPage = 1;
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let gateways = [];
+    let currentPage = 1;
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载数据
-            await loadPaymentGateways();
-            await loadPaymentRecords();
-            await loadGlobalSettings();
+        await loadPaymentGateways();
+        await loadPaymentRecords();
+        await loadGlobalSettings();
 
-            // 绑定事件
-            document.getElementById('addPaymentBtn').addEventListener('click', () => {
-                document.getElementById('paymentId').value = '';
-                document.getElementById('paymentForm').reset();
-                document.getElementById('paymentStatus').value = 'active';
-                document.getElementById('paymentModalTitle').textContent = '添加支付接口';
-                adminCore.openModal('addPaymentModal');
-            });
+        document.getElementById('addPaymentBtn').addEventListener('click', () => {
+            document.getElementById('paymentId').value = '';
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentStatus').value = 'active';
+            document.getElementById('paymentModalTitle').textContent = '添加支付接口';
+            adminCore.openModal('addPaymentModal');
+        });
 
-            document.getElementById('closePaymentModal').addEventListener('click', () => {
-                adminCore.closeModal('addPaymentModal');
-            });
+        document.getElementById('closePaymentModal').addEventListener('click', () => {
+            adminCore.closeModal('addPaymentModal');
+        });
 
-            document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
-                adminCore.closeModal('addPaymentModal');
-            });
+        document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
+            adminCore.closeModal('addPaymentModal');
+        });
 
-            document.getElementById('savePaymentBtn').addEventListener('click', savePaymentGateway);
+        document.getElementById('savePaymentBtn').addEventListener('click', savePaymentGateway);
+        document.getElementById('refreshGatewaysBtn').addEventListener('click', () => {
+            loadPaymentGateways();
+        });
+        document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalSettings);
 
-            document.getElementById('refreshGatewaysBtn').addEventListener('click', () => {
-                loadPaymentGateways();
-            });
-
-            document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalSettings);
-
-            // 分页点击
-            document.querySelectorAll('#paymentPagination .page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        loadPaymentRecords();
-                        
-                        document.querySelectorAll('#paymentPagination .page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
-
-            // 状态筛选
-            document.getElementById('paymentStatusFilter').addEventListener('change', () => {
-                currentPage = 1;
-                loadPaymentRecords();
+        document.querySelectorAll('#paymentPagination .page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
+                    loadPaymentRecords();
+                    
+                    document.querySelectorAll('#paymentPagination .page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
             });
         });
 
-        // 加载支付渠道
-        async function loadPaymentGateways() {
-            const container = document.getElementById('paymentGatewayList');
-            const token = localStorage.getItem('token');
+        document.getElementById('paymentStatusFilter').addEventListener('change', () => {
+            currentPage = 1;
+            loadPaymentRecords();
+        });
+    });
 
-            try {
-                const response = await fetch(`${API_BASE}/payment-gateways`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+    async function loadPaymentGateways() {
+        const container = document.getElementById('paymentGatewayList');
+        const token = localStorage.getItem('token');
 
-                if (data.success) {
-                    gateways = data.data;
-                    renderPaymentGateways(gateways);
-                    updatePaymentStats(gateways);
-                } else {
-                    container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
-                }
-            } catch (error) {
-                console.error('加载支付接口失败:', error);
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/payment-gateways`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                gateways = data.data;
+                renderPaymentGateways(gateways);
+                updatePaymentStats(gateways);
+            } else {
                 container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
             }
+        } catch (error) {
+            console.error('加载支付接口失败:', error);
+            container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
+        }
+    }
+
+    function renderPaymentGateways(gateways) {
+        const container = document.getElementById('paymentGatewayList');
+        
+        if (!gateways || gateways.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">
+                    <i class="fas fa-credit-card" style="font-size:48px; margin-bottom:16px;"></i>
+                    <p>暂无支付接口配置，点击"添加接口"创建</p>
+                </div>
+            `;
+            return;
         }
 
-        // 渲染支付渠道卡片
-        function renderPaymentGateways(gateways) {
-            const container = document.getElementById('paymentGatewayList');
+        container.innerHTML = '';
+        
+        gateways.forEach(gateway => {
+            const card = document.createElement('div');
+            card.className = `payment-card ${!gateway.is_active ? 'disabled' : ''}`;
             
-            if (!gateways || gateways.length === 0) {
-                container.innerHTML = `
-                    <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">
-                        <i class="fas fa-credit-card" style="font-size:48px; margin-bottom:16px;"></i>
-                        <p>暂无支付接口配置，点击"添加接口"创建</p>
-                    </div>
-                `;
-                return;
-            }
+            let iconClass = 'default';
+            if (gateway.type === 'alipay') iconClass = 'alipay';
+            else if (gateway.type === 'wechat') iconClass = 'wechat';
+            else if (gateway.type === 'paypal') iconClass = 'paypal';
+            else if (gateway.type === 'stripe') iconClass = 'stripe';
 
-            container.innerHTML = '';
-            
-            gateways.forEach(gateway => {
-                const card = document.createElement('div');
-                card.className = `payment-card ${!gateway.is_active ? 'disabled' : ''}`;
-                
-                // 根据支付方式设置图标颜色
-                let iconClass = 'default';
-                if (gateway.type === 'alipay') iconClass = 'alipay';
-                else if (gateway.type === 'wechat') iconClass = 'wechat';
-                else if (gateway.type === 'paypal') iconClass = 'paypal';
-                else if (gateway.type === 'stripe') iconClass = 'stripe';
+            let typeName = '未知';
+            if (gateway.type === 'alipay') typeName = '支付宝';
+            else if (gateway.type === 'wechat') typeName = '微信支付';
+            else if (gateway.type === 'paypal') typeName = 'PayPal';
+            else if (gateway.type === 'stripe') typeName = 'Stripe';
 
-                // 支付方式名称
-                let typeName = '未知';
-                if (gateway.type === 'alipay') typeName = '支付宝';
-                else if (gateway.type === 'wechat') typeName = '微信支付';
-                else if (gateway.type === 'paypal') typeName = 'PayPal';
-                else if (gateway.type === 'stripe') typeName = 'Stripe';
+            const statusBadge = gateway.is_active ? 
+                '<span class="status-badge status-active">已启用</span>' : 
+                '<span class="status-badge status-inactive">已禁用</span>';
 
-                // 状态徽章
-                const statusBadge = gateway.is_active ? 
-                    '<span class="status-badge status-active">已启用</span>' : 
-                    '<span class="status-badge status-inactive">已禁用</span>';
+            const defaultBadge = gateway.is_default ? 
+                '<span style="margin-left:8px; background:var(--primary); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">默认</span>' : '';
 
-                // 默认徽章
-                const defaultBadge = gateway.is_default ? 
-                    '<span style="margin-left:8px; background:var(--primary); color:white; padding:2px 8px; border-radius:12px; font-size:12px;">默认</span>' : '';
-
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:16px;">
-                        <div>
-                            <div class="payment-icon ${iconClass}">
-                                <i class="fas fa-${gateway.type === 'alipay' ? 'alipay' : (gateway.type === 'wechat' ? 'weixin' : 'credit-card')}"></i>
-                            </div>
-                            <h4 style="font-size:16px; margin:0;">${typeName}${defaultBadge}</h4>
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:16px;">
+                    <div>
+                        <div class="payment-icon ${iconClass}">
+                            <i class="fas fa-${gateway.type === 'alipay' ? 'alipay' : (gateway.type === 'wechat' ? 'weixin' : 'credit-card')}"></i>
                         </div>
-                        ${statusBadge}
+                        <h4 style="font-size:16px; margin:0;">${typeName}${defaultBadge}</h4>
                     </div>
-                    
-                    <div style="margin-bottom:12px;">
-                        <div style="color:var(--gray); font-size:13px; margin-bottom:4px;">商户号</div>
-                        <div class="secret-mask">${gateway.merchant_id || '-'}</div>
-                    </div>
-                    
-                    <div style="margin-bottom:16px;">
-                        <div style="color:var(--gray); font-size:13px; margin-bottom:4px;">密钥</div>
-                        <div class="secret-mask">${gateway.secret_key ? '••••••••' + gateway.secret_key.slice(-4) : '-'}</div>
-                    </div>
-                    
-                    <div style="display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--border); padding-top:16px;">
-                        <button class="btn btn-sm btn-secondary" onclick="testPaymentGateway('${gateway.id}')">
-                            <i class="fas fa-play"></i>测试
-                        </button>
-                        <button class="btn btn-sm btn-secondary" onclick="editPaymentGateway('${gateway.id}')">
-                            <i class="fas fa-edit"></i>编辑
-                        </button>
-                        <button class="btn btn-sm btn-${gateway.is_active ? 'warning' : 'success'}" onclick="togglePaymentGateway('${gateway.id}')">
-                            <i class="fas fa-${gateway.is_active ? 'ban' : 'check'}"></i>
-                            ${gateway.is_active ? '禁用' : '启用'}
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deletePaymentGateway('${gateway.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-        }
-
-        // 更新支付统计
-        function updatePaymentStats(gateways) {
-            const total = gateways.length;
-            const active = gateways.filter(g => g.is_active).length;
-            
-            document.getElementById('totalGateways').textContent = total;
-            document.getElementById('activeGateways').textContent = active;
-            
-            // 交易统计可以从另一个API获取
-            document.getElementById('todayTransactions').textContent = '128';
-            document.getElementById('todayAmount').textContent = '$3,245';
-        }
-
-        // 编辑支付接口
-        window.editPaymentGateway = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/payment-gateways/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const gateway = data.data;
-                    document.getElementById('paymentId').value = gateway.id;
-                    document.getElementById('paymentType').value = gateway.type;
-                    document.getElementById('paymentMerchantId').value = gateway.merchant_id || '';
-                    document.getElementById('paymentAppName').value = gateway.app_name || '';
-                    document.getElementById('paymentSecret').value = '';
-                    document.getElementById('paymentPublicKey').value = gateway.public_key || '';
-                    document.getElementById('paymentGatewayUrl').value = gateway.gateway_url || 'https://api.payment.com';
-                    document.getElementById('paymentWebhookSecret').value = gateway.webhook_secret || '';
-                    document.getElementById('paymentSort').value = gateway.sort_order || 1;
-                    document.getElementById('paymentStatus').value = gateway.is_active ? 'active' : 'inactive';
-                    document.getElementById('paymentIsDefault').checked = gateway.is_default || false;
-                    
-                    document.getElementById('paymentModalTitle').textContent = '编辑支付接口';
-                    adminCore.openModal('addPaymentModal');
-                }
-            } catch (error) {
-                alert('加载支付接口失败');
-            }
-        };
-
-        // 切换支付接口状态
-        window.togglePaymentGateway = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/payment-gateways/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const gateway = data.data;
-                    const action = gateway.is_active ? '禁用' : '启用';
-                    
-                    if (!confirm(`确定要${action}该支付接口吗？`)) return;
-
-                    const updateRes = await fetch(`${API_BASE}/payment-gateways/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ is_active: !gateway.is_active })
-                    });
-                    const updateData = await updateRes.json();
-
-                    if (updateData.success) {
-                        loadPaymentGateways();
-                    } else {
-                        alert('操作失败：' + updateData.error);
-                    }
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 删除支付接口
-        window.deletePaymentGateway = async function(id) {
-            if (!confirm('确定要删除该支付接口吗？此操作不可撤销。')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/payment-gateways/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    loadPaymentGateways();
-                } else {
-                    alert('删除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 测试支付接口
-        window.testPaymentGateway = function(id) {
-            adminCore.openModal('testPaymentModal');
-        };
-
-        // 保存支付接口
-        async function savePaymentGateway() {
-            const token = localStorage.getItem('token');
-            const gatewayId = document.getElementById('paymentId').value;
-
-            const formData = {
-                type: document.getElementById('paymentType').value,
-                merchant_id: document.getElementById('paymentMerchantId').value,
-                app_name: document.getElementById('paymentAppName').value,
-                secret_key: document.getElementById('paymentSecret').value,
-                public_key: document.getElementById('paymentPublicKey').value,
-                gateway_url: document.getElementById('paymentGatewayUrl').value,
-                webhook_secret: document.getElementById('paymentWebhookSecret').value,
-                sort_order: parseInt(document.getElementById('paymentSort').value) || 1,
-                is_active: document.getElementById('paymentStatus').value === 'active',
-                is_default: document.getElementById('paymentIsDefault').checked
-            };
-
-            if (!formData.type || !formData.merchant_id) {
-                alert('请填写必填字段');
-                return;
-            }
-
-            // 新增时必须填写密钥
-            if (!gatewayId && !formData.secret_key) {
-                alert('密钥不能为空');
-                return;
-            }
-
-            const url = gatewayId ? `${API_BASE}/payment-gateways/${gatewayId}` : `${API_BASE}/payment-gateways`;
-            const method = gatewayId ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addPaymentModal');
-                    loadPaymentGateways();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 加载支付记录
-        async function loadPaymentRecords() {
-            const tbody = document.getElementById('paymentRecordsBody');
-            const token = localStorage.getItem('token');
-            const statusFilter = document.getElementById('paymentStatusFilter').value;
-
-            try {
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    limit: 5,
-                    status: statusFilter
-                });
-
-                const response = await fetch(`${API_BASE}/payment-records?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderPaymentRecords(data.data);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="empty-placeholder">暂无支付记录</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载支付记录失败:', error);
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 渲染支付记录
-        function renderPaymentRecords(records) {
-            const tbody = document.getElementById('paymentRecordsBody');
-            tbody.innerHTML = '';
-
-            records.forEach(record => {
-                const row = document.createElement('tr');
+                    ${statusBadge}
+                </div>
                 
-                let statusClass = '';
-                let statusText = '';
-                if (record.status === 'success') {
-                    statusClass = 'status-active';
-                    statusText = '成功';
-                } else if (record.status === 'pending') {
-                    statusClass = 'status-inactive';
-                    statusText = '处理中';
-                } else {
-                    statusClass = 'status-suspended';
-                    statusText = '失败';
-                }
+                <div style="margin-bottom:12px;">
+                    <div style="color:var(--gray); font-size:13px; margin-bottom:4px;">商户号</div>
+                    <div class="secret-mask">${gateway.merchant_id || '-'}</div>
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <div style="color:var(--gray); font-size:13px; margin-bottom:4px;">密钥</div>
+                    <div class="secret-mask">${gateway.secret_key ? '••••••••' + gateway.secret_key.slice(-4) : '-'}</div>
+                </div>
+                
+                <div style="display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--border); padding-top:16px;">
+                    <button class="btn btn-sm btn-secondary" onclick="testPaymentGateway('${gateway.id}')">
+                        <i class="fas fa-play"></i>测试
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="editPaymentGateway('${gateway.id}')">
+                        <i class="fas fa-edit"></i>编辑
+                    </button>
+                    <button class="btn btn-sm btn-${gateway.is_active ? 'warning' : 'success'}" onclick="togglePaymentGateway('${gateway.id}')">
+                        <i class="fas fa-${gateway.is_active ? 'ban' : 'check'}"></i>
+                        ${gateway.is_active ? '禁用' : '启用'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deletePaymentGateway('${gateway.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
 
-                row.innerHTML = `
-                    <td><code>${record.order_no}</code></td>
-                    <td>${record.username || '-'}</td>
-                    <td><strong>$${record.amount}</strong></td>
-                    <td>${record.payment_method}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>${record.created_at}</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewPaymentDetail('${record.id}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+            container.appendChild(card);
+        });
+    }
+
+    function updatePaymentStats(gateways) {
+        const total = gateways.length;
+        const active = gateways.filter(g => g.is_active).length;
+        
+        document.getElementById('totalGateways').textContent = total;
+        document.getElementById('activeGateways').textContent = active;
+        document.getElementById('todayTransactions').textContent = '128';
+        document.getElementById('todayAmount').textContent = '$3,245';
+    }
+
+    window.editPaymentGateway = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/payment-gateways/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-        }
+            const data = await response.json();
 
-        // 查看支付详情
-        window.viewPaymentDetail = function(id) {
-            alert('查看支付详情 ID: ' + id);
-        };
-
-        // 加载全局设置
-        async function loadGlobalSettings() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/settings/payment`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const settings = data.data;
-                    document.getElementById('defaultPayment').value = settings.default_payment || '';
-                    document.getElementById('paymentTimeout').value = settings.timeout || 30;
-                    document.getElementById('currencySymbol').value = settings.currency || '$';
-                    document.getElementById('enableCallback').checked = settings.enable_callback !== false;
-                    document.getElementById('notifyUrl').value = settings.notify_url || 'https://api.globalshorts.com/payment/notify';
-                    document.getElementById('returnUrl').value = settings.return_url || 'https://globalshorts.com/payment/success';
-                    document.getElementById('successUrl').value = settings.success_url || 'https://globalshorts.com/payment/success';
-                    document.getElementById('failUrl').value = settings.fail_url || 'https://globalshorts.com/payment/fail';
-                }
-            } catch (error) {
-                console.error('加载全局设置失败:', error);
+            if (data.success) {
+                const gateway = data.data;
+                document.getElementById('paymentId').value = gateway.id;
+                document.getElementById('paymentType').value = gateway.type;
+                document.getElementById('paymentMerchantId').value = gateway.merchant_id || '';
+                document.getElementById('paymentAppName').value = gateway.app_name || '';
+                document.getElementById('paymentSecret').value = '';
+                document.getElementById('paymentPublicKey').value = gateway.public_key || '';
+                document.getElementById('paymentGatewayUrl').value = gateway.gateway_url || 'https://api.payment.com';
+                document.getElementById('paymentWebhookSecret').value = gateway.webhook_secret || '';
+                document.getElementById('paymentSort').value = gateway.sort_order || 1;
+                document.getElementById('paymentStatus').value = gateway.is_active ? 'active' : 'inactive';
+                document.getElementById('paymentIsDefault').checked = gateway.is_default || false;
+                
+                document.getElementById('paymentModalTitle').textContent = '编辑支付接口';
+                adminCore.openModal('addPaymentModal');
             }
+        } catch (error) {
+            alert('加载支付接口失败');
         }
+    };
 
-        // 保存全局设置
-        async function saveGlobalSettings() {
-            const token = localStorage.getItem('token');
-            
-            const settings = {
-                default_payment: document.getElementById('defaultPayment').value,
-                timeout: parseInt(document.getElementById('paymentTimeout').value) || 30,
-                currency: document.getElementById('currencySymbol').value,
-                enable_callback: document.getElementById('enableCallback').checked,
-                notify_url: document.getElementById('notifyUrl').value,
-                return_url: document.getElementById('returnUrl').value,
-                success_url: document.getElementById('successUrl').value,
-                fail_url: document.getElementById('failUrl').value
-            };
+    window.togglePaymentGateway = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/payment-gateways/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
 
-            try {
-                const response = await fetch(`${API_BASE}/settings/payment`, {
+            if (data.success) {
+                const gateway = data.data;
+                const action = gateway.is_active ? '禁用' : '启用';
+                
+                if (!confirm(`确定要${action}该支付接口吗？`)) return;
+
+                // 修改：使用 window.API_BASE
+                const updateRes = await fetch(`${window.API_BASE}/payment-gateways/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(settings)
+                    body: JSON.stringify({ is_active: !gateway.is_active })
                 });
-                const data = await response.json();
+                const updateData = await updateRes.json();
 
-                if (data.success) {
-                    alert('全局设置保存成功');
+                if (updateData.success) {
+                    loadPaymentGateways();
                 } else {
-                    alert('保存失败：' + data.error);
+                    alert('操作失败：' + updateData.error);
                 }
-            } catch (error) {
-                alert('网络错误，请重试');
             }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    window.deletePaymentGateway = async function(id) {
+        if (!confirm('确定要删除该支付接口吗？此操作不可撤销。')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/payment-gateways/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                loadPaymentGateways();
+            } else {
+                alert('删除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    window.testPaymentGateway = function(id) {
+        adminCore.openModal('testPaymentModal');
+    };
+
+    async function savePaymentGateway() {
+        const token = localStorage.getItem('token');
+        const gatewayId = document.getElementById('paymentId').value;
+
+        const formData = {
+            type: document.getElementById('paymentType').value,
+            merchant_id: document.getElementById('paymentMerchantId').value,
+            app_name: document.getElementById('paymentAppName').value,
+            secret_key: document.getElementById('paymentSecret').value,
+            public_key: document.getElementById('paymentPublicKey').value,
+            gateway_url: document.getElementById('paymentGatewayUrl').value,
+            webhook_secret: document.getElementById('paymentWebhookSecret').value,
+            sort_order: parseInt(document.getElementById('paymentSort').value) || 1,
+            is_active: document.getElementById('paymentStatus').value === 'active',
+            is_default: document.getElementById('paymentIsDefault').checked
+        };
+
+        if (!formData.type || !formData.merchant_id) {
+            alert('请填写必填字段');
+            return;
         }
 
-        // 关闭测试模态框
-        document.getElementById('closeTestModal')?.addEventListener('click', () => {
-            adminCore.closeModal('testPaymentModal');
+        if (!gatewayId && !formData.secret_key) {
+            alert('密钥不能为空');
+            return;
+        }
+
+        const url = gatewayId ? `${window.API_BASE}/payment-gateways/${gatewayId}` : `${window.API_BASE}/payment-gateways`;
+        const method = gatewayId ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('addPaymentModal');
+                loadPaymentGateways();
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    async function loadPaymentRecords() {
+        const tbody = document.getElementById('paymentRecordsBody');
+        const token = localStorage.getItem('token');
+        const statusFilter = document.getElementById('paymentStatusFilter').value;
+
+        try {
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 5,
+                status: statusFilter
+            });
+
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/payment-records?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                renderPaymentRecords(data.data);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-placeholder">暂无支付记录</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载支付记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderPaymentRecords(records) {
+        const tbody = document.getElementById('paymentRecordsBody');
+        tbody.innerHTML = '';
+
+        records.forEach(record => {
+            const row = document.createElement('tr');
+            
+            let statusClass = '';
+            let statusText = '';
+            if (record.status === 'success') {
+                statusClass = 'status-active';
+                statusText = '成功';
+            } else if (record.status === 'pending') {
+                statusClass = 'status-inactive';
+                statusText = '处理中';
+            } else {
+                statusClass = 'status-suspended';
+                statusText = '失败';
+            }
+
+            row.innerHTML = `
+                <td><code>${record.order_no}</code></td>
+                <td>${record.username || '-'}</td>
+                <td><strong>$${record.amount}</strong></td>
+                <td>${record.payment_method}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${record.created_at}</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="viewPaymentDetail('${record.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
         });
-    </script>
+    }
+
+    window.viewPaymentDetail = function(id) {
+        alert('查看支付详情 ID: ' + id);
+    };
+
+    async function loadGlobalSettings() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/payment`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const settings = data.data;
+                document.getElementById('defaultPayment').value = settings.default_payment || '';
+                document.getElementById('paymentTimeout').value = settings.timeout || 30;
+                document.getElementById('currencySymbol').value = settings.currency || '$';
+                document.getElementById('enableCallback').checked = settings.enable_callback !== false;
+                document.getElementById('notifyUrl').value = settings.notify_url || 'https://api.globalshorts.com/payment/notify';
+                document.getElementById('returnUrl').value = settings.return_url || 'https://globalshorts.com/payment/success';
+                document.getElementById('successUrl').value = settings.success_url || 'https://globalshorts.com/payment/success';
+                document.getElementById('failUrl').value = settings.fail_url || 'https://globalshorts.com/payment/fail';
+            }
+        } catch (error) {
+            console.error('加载全局设置失败:', error);
+        }
+    }
+
+    async function saveGlobalSettings() {
+        const token = localStorage.getItem('token');
+        
+        const settings = {
+            default_payment: document.getElementById('defaultPayment').value,
+            timeout: parseInt(document.getElementById('paymentTimeout').value) || 30,
+            currency: document.getElementById('currencySymbol').value,
+            enable_callback: document.getElementById('enableCallback').checked,
+            notify_url: document.getElementById('notifyUrl').value,
+            return_url: document.getElementById('returnUrl').value,
+            success_url: document.getElementById('successUrl').value,
+            fail_url: document.getElementById('failUrl').value
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/payment`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('全局设置保存成功');
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    document.getElementById('closeTestModal')?.addEventListener('click', () => {
+        adminCore.closeModal('testPaymentModal');
+    });
+</script>
 </body>
 </html>

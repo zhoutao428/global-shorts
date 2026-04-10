@@ -401,372 +401,355 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let revenueChart, pieChart;
-        let currentPage = 1;
-        let currentFilters = {
-            dateRange: 'week',
-            channel: 'all',
-            startDate: '',
-            endDate: ''
-        };
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let revenueChart, pieChart;
+    let currentPage = 1;
+    let currentFilters = {
+        dateRange: 'week',
+        channel: 'all',
+        startDate: '',
+        endDate: ''
+    };
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        initCharts();
+        await loadRevenueData();
+
+        document.getElementById('dateRange').addEventListener('change', (e) => {
+            const customRange = document.getElementById('customDateRange');
+            customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+        });
+
+        document.getElementById('applyFilterBtn').addEventListener('click', () => {
+            currentPage = 1;
+            updateFilters();
+            loadRevenueData();
+        });
+
+        document.getElementById('exportRevenueBtn').addEventListener('click', exportRevenueReport);
+        document.getElementById('setTargetBtn').addEventListener('click', openTargetModal);
+        document.getElementById('closeTargetModal').addEventListener('click', () => {
+            adminCore.closeModal('setTargetModal');
+        });
+        document.getElementById('cancelTargetBtn').addEventListener('click', () => {
+            adminCore.closeModal('setTargetModal');
+        });
+        document.getElementById('saveTargetBtn').addEventListener('click', saveTarget);
+        document.getElementById('detailViewType').addEventListener('change', () => {
+            currentPage = 1;
+            loadRevenueDetails();
+        });
+
+        document.querySelectorAll('#revenuePagination .page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
+                    loadRevenueDetails();
+                    
+                    document.querySelectorAll('#revenuePagination .page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        });
+    });
+
+    function initCharts() {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'VIP订阅', data: [], borderColor: '#1890ff', backgroundColor: 'rgba(24,144,255,0.1)', tension: 0.4 },
+                    { label: '单集购买', data: [], borderColor: '#52c41a', backgroundColor: 'rgba(82,196,26,0.1)', tension: 0.4 },
+                    { label: '广告收入', data: [], borderColor: '#faad14', backgroundColor: 'rgba(250,173,20,0.1)', tension: 0.4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
             }
+        });
 
-            // 初始化图表
-            initCharts();
+        const pieCtx = document.getElementById('revenuePieChart').getContext('2d');
+        pieChart = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['VIP订阅', '单集购买', '广告收入', '金币充值'],
+                datasets: [{
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#f5222d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
 
-            // 加载收入数据
-            await loadRevenueData();
+    function updateFilters() {
+        currentFilters.dateRange = document.getElementById('dateRange').value;
+        currentFilters.channel = document.getElementById('channelFilter').value;
+        
+        if (currentFilters.dateRange === 'custom') {
+            currentFilters.startDate = document.getElementById('startDate').value;
+            currentFilters.endDate = document.getElementById('endDate').value;
+        }
+    }
 
-            // 绑定事件
-            document.getElementById('dateRange').addEventListener('change', (e) => {
-                const customRange = document.getElementById('customDateRange');
-                customRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+    async function loadRevenueData() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            const params = new URLSearchParams({
+                dateRange: currentFilters.dateRange,
+                channel: currentFilters.channel,
+                startDate: currentFilters.startDate,
+                endDate: currentFilters.endDate
             });
 
-            document.getElementById('applyFilterBtn').addEventListener('click', () => {
-                currentPage = 1;
-                updateFilters();
+            // 修改：使用 window.API_BASE
+            const [summaryRes, trendRes, compositionRes] = await Promise.all([
+                fetch(`${window.API_BASE}/revenue/summary?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${window.API_BASE}/revenue/trend`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${window.API_BASE}/revenue/composition?period=month`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            const summary = await summaryRes.json();
+            const trend = await trendRes.json();
+            const composition = await compositionRes.json();
+
+            if (summary.success) {
+                updateRevenueStats(summary.data.stats);
+                updateTargetProgress(summary.data.target);
+            }
+            
+            if (trend.success) {
+                updateRevenueChart(trend.data);
+            }
+            
+            if (composition.success) {
+                updateRevenuePie(composition.data);
+            }
+        } catch (error) {
+            console.error('加载收入数据失败:', error);
+        }
+
+        await loadRevenueDetails();
+    }
+
+    function updateRevenueStats(stats) {
+        document.getElementById('todayRevenue').textContent = `$${stats.today.amount.toLocaleString()}`;
+        document.getElementById('todayGrowth').innerHTML = stats.today.growth > 0 ? 
+            `↑ ${stats.today.growth}%` : `↓ ${Math.abs(stats.today.growth)}%`;
+        document.getElementById('todayGrowth').style.color = stats.today.growth >= 0 ? 'var(--success)' : 'var(--error)';
+        
+        document.getElementById('weekRevenue').textContent = `$${stats.week.amount.toLocaleString()}`;
+        document.getElementById('weekGrowth').innerHTML = stats.week.growth > 0 ? 
+            `↑ ${stats.week.growth}%` : `↓ ${Math.abs(stats.week.growth)}%`;
+        document.getElementById('weekGrowth').style.color = stats.week.growth >= 0 ? 'var(--success)' : 'var(--error)';
+        
+        document.getElementById('monthRevenue').textContent = `$${stats.month.amount.toLocaleString()}`;
+        document.getElementById('monthGrowth').innerHTML = stats.month.growth > 0 ? 
+            `↑ ${stats.month.growth}%` : `↓ ${Math.abs(stats.month.growth)}%`;
+        document.getElementById('monthGrowth').style.color = stats.month.growth >= 0 ? 'var(--success)' : 'var(--error)';
+        
+        document.getElementById('growthRate').textContent = `${stats.growth.rate}%`;
+        document.getElementById('prevPeriod').textContent = `上月: ${stats.growth.previous}%`;
+    }
+
+    function updateRevenueChart(trend) {
+        if (!trend || !trend.labels) {
+            console.warn('趋势数据为空', trend);
+            return;
+        }
+        
+        revenueChart.data.labels = trend.labels;
+        revenueChart.data.datasets[0].data = trend.vip || [];
+        revenueChart.data.datasets[1].data = trend.episode || [];
+        revenueChart.data.datasets[2].data = trend.ad || [];
+        revenueChart.update();
+    }
+
+    function updateRevenuePie(composition) {
+        pieChart.data.datasets[0].data = [
+            composition.vip,
+            composition.episode,
+            composition.ad,
+            composition.coin
+        ];
+        pieChart.update();
+
+        const total = composition.vip + composition.episode + composition.ad + composition.coin;
+        document.getElementById('vipPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--primary);"></i> VIP订阅 <span style="float:right;">${Math.round(composition.vip / total * 100)}%</span>`;
+        document.getElementById('episodePercent').innerHTML = `<i class="fas fa-circle" style="color:var(--success);"></i> 单集购买 <span style="float:right;">${Math.round(composition.episode / total * 100)}%</span>`;
+        document.getElementById('adPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--warning);"></i> 广告收入 <span style="float:right;">${Math.round(composition.ad / total * 100)}%</span>`;
+        document.getElementById('coinPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--error);"></i> 金币充值 <span style="float:right;">${Math.round(composition.coin / total * 100)}%</span>`;
+    }
+
+    function updateTargetProgress(target) {
+        document.getElementById('monthTarget').textContent = `$${target.monthTarget.toLocaleString()}`;
+        document.getElementById('targetProgress').style.width = `${target.percentage}%`;
+        document.getElementById('achievedAmount').textContent = `$${target.achieved.toLocaleString()} (${target.percentage}%)`;
+        document.getElementById('remainingDays').textContent = `${target.remainingDays}天`;
+        document.getElementById('dailyNeeded').textContent = `$${target.dailyNeeded.toLocaleString()}`;
+    }
+
+    async function loadRevenueDetails() {
+        const tbody = document.getElementById('revenueTableBody');
+        const token = localStorage.getItem('token');
+        const viewType = document.getElementById('detailViewType').value;
+
+        try {
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 10,
+                viewType: viewType,
+                dateRange: currentFilters.dateRange,
+                channel: currentFilters.channel
+            });
+
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/revenue/details?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                renderRevenueDetails(data.data);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无收入数据</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载收入明细失败:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderRevenueDetails(details) {
+        const tbody = document.getElementById('revenueTableBody');
+        tbody.innerHTML = '';
+
+        details.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.date}</td>
+                <td>${item.orders.toLocaleString()}</td>
+                <td>$${item.vip.toLocaleString()}</td>
+                <td>$${item.episode.toLocaleString()}</td>
+                <td>$${item.ad.toLocaleString()}</td>
+                <td>$${item.coin.toLocaleString()}</td>
+                <td><strong>$${item.total.toLocaleString()}</strong></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="viewDetail('${item.date}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                 </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    window.viewDetail = function(date) {
+        alert('查看详情：' + date);
+    };
+
+    async function exportRevenueReport() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            const params = new URLSearchParams({
+                dateRange: currentFilters.dateRange,
+                channel: currentFilters.channel,
+                startDate: currentFilters.startDate,
+                endDate: currentFilters.endDate
+            });
+
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/revenue/export?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `revenue_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('导出失败');
+            }
+        } catch (error) {
+            console.error('导出失败:', error);
+            alert('导出失败，请重试');
+        }
+    }
+
+    function openTargetModal() {
+        document.getElementById('targetMonth').value = '2024-03';
+        document.getElementById('targetAmount').value = '300000';
+        document.getElementById('targetNote').value = '';
+        adminCore.openModal('setTargetModal');
+    }
+
+    async function saveTarget() {
+        const token = localStorage.getItem('token');
+        
+        const targetData = {
+            month: document.getElementById('targetMonth').value,
+            amount: parseFloat(document.getElementById('targetAmount').value),
+            note: document.getElementById('targetNote').value
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/revenue/target`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(targetData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('setTargetModal');
                 loadRevenueData();
-            });
-
-            document.getElementById('exportRevenueBtn').addEventListener('click', exportRevenueReport);
-            document.getElementById('setTargetBtn').addEventListener('click', openTargetModal);
-            document.getElementById('closeTargetModal').addEventListener('click', () => {
-                adminCore.closeModal('setTargetModal');
-            });
-            document.getElementById('cancelTargetBtn').addEventListener('click', () => {
-                adminCore.closeModal('setTargetModal');
-            });
-            document.getElementById('saveTargetBtn').addEventListener('click', saveTarget);
-            document.getElementById('detailViewType').addEventListener('change', () => {
-                currentPage = 1;
-                loadRevenueDetails();
-            });
-
-            // 分页点击
-            document.querySelectorAll('#revenuePagination .page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        loadRevenueDetails();
-                        
-                        document.querySelectorAll('#revenuePagination .page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
-        });
-
-        // 初始化图表
-        function initCharts() {
-            const ctx = document.getElementById('revenueChart').getContext('2d');
-            revenueChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        { label: 'VIP订阅', data: [], borderColor: '#1890ff', backgroundColor: 'rgba(24,144,255,0.1)', tension: 0.4 },
-                        { label: '单集购买', data: [], borderColor: '#52c41a', backgroundColor: 'rgba(82,196,26,0.1)', tension: 0.4 },
-                        { label: '广告收入', data: [], borderColor: '#faad14', backgroundColor: 'rgba(250,173,20,0.1)', tension: 0.4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
-
-            const pieCtx = document.getElementById('revenuePieChart').getContext('2d');
-            pieChart = new Chart(pieCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['VIP订阅', '单集购买', '广告收入', '金币充值'],
-                    datasets: [{
-                        data: [0, 0, 0, 0],
-                        backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#f5222d']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            });
-        }
-
-        // 更新筛选条件
-        function updateFilters() {
-            currentFilters.dateRange = document.getElementById('dateRange').value;
-            currentFilters.channel = document.getElementById('channelFilter').value;
-            
-            if (currentFilters.dateRange === 'custom') {
-                currentFilters.startDate = document.getElementById('startDate').value;
-                currentFilters.endDate = document.getElementById('endDate').value;
+            } else {
+                alert('保存失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
-
-        // 加载收入数据
-async function loadRevenueData() {
-    const token = localStorage.getItem('token');
-    
-    try {
-        const params = new URLSearchParams({
-            dateRange: currentFilters.dateRange,
-            channel: currentFilters.channel,
-            startDate: currentFilters.startDate,
-            endDate: currentFilters.endDate
-        });
-
-        // 并行获取所有数据
-        const [summaryRes, trendRes, compositionRes] = await Promise.all([
-            fetch(`${API_BASE}/revenue/summary?${params}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }),
-            fetch(`${API_BASE}/revenue/trend`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }),
-            fetch(`${API_BASE}/revenue/composition?period=month`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-        ]);
-
-        const summary = await summaryRes.json();
-        const trend = await trendRes.json();
-        const composition = await compositionRes.json();
-
-        if (summary.success) {
-            updateRevenueStats(summary.data.stats);
-            updateTargetProgress(summary.data.target);
-        }
-        
-        if (trend.success) {
-            updateRevenueChart(trend.data);
-        }
-        
-        if (composition.success) {
-            updateRevenuePie(composition.data);
-        }
-    } catch (error) {
-        console.error('加载收入数据失败:', error);
     }
-
-    // 加载明细
-    await loadRevenueDetails();
-}
-
-        // 更新统计卡片
-        function updateRevenueStats(stats) {
-            document.getElementById('todayRevenue').textContent = `$${stats.today.amount.toLocaleString()}`;
-            document.getElementById('todayGrowth').innerHTML = stats.today.growth > 0 ? 
-                `↑ ${stats.today.growth}%` : `↓ ${Math.abs(stats.today.growth)}%`;
-            document.getElementById('todayGrowth').style.color = stats.today.growth >= 0 ? 'var(--success)' : 'var(--error)';
-            
-            document.getElementById('weekRevenue').textContent = `$${stats.week.amount.toLocaleString()}`;
-            document.getElementById('weekGrowth').innerHTML = stats.week.growth > 0 ? 
-                `↑ ${stats.week.growth}%` : `↓ ${Math.abs(stats.week.growth)}%`;
-            document.getElementById('weekGrowth').style.color = stats.week.growth >= 0 ? 'var(--success)' : 'var(--error)';
-            
-            document.getElementById('monthRevenue').textContent = `$${stats.month.amount.toLocaleString()}`;
-            document.getElementById('monthGrowth').innerHTML = stats.month.growth > 0 ? 
-                `↑ ${stats.month.growth}%` : `↓ ${Math.abs(stats.month.growth)}%`;
-            document.getElementById('monthGrowth').style.color = stats.month.growth >= 0 ? 'var(--success)' : 'var(--error)';
-            
-            document.getElementById('growthRate').textContent = `${stats.growth.rate}%`;
-            document.getElementById('prevPeriod').textContent = `上月: ${stats.growth.previous}%`;
-        }
-
-        // 更新收入趋势图表
-        function updateRevenueChart(trend) {
-    if (!trend || !trend.labels) {
-        console.warn('趋势数据为空', trend);
-        return;
-    }
-    
-    revenueChart.data.labels = trend.labels;
-    revenueChart.data.datasets[0].data = trend.vip || [];
-    revenueChart.data.datasets[1].data = trend.episode || [];
-    revenueChart.data.datasets[2].data = trend.ad || [];
-    revenueChart.update();
-}
-
-        // 更新收入构成饼图
-        function updateRevenuePie(composition) {
-            pieChart.data.datasets[0].data = [
-                composition.vip,
-                composition.episode,
-                composition.ad,
-                composition.coin
-            ];
-            pieChart.update();
-
-            const total = composition.vip + composition.episode + composition.ad + composition.coin;
-            document.getElementById('vipPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--primary);"></i> VIP订阅 <span style="float:right;">${Math.round(composition.vip / total * 100)}%</span>`;
-            document.getElementById('episodePercent').innerHTML = `<i class="fas fa-circle" style="color:var(--success);"></i> 单集购买 <span style="float:right;">${Math.round(composition.episode / total * 100)}%</span>`;
-            document.getElementById('adPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--warning);"></i> 广告收入 <span style="float:right;">${Math.round(composition.ad / total * 100)}%</span>`;
-            document.getElementById('coinPercent').innerHTML = `<i class="fas fa-circle" style="color:var(--error);"></i> 金币充值 <span style="float:right;">${Math.round(composition.coin / total * 100)}%</span>`;
-        }
-
-        // 更新目标进度
-        function updateTargetProgress(target) {
-            document.getElementById('monthTarget').textContent = `$${target.monthTarget.toLocaleString()}`;
-            document.getElementById('targetProgress').style.width = `${target.percentage}%`;
-            document.getElementById('achievedAmount').textContent = `$${target.achieved.toLocaleString()} (${target.percentage}%)`;
-            document.getElementById('remainingDays').textContent = `${target.remainingDays}天`;
-            document.getElementById('dailyNeeded').textContent = `$${target.dailyNeeded.toLocaleString()}`;
-        }
-
-        // 加载收入明细
-        async function loadRevenueDetails() {
-            const tbody = document.getElementById('revenueTableBody');
-            const token = localStorage.getItem('token');
-            const viewType = document.getElementById('detailViewType').value;
-
-            try {
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    limit: 10,
-                    viewType: viewType,
-                    dateRange: currentFilters.dateRange,
-                    channel: currentFilters.channel
-                });
-
-                const response = await fetch(`${API_BASE}/revenue/details?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderRevenueDetails(data.data);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无收入数据</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载收入明细失败:', error);
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 渲染收入明细
-        function renderRevenueDetails(details) {
-            const tbody = document.getElementById('revenueTableBody');
-            tbody.innerHTML = '';
-
-            details.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.date}</td>
-                    <td>${item.orders.toLocaleString()}</td>
-                    <td>$${item.vip.toLocaleString()}</td>
-                    <td>$${item.episode.toLocaleString()}</td>
-                    <td>$${item.ad.toLocaleString()}</td>
-                    <td>$${item.coin.toLocaleString()}</td>
-                    <td><strong>$${item.total.toLocaleString()}</strong></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewDetail('${item.date}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // 查看详情
-        window.viewDetail = function(date) {
-            alert('查看详情：' + date);
-        };
-
-        // 导出报表
-        async function exportRevenueReport() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const params = new URLSearchParams({
-                    dateRange: currentFilters.dateRange,
-                    channel: currentFilters.channel,
-                    startDate: currentFilters.startDate,
-                    endDate: currentFilters.endDate
-                });
-
-                const response = await fetch(`${API_BASE}/revenue/export?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `revenue_${new Date().toISOString().split('T')[0]}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    alert('导出失败');
-                }
-            } catch (error) {
-                console.error('导出失败:', error);
-                alert('导出失败，请重试');
-            }
-        }
-
-        // 打开目标设置模态框
-        function openTargetModal() {
-            document.getElementById('targetMonth').value = '2024-03';
-            document.getElementById('targetAmount').value = '300000';
-            document.getElementById('targetNote').value = '';
-            adminCore.openModal('setTargetModal');
-        }
-
-        // 保存目标
-        async function saveTarget() {
-            const token = localStorage.getItem('token');
-            
-            const targetData = {
-                month: document.getElementById('targetMonth').value,
-                amount: parseFloat(document.getElementById('targetAmount').value),
-                note: document.getElementById('targetNote').value
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/revenue/target`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(targetData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('setTargetModal');
-                    loadRevenueData();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-    </script>
+</script>
 </body>
 </html>

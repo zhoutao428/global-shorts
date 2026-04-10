@@ -327,302 +327,292 @@
     <div class="modal-overlay" id="languageModal">...</div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let topDramasChart, categoryViewsChart;
-        let currentPage = 1;
-        let currentFilters = {
-            category: '',
-            timeRange: 'week'
-        };
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let topDramasChart, categoryViewsChart;
+    let currentPage = 1;
+    let currentFilters = {
+        category: '',
+        timeRange: 'week'
+    };
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            initCharts();
-            await loadPerformanceData();
+        initCharts();
+        await loadPerformanceData();
 
-            document.getElementById('applyFilterBtn').addEventListener('click', () => {
-                currentFilters.category = document.getElementById('categoryFilter').value;
-                currentFilters.timeRange = document.getElementById('timeRangeFilter').value;
-                currentPage = 1;
-                loadPerformanceData();
-            });
-
-            document.getElementById('refreshDataBtn').addEventListener('click', () => {
-                loadPerformanceData();
-            });
-
-            document.getElementById('exportPerformanceBtn').addEventListener('click', exportPerformanceData);
-
-            document.getElementById('categoryStatPeriod').addEventListener('change', (e) => {
-                loadCategoryStats(e.target.value);
-            });
-
-            // 分页点击事件委托
-            document.getElementById('performancePagination').addEventListener('click', (e) => {
-                if (e.target.classList.contains('page-item')) {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        loadPerformanceTable();
-                        // 更新激活样式
-                        document.querySelectorAll('#performancePagination .page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                }
-            });
+        document.getElementById('applyFilterBtn').addEventListener('click', () => {
+            currentFilters.category = document.getElementById('categoryFilter').value;
+            currentFilters.timeRange = document.getElementById('timeRangeFilter').value;
+            currentPage = 1;
+            loadPerformanceData();
         });
 
-        // 初始化图表
-        function initCharts() {
-            const topCtx = document.getElementById('topDramasChart').getContext('2d');
-            topDramasChart = new Chart(topCtx, {
-                type: 'bar',
-                data: { labels: [], datasets: [
-                    { label: '播放量', data: [], backgroundColor: '#1890ff', borderRadius: 4 },
-                    { label: '点赞', data: [], backgroundColor: '#52c41a', borderRadius: 4 }
-                ]},
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: value => value.toLocaleString() } } }
-                }
-            });
+        document.getElementById('refreshDataBtn').addEventListener('click', () => {
+            loadPerformanceData();
+        });
 
-            const catCtx = document.getElementById('categoryViewsChart').getContext('2d');
-            categoryViewsChart = new Chart(catCtx, {
-                type: 'doughnut',
-                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#1890ff','#52c41a','#faad14','#f5222d','#722ed1'] }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
+        document.getElementById('exportPerformanceBtn').addEventListener('click', exportPerformanceData);
 
-        // 加载所有表现数据
-        async function loadPerformanceData() {
-            const token = localStorage.getItem('token');
-            try {
-                const params = new URLSearchParams({
-                    category: currentFilters.category,
-                    timeRange: currentFilters.timeRange
-                });
-                const response = await fetch(`${API_BASE}/content/performance?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (data.success) {
-                    updateStats(data.data.stats);
-                    updateTopDramasChart(data.data.topDramas);
-                } else {
-                    showError('加载表现数据失败：' + (data.error || '未知错误'));
+        document.getElementById('categoryStatPeriod').addEventListener('change', (e) => {
+            loadCategoryStats(e.target.value);
+        });
+
+        document.getElementById('performancePagination').addEventListener('click', (e) => {
+            if (e.target.classList.contains('page-item')) {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
+                    loadPerformanceTable();
+                    document.querySelectorAll('#performancePagination .page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
                 }
-            } catch (error) {
-                console.error('加载表现数据失败:', error);
-                showError('网络错误，请重试');
             }
+        });
+    });
 
-            await loadPerformanceTable();
-            await loadCategoryStats(currentFilters.timeRange);
-            updateTimeLabel();
-        }
+    function initCharts() {
+        const topCtx = document.getElementById('topDramasChart').getContext('2d');
+        topDramasChart = new Chart(topCtx, {
+            type: 'bar',
+            data: { labels: [], datasets: [
+                { label: '播放量', data: [], backgroundColor: '#1890ff', borderRadius: 4 },
+                { label: '点赞', data: [], backgroundColor: '#52c41a', borderRadius: 4 }
+            ]},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: value => value.toLocaleString() } } }
+            }
+        });
 
-        // 更新统计卡片（数字使用千位分隔符）
-        function updateStats(stats) {
-            document.getElementById('totalViews').textContent = stats.totalViews?.toLocaleString() || '0';
-            document.getElementById('totalLikes').textContent = stats.totalLikes?.toLocaleString() || '0';
-            document.getElementById('totalFavorites').textContent = stats.totalFavorites?.toLocaleString() || '0';
-            document.getElementById('totalComments').textContent = stats.totalComments?.toLocaleString() || '0';
-            document.getElementById('totalShares').textContent = stats.totalShares?.toLocaleString() || '0';
-        }
+        const catCtx = document.getElementById('categoryViewsChart').getContext('2d');
+        categoryViewsChart = new Chart(catCtx, {
+            type: 'doughnut',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: ['#1890ff','#52c41a','#faad14','#f5222d','#722ed1'] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
 
-        // 更新TOP图表
-        function updateTopDramasChart(dramas) {
-            if (!dramas || dramas.length === 0) {
-                topDramasChart.data.labels = [];
-                topDramasChart.data.datasets[0].data = [];
-                topDramasChart.data.datasets[1].data = [];
+    async function loadPerformanceData() {
+        const token = localStorage.getItem('token');
+        try {
+            const params = new URLSearchParams({
+                category: currentFilters.category,
+                timeRange: currentFilters.timeRange
+            });
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/content/performance?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data.success) {
+                updateStats(data.data.stats);
+                updateTopDramasChart(data.data.topDramas);
             } else {
-                topDramasChart.data.labels = dramas.map(d => d.title.length > 15 ? d.title.substring(0,15)+'...' : d.title);
-                topDramasChart.data.datasets[0].data = dramas.map(d => d.views);
-                topDramasChart.data.datasets[1].data = dramas.map(d => d.likes);
+                showError('加载表现数据失败：' + (data.error || '未知错误'));
             }
-            topDramasChart.update();
+        } catch (error) {
+            console.error('加载表现数据失败:', error);
+            showError('网络错误，请重试');
         }
 
-        // 更新时间标签
-        function updateTimeLabel() {
-            const now = new Date();
-            document.getElementById('updateTime').textContent = `更新时间: ${now.toLocaleString()}`;
-        }
+        await loadPerformanceTable();
+        await loadCategoryStats(currentFilters.timeRange);
+        updateTimeLabel();
+    }
 
-        // 加载表现表格（分页）
-        async function loadPerformanceTable() {
-            const tbody = document.getElementById('performanceTableBody');
-            const token = localStorage.getItem('token');
-            try {
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    limit: 10,
-                    category: currentFilters.category,
-                    timeRange: currentFilters.timeRange
-                });
-                const response = await fetch(`${API_BASE}/content/performance/dramas?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (data.success) {
-                    if (data.data.length > 0) {
-                        renderPerformanceTable(data.data);
-                        renderPagination(data.pagination);
-                    } else {
-                        tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">暂无数据</td></tr>';
-                        document.getElementById('performancePagination').innerHTML = '';
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">加载失败：' + (data.error || '') + '</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载表格失败:', error);
-                tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">网络错误，请重试</td></tr>';
-            }
-        }
+    function updateStats(stats) {
+        document.getElementById('totalViews').textContent = stats.totalViews?.toLocaleString() || '0';
+        document.getElementById('totalLikes').textContent = stats.totalLikes?.toLocaleString() || '0';
+        document.getElementById('totalFavorites').textContent = stats.totalFavorites?.toLocaleString() || '0';
+        document.getElementById('totalComments').textContent = stats.totalComments?.toLocaleString() || '0';
+        document.getElementById('totalShares').textContent = stats.totalShares?.toLocaleString() || '0';
+    }
 
-        // 渲染表格（数字使用千位分隔符）
-        function renderPerformanceTable(dramas) {
-            const tbody = document.getElementById('performanceTableBody');
-            tbody.innerHTML = '';
-            dramas.forEach((drama, index) => {
-                const completionRate = drama.completion_rate || 0;
-                const rateColor = completionRate >= 80 ? 'var(--success)' : (completionRate >= 60 ? 'var(--warning)' : 'var(--error)');
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>#${(currentPage-1)*10 + index + 1}</strong></td>
-                    <td><a href="/dramas.html?id=${drama.id}" style="color:var(--primary);">${drama.title}</a></td>
-                    <td>${drama.category || '-'}</td>
-                    <td>${(drama.views || 0).toLocaleString()}</td>
-                    <td>${(drama.likes || 0).toLocaleString()}</td>
-                    <td>${(drama.favorites || 0).toLocaleString()}</td>
-                    <td>${(drama.comments || 0).toLocaleString()}</td>
-                    <td>${(drama.shares || 0).toLocaleString()}</td>
-                    <td>
-                        <span style="color:${rateColor};">${completionRate}%</span>
-                        <div style="width:60px; height:4px; background:var(--border); border-radius:2px; margin-top:4px;">
-                            <div style="width:${completionRate}%; height:100%; background:${rateColor}; border-radius:2px;"></div>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewDramaDetail('${drama.id}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+    function updateTopDramasChart(dramas) {
+        if (!dramas || dramas.length === 0) {
+            topDramasChart.data.labels = [];
+            topDramasChart.data.datasets[0].data = [];
+            topDramasChart.data.datasets[1].data = [];
+        } else {
+            topDramasChart.data.labels = dramas.map(d => d.title.length > 15 ? d.title.substring(0,15)+'...' : d.title);
+            topDramasChart.data.datasets[0].data = dramas.map(d => d.views);
+            topDramasChart.data.datasets[1].data = dramas.map(d => d.likes);
+        }
+        topDramasChart.update();
+    }
+
+    function updateTimeLabel() {
+        const now = new Date();
+        document.getElementById('updateTime').textContent = `更新时间: ${now.toLocaleString()}`;
+    }
+
+    async function loadPerformanceTable() {
+        const tbody = document.getElementById('performanceTableBody');
+        const token = localStorage.getItem('token');
+        try {
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 10,
+                category: currentFilters.category,
+                timeRange: currentFilters.timeRange
             });
-        }
-
-        // 渲染分页
-        function renderPagination(pagination) {
-            const container = document.getElementById('performancePagination');
-            let html = '';
-            for (let i = 1; i <= pagination.pages; i++) {
-                html += `<div class="page-item ${i === pagination.page ? 'active' : ''}" data-page="${i}">${i}</div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        // 查看剧集详情
-        window.viewDramaDetail = function(id) {
-            window.location.href = `/dramas.html?id=${id}`;
-        };
-
-        // 加载分类统计
-        async function loadCategoryStats(period) {
-            const tbody = document.getElementById('categoryStatsBody');
-            const token = localStorage.getItem('token');
-            try {
-                const response = await fetch(`${API_BASE}/content/performance/categories?period=${period}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                if (data.success && data.data.length > 0) {
-                    renderCategoryStats(data.data);
-                    updateCategoryChart(data.data);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无分类数据</td></tr>';
-                    categoryViewsChart.data.labels = [];
-                    categoryViewsChart.data.datasets[0].data = [];
-                    categoryViewsChart.update();
-                }
-            } catch (error) {
-                console.error('加载分类统计失败:', error);
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        function renderCategoryStats(categories) {
-            const tbody = document.getElementById('categoryStatsBody');
-            tbody.innerHTML = '';
-            categories.forEach(cat => {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${cat.name}</td><td>${cat.views.toLocaleString()}</td><td>${cat.percentage}%</td>`;
-                tbody.appendChild(row);
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/content/performance/dramas?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-        }
-
-        function updateCategoryChart(categories) {
-            categoryViewsChart.data.labels = categories.map(c => c.name);
-            categoryViewsChart.data.datasets[0].data = categories.map(c => c.percentage);
-            categoryViewsChart.update();
-        }
-
-        // 导出数据
-        async function exportPerformanceData() {
-            const token = localStorage.getItem('token');
-            try {
-                const params = new URLSearchParams({
-                    category: currentFilters.category,
-                    timeRange: currentFilters.timeRange
-                });
-                const response = await fetch(`${API_BASE}/content/performance/export?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `content_performance_${new Date().toISOString().split('T')[0]}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data.success) {
+                if (data.data.length > 0) {
+                    renderPerformanceTable(data.data);
+                    renderPagination(data.pagination);
                 } else {
-                    showError('导出失败');
+                    tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">暂无数据</td></tr>';
+                    document.getElementById('performancePagination').innerHTML = '';
                 }
-            } catch (error) {
-                console.error('导出失败:', error);
-                showError('导出失败，请重试');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">加载失败：' + (data.error || '') + '</td></tr>';
             }
+        } catch (error) {
+            console.error('加载表格失败:', error);
+            tbody.innerHTML = '<tr><td colspan="10" class="empty-placeholder">网络错误，请重试</td></tr>';
         }
+    }
 
-        // 正式错误提示（使用自定义事件，需确保有监听器）
-        function showError(msg) {
-            console.error(msg);
-            const event = new CustomEvent('showToast', {
-                detail: { message: msg, type: 'error' }
-            });
-            document.dispatchEvent(event);
+    function renderPerformanceTable(dramas) {
+        const tbody = document.getElementById('performanceTableBody');
+        tbody.innerHTML = '';
+        dramas.forEach((drama, index) => {
+            const completionRate = drama.completion_rate || 0;
+            const rateColor = completionRate >= 80 ? 'var(--success)' : (completionRate >= 60 ? 'var(--warning)' : 'var(--error)');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>#${(currentPage-1)*10 + index + 1}</strong></td>
+                <td><a href="/dramas.html?id=${drama.id}" style="color:var(--primary);">${drama.title}</a></td>
+                <td>${drama.category || '-'}</td>
+                <td>${(drama.views || 0).toLocaleString()}</td>
+                <td>${(drama.likes || 0).toLocaleString()}</td>
+                <td>${(drama.favorites || 0).toLocaleString()}</td>
+                <td>${(drama.comments || 0).toLocaleString()}</td>
+                <td>${(drama.shares || 0).toLocaleString()}</td>
+                <td>
+                    <span style="color:${rateColor};">${completionRate}%</span>
+                    <div style="width:60px; height:4px; background:var(--border); border-radius:2px; margin-top:4px;">
+                        <div style="width:${completionRate}%; height:100%; background:${rateColor}; border-radius:2px;"></div>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="viewDramaDetail('${drama.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderPagination(pagination) {
+        const container = document.getElementById('performancePagination');
+        let html = '';
+        for (let i = 1; i <= pagination.pages; i++) {
+            html += `<div class="page-item ${i === pagination.page ? 'active' : ''}" data-page="${i}">${i}</div>`;
         }
-    </script>
+        container.innerHTML = html;
+    }
+
+    window.viewDramaDetail = function(id) {
+        window.location.href = `/dramas.html?id=${id}`;
+    };
+
+    async function loadCategoryStats(period) {
+        const tbody = document.getElementById('categoryStatsBody');
+        const token = localStorage.getItem('token');
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/content/performance/categories?period=${period}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (data.success && data.data.length > 0) {
+                renderCategoryStats(data.data);
+                updateCategoryChart(data.data);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无分类数据</td></tr>';
+                categoryViewsChart.data.labels = [];
+                categoryViewsChart.data.datasets[0].data = [];
+                categoryViewsChart.update();
+            }
+        } catch (error) {
+            console.error('加载分类统计失败:', error);
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderCategoryStats(categories) {
+        const tbody = document.getElementById('categoryStatsBody');
+        tbody.innerHTML = '';
+        categories.forEach(cat => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${cat.name}</td><td>${cat.views.toLocaleString()}</td><td>${cat.percentage}%</td>`;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateCategoryChart(categories) {
+        categoryViewsChart.data.labels = categories.map(c => c.name);
+        categoryViewsChart.data.datasets[0].data = categories.map(c => c.percentage);
+        categoryViewsChart.update();
+    }
+
+    async function exportPerformanceData() {
+        const token = localStorage.getItem('token');
+        try {
+            const params = new URLSearchParams({
+                category: currentFilters.category,
+                timeRange: currentFilters.timeRange
+            });
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/content/performance/export?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `content_performance_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } else {
+                showError('导出失败');
+            }
+        } catch (error) {
+            console.error('导出失败:', error);
+            showError('导出失败，请重试');
+        }
+    }
+
+    function showError(msg) {
+        console.error(msg);
+        const event = new CustomEvent('showToast', {
+            detail: { message: msg, type: 'error' }
+        });
+        document.dispatchEvent(event);
+    }
+</script>
 </body>
 </html>

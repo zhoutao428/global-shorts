@@ -390,801 +390,785 @@
     <div class="modal-overlay" id="languageModal">...</div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-users.js"></script>
+<script src="js/admin-users.js"></script>
 
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let currentPage = 1;
-        let currentFilters = {
-            search: '',
-            status: '',
-            vip: ''
-        };
-        let currentUnlockUserId = null;
-        let currentInteractionUserId = null;
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let currentPage = 1;
+    let currentFilters = {
+        search: '',
+        status: '',
+        vip: ''
+    };
+    let currentUnlockUserId = null;
+    let currentInteractionUserId = null;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            await loadUsers();
+        await loadUsers();
 
-            document.getElementById('userSearch').addEventListener('input', debounce(() => {
-                currentFilters.search = document.getElementById('userSearch').value;
-                currentPage = 1;
-                loadUsers();
-            }, 500));
+        document.getElementById('userSearch').addEventListener('input', debounce(() => {
+            currentFilters.search = document.getElementById('userSearch').value;
+            currentPage = 1;
+            loadUsers();
+        }, 500));
 
-            document.getElementById('userStatusFilter').addEventListener('change', () => {
-                currentFilters.status = document.getElementById('userStatusFilter').value;
-                currentPage = 1;
-                loadUsers();
-            });
+        document.getElementById('userStatusFilter').addEventListener('change', () => {
+            currentFilters.status = document.getElementById('userStatusFilter').value;
+            currentPage = 1;
+            loadUsers();
+        });
 
-            document.getElementById('userVipFilter').addEventListener('change', () => {
-                currentFilters.vip = document.getElementById('userVipFilter').value;
-                currentPage = 1;
-                loadUsers();
-            });
+        document.getElementById('userVipFilter').addEventListener('change', () => {
+            currentFilters.vip = document.getElementById('userVipFilter').value;
+            currentPage = 1;
+            loadUsers();
+        });
 
-            document.getElementById('exportUsers').addEventListener('click', exportUsers);
+        document.getElementById('exportUsers').addEventListener('click', exportUsers);
 
-            document.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        loadUsers();
-                        
-                        document.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
-
-            // 编辑用户相关事件
-            document.getElementById('closeEditUserModal').addEventListener('click', () => {
-                adminCore.closeModal('editUserModal');
-            });
-            document.getElementById('cancelEditUserBtn').addEventListener('click', () => {
-                adminCore.closeModal('editUserModal');
-            });
-            document.getElementById('updateUserBtn').addEventListener('click', updateUser);
-
-            // 解锁记录模态框事件
-            document.getElementById('closeUnlockedModal').addEventListener('click', () => {
-                adminCore.closeModal('userUnlockedModal');
-            });
-            document.getElementById('closeUnlockedFooterBtn').addEventListener('click', () => {
-                adminCore.closeModal('userUnlockedModal');
-            });
-
-            // 添加解锁按钮
-            document.getElementById('addUnlockBtn').addEventListener('click', async () => {
-                await loadDramaSelectForUnlock();
-                adminCore.openModal('selectDramaModal');
-            });
-
-            // 选择剧集模态框关闭
-            document.getElementById('closeSelectDramaModal').addEventListener('click', () => {
-                adminCore.closeModal('selectDramaModal');
-            });
-            document.getElementById('cancelSelectDramaBtn').addEventListener('click', () => {
-                adminCore.closeModal('selectDramaModal');
-            });
-
-            // 确认解锁
-            document.getElementById('confirmUnlockBtn').addEventListener('click', confirmUnlock);
-
-            // 互动记录模态框事件
-            document.getElementById('closeInteractionsModal').addEventListener('click', () => {
-                adminCore.closeModal('userInteractionsModal');
-            });
-            document.getElementById('closeInteractionsFooterBtn').addEventListener('click', () => {
-                adminCore.closeModal('userInteractionsModal');
-            });
-
-            // 互动记录标签页切换
-            document.querySelectorAll('#userInteractionsModal .tab-item').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    const modal = document.getElementById('userInteractionsModal');
-                    modal.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-                    modal.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
+                    loadUsers();
                     
+                    document.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
                     e.target.classList.add('active');
-                    const tabId = e.target.dataset.tab;
-                    modal.querySelector('#' + tabId + 'Tab').classList.add('active');
-                });
+                }
             });
         });
 
-        // 加载用户列表
-        async function loadUsers() {
-            const tbody = document.getElementById('userTableBody');
-            const token = localStorage.getItem('token');
+        document.getElementById('closeEditUserModal').addEventListener('click', () => {
+            adminCore.closeModal('editUserModal');
+        });
+        document.getElementById('cancelEditUserBtn').addEventListener('click', () => {
+            adminCore.closeModal('editUserModal');
+        });
+        document.getElementById('updateUserBtn').addEventListener('click', updateUser);
 
-            try {
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    limit: 10,
-                    search: currentFilters.search,
-                    status: currentFilters.status,
-                    vip: currentFilters.vip === 'vip' ? '1' : (currentFilters.vip === 'normal' ? '0' : '')
-                });
+        document.getElementById('closeUnlockedModal').addEventListener('click', () => {
+            adminCore.closeModal('userUnlockedModal');
+        });
+        document.getElementById('closeUnlockedFooterBtn').addEventListener('click', () => {
+            adminCore.closeModal('userUnlockedModal');
+        });
 
-                const response = await fetch(`${API_BASE}/users?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('addUnlockBtn').addEventListener('click', async () => {
+            await loadDramaSelectForUnlock();
+            adminCore.openModal('selectDramaModal');
+        });
 
-                if (data.success) {
-                    renderUsers(data.data);
-                    if (data.pagination) {
-                        updatePagination(data.pagination);
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
+        document.getElementById('closeSelectDramaModal').addEventListener('click', () => {
+            adminCore.closeModal('selectDramaModal');
+        });
+        document.getElementById('cancelSelectDramaBtn').addEventListener('click', () => {
+            adminCore.closeModal('selectDramaModal');
+        });
+
+        document.getElementById('confirmUnlockBtn').addEventListener('click', confirmUnlock);
+
+        document.getElementById('closeInteractionsModal').addEventListener('click', () => {
+            adminCore.closeModal('userInteractionsModal');
+        });
+        document.getElementById('closeInteractionsFooterBtn').addEventListener('click', () => {
+            adminCore.closeModal('userInteractionsModal');
+        });
+
+        document.querySelectorAll('#userInteractionsModal .tab-item').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const modal = document.getElementById('userInteractionsModal');
+                modal.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                modal.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                e.target.classList.add('active');
+                const tabId = e.target.dataset.tab;
+                modal.querySelector('#' + tabId + 'Tab').classList.add('active');
+            });
+        });
+    });
+
+    async function loadUsers() {
+        const tbody = document.getElementById('userTableBody');
+        const token = localStorage.getItem('token');
+
+        try {
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: 10,
+                search: currentFilters.search,
+                status: currentFilters.status,
+                vip: currentFilters.vip === 'vip' ? '1' : (currentFilters.vip === 'normal' ? '0' : '')
+            });
+
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                renderUsers(data.data);
+                if (data.pagination) {
+                    updatePagination(data.pagination);
                 }
-            } catch (error) {
-                console.error('加载用户失败:', error);
+            } else {
                 tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
             }
+        } catch (error) {
+            console.error('加载用户失败:', error);
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderUsers(users) {
+        const tbody = document.getElementById('userTableBody');
+        
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无用户</td></tr>';
+            return;
         }
 
-        // 渲染用户列表（增加互动记录按钮）
-        function renderUsers(users) {
-            const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
             
-            if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无用户</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '';
+            const statusClass = user.is_active ? 'status-active' : 'status-inactive';
+            const statusText = user.is_active ? '活跃' : '禁用';
             
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                
-                const statusClass = user.is_active ? 'status-active' : 'status-inactive';
-                const statusText = user.is_active ? '活跃' : '禁用';
-                
-                const vipClass = user.is_vip ? 'status-vip' : 'status-inactive';
-                const vipText = user.is_vip ? 'VIP' : '普通';
+            const vipClass = user.is_vip ? 'status-vip' : 'status-inactive';
+            const vipText = user.is_vip ? 'VIP' : '普通';
 
-                row.innerHTML = `
-                    <td>${user.id.substring(0, 8)}...</td>
-                    <td>${user.nickname || user.username || '-'}</td>
-                    <td>${user.email}</td>
-                    <td>${user.country || '-'}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td><span class="status-badge ${vipClass}">${vipText}</span></td>
-                    <td>${user.coins || 0}</td>
-                    <td>${user.created_at ? user.created_at.substring(0,10) : '-'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editUser('${user.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        ${!user.is_vip ? 
-                            `<button class="btn btn-sm btn-success" onclick="setVip('${user.id}')">设为VIP</button>` : 
-                            `<button class="btn btn-sm btn-warning" onclick="cancelVip('${user.id}')">取消VIP</button>`
-                        }
-                        <!-- 新增：互动记录按钮（点赞、收藏、历史） -->
-                        <button class="btn btn-sm btn-info" onclick="showUserInteractions('${user.id}', '${user.nickname || user.username || ''}')">
-                            <i class="fas fa-heart"></i>互动
-                        </button>
-                        <!-- 解锁记录按钮（保留） -->
-                        <button class="btn btn-sm btn-info" onclick="showUnlockedModal('${user.id}', '${user.nickname || user.username || ''}')">
-                            <i class="fas fa-unlock-alt"></i>解锁
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // 编辑用户
-        window.editUser = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const user = data.data;
-                    document.getElementById('editUserId').value = user.id;
-                    document.getElementById('editUsername').value = user.nickname || user.username;
-                    document.getElementById('editEmail').value = user.email;
-                    document.getElementById('editCountry').value = user.country || '';
-                    document.getElementById('editStatus').value = user.is_active ? 'active' : 'inactive';
-                    document.getElementById('editVipStatus').value = user.is_vip ? '1' : '0';
-                    document.getElementById('editCoins').value = user.coins || 0;
-                    
-                    adminCore.openModal('editUserModal');
-                }
-            } catch (error) {
-                alert('加载用户失败');
-            }
-        };
-
-        // 更新用户
-        async function updateUser() {
-            const token = localStorage.getItem('token');
-            const userId = document.getElementById('editUserId').value;
-
-            const formData = {
-                email: document.getElementById('editEmail').value,
-                country: document.getElementById('editCountry').value,
-                is_active: document.getElementById('editStatus').value === 'active',
-                is_vip: document.getElementById('editVipStatus').value === '1',
-                coins: parseInt(document.getElementById('editCoins').value) || 0
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('editUserModal');
-                    await loadUsers();
-                    alert('更新成功！');
-                } else {
-                    alert('更新失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 删除用户
-        window.deleteUser = async function(id) {
-            if (!confirm('确定要删除该用户吗？')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadUsers();
-                    alert('删除成功！');
-                } else {
-                    alert('删除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 设为VIP
-        window.setVip = async function(id) {
-            const expiresAt = prompt('设置VIP到期时间 (YYYY-MM-DD)，留空为永久', '');
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        is_vip: true, 
-                        vip_expires_at: expiresAt || null 
-                    })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadUsers();
-                    alert('设置成功！');
-                } else {
-                    alert('操作失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 取消VIP
-        window.cancelVip = async function(id) {
-            if (!confirm('确定要取消该用户的VIP资格吗？')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/${id}`, {
-                    method: 'PUT',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        is_vip: false, 
-                        vip_expires_at: null 
-                    })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadUsers();
-                    alert('取消成功！');
-                } else {
-                    alert('操作失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 导出用户
-        async function exportUsers() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/users/export`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
-                    a.click();
-                } else {
-                    alert('导出失败');
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // ========== 解锁记录相关函数 ==========
-
-        // 显示解锁记录模态框
-        window.showUnlockedModal = async function(userId, userName) {
-            currentUnlockUserId = userId;
-            document.getElementById('unlockedUserName').textContent = userName || '用户';
-            await loadUnlockedDramas(userId);
-            adminCore.openModal('userUnlockedModal');
-        };
-
-        // 加载用户解锁的剧集
-        async function loadUnlockedDramas(userId) {
-            const tbody = document.getElementById('unlockedListBody');
-            const token = localStorage.getItem('token');
-
-            tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载中...</td></tr>';
-
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}/unlocked-dramas`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const dramas = data.data || [];
-                    if (dramas.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">暂无解锁记录</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        dramas.forEach(d => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${d.drama_id.substring(0, 8)}...</td>
-                                <td>${d.drama_title}</td>
-                                <td>${d.unlocked_at || '-'}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger" onclick="removeUnlock('${userId}', '${d.drama_id}')">
-                                        <i class="fas fa-trash"></i>移除
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
+            row.innerHTML = `
+                <td>${user.id.substring(0, 8)}...</td>
+                <td>${user.nickname || user.username || '-'}</td>
+                <td>${user.email}</td>
+                <td>${user.country || '-'}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td><span class="status-badge ${vipClass}">${vipText}</span></td>
+                <td>${user.coins || 0}</td>
+                <td>${user.created_at ? user.created_at.substring(0,10) : '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editUser('${user.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    ${!user.is_vip ? 
+                        `<button class="btn btn-sm btn-success" onclick="setVip('${user.id}')">设为VIP</button>` : 
+                        `<button class="btn btn-sm btn-warning" onclick="cancelVip('${user.id}')">取消VIP</button>`
                     }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载解锁记录失败:', error);
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
+                    <button class="btn btn-sm btn-info" onclick="showUserInteractions('${user.id}', '${user.nickname || user.username || ''}')">
+                        <i class="fas fa-heart"></i>互动
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="showUnlockedModal('${user.id}', '${user.nickname || user.username || ''}')">
+                        <i class="fas fa-unlock-alt"></i>解锁
+                    </button>
+                 </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    window.editUser = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const user = data.data;
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUsername').value = user.nickname || user.username;
+                document.getElementById('editEmail').value = user.email;
+                document.getElementById('editCountry').value = user.country || '';
+                document.getElementById('editStatus').value = user.is_active ? 'active' : 'inactive';
+                document.getElementById('editVipStatus').value = user.is_vip ? '1' : '0';
+                document.getElementById('editCoins').value = user.coins || 0;
+                
+                adminCore.openModal('editUserModal');
             }
+        } catch (error) {
+            alert('加载用户失败');
         }
+    };
 
-        // 移除解锁记录
-        window.removeUnlock = async function(userId, dramaId) {
-            if (!confirm('确定要移除该用户的解锁记录吗？')) return;
-            const token = localStorage.getItem('token');
+    async function updateUser() {
+        const token = localStorage.getItem('token');
+        const userId = document.getElementById('editUserId').value;
 
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}/unlocked-dramas/${dramaId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    await loadUnlockedDramas(userId);
-                } else {
-                    alert('移除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
+        const formData = {
+            email: document.getElementById('editEmail').value,
+            country: document.getElementById('editCountry').value,
+            is_active: document.getElementById('editStatus').value === 'active',
+            is_vip: document.getElementById('editVipStatus').value === '1',
+            coins: parseInt(document.getElementById('editCoins').value) || 0
         };
 
-        // 加载剧集下拉框（用于添加解锁）
-        async function loadDramaSelectForUnlock() {
-            const select = document.getElementById('unlockDramaSelect');
-            const token = localStorage.getItem('token');
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
 
-            try {
-                const response = await fetch(`${API_BASE}/dramas?limit=100`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+            if (data.success) {
+                adminCore.closeModal('editUserModal');
+                await loadUsers();
+                alert('更新成功！');
+            } else {
+                alert('更新失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
 
-                if (data.success) {
-                    select.innerHTML = '<option value="">请选择剧集</option>';
-                    data.data.forEach(drama => {
-                        const option = document.createElement('option');
-                        option.value = drama.id;
-                        option.textContent = `${drama.title} (${drama.id.substring(0,8)}...)`;
-                        select.appendChild(option);
+    window.deleteUser = async function(id) {
+        if (!confirm('确定要删除该用户吗？')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadUsers();
+                alert('删除成功！');
+            } else {
+                alert('删除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    window.setVip = async function(id) {
+        const expiresAt = prompt('设置VIP到期时间 (YYYY-MM-DD)，留空为永久', '');
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    is_vip: true, 
+                    vip_expires_at: expiresAt || null 
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadUsers();
+                alert('设置成功！');
+            } else {
+                alert('操作失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    window.cancelVip = async function(id) {
+        if (!confirm('确定要取消该用户的VIP资格吗？')) return;
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${id}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    is_vip: false, 
+                    vip_expires_at: null 
+                })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadUsers();
+                alert('取消成功！');
+            } else {
+                alert('操作失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    async function exportUsers() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/export`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('导出失败');
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    // ========== 解锁记录相关函数 ==========
+
+    window.showUnlockedModal = async function(userId, userName) {
+        currentUnlockUserId = userId;
+        document.getElementById('unlockedUserName').textContent = userName || '用户';
+        await loadUnlockedDramas(userId);
+        adminCore.openModal('userUnlockedModal');
+    };
+
+    async function loadUnlockedDramas(userId) {
+        const tbody = document.getElementById('unlockedListBody');
+        const token = localStorage.getItem('token');
+
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载中...</td></tr>';
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}/unlocked-dramas`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const dramas = data.data || [];
+                if (dramas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">暂无解锁记录</td></tr>';
+                } else {
+                    tbody.innerHTML = '';
+                    dramas.forEach(d => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${d.drama_id.substring(0, 8)}...</td>
+                            <td>${d.drama_title}</td>
+                            <td>${d.unlocked_at || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="removeUnlock('${userId}', '${d.drama_id}')">
+                                    <i class="fas fa-trash"></i>移除
+                                </button>
+                             </td>
+                        `;
+                        tbody.appendChild(row);
                     });
                 }
-            } catch (error) {
-                console.error('加载剧集列表失败:', error);
-            }
-        }
-
-        // 确认解锁
-        async function confirmUnlock() {
-            const dramaId = document.getElementById('unlockDramaSelect').value;
-            if (!dramaId || !currentUnlockUserId) {
-                alert('请选择剧集');
-                return;
-            }
-
-            const token = localStorage.getItem('token');
-            try {
-                const response = await fetch(`${API_BASE}/users/${currentUnlockUserId}/unlocked-dramas`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ drama_id: dramaId })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('selectDramaModal');
-                    await loadUnlockedDramas(currentUnlockUserId);
-                } else {
-                    alert('解锁失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // ========== 互动记录相关函数 ==========
-
-        // 显示用户互动记录
-        window.showUserInteractions = async function(userId, userName) {
-            currentInteractionUserId = userId;
-            document.getElementById('interactionUserName').textContent = userName || '用户';
-            
-            // 加载各项记录
-            await loadUserLikes(userId);
-            await loadUserFavorites(userId);
-            await loadUserHistory(userId);
-            await loadInteractionUnlocked(userId);
-            
-            adminCore.openModal('userInteractionsModal');
-        };
-
-        // 加载用户点赞记录
-        async function loadUserLikes(userId) {
-            const tbody = document.getElementById('userLikesBody');
-            const token = localStorage.getItem('token');
-
-            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>';
-
-            try {
-                const response = await fetch(`${API_BASE}/interactions?type=likes&user_id=${userId}&limit=20`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const likes = data.data?.likes || [];
-                    if (likes.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无点赞记录</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        likes.forEach(like => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>
-                                    <a href="/admin/episodes.html?drama_id=${like.drama_id}" style="color:var(--primary);">
-                                        ${like.drama_title || '未知剧集'}
-                                    </a>
-                                </td>
-                                <td>${like.created_at ? like.created_at.substring(0,16) : '-'}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger" onclick="removeUserLike('${userId}', '${like.drama_id}')">
-                                        <i class="fas fa-trash"></i>移除
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载点赞记录失败:', error);
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 加载用户收藏记录
-        async function loadUserFavorites(userId) {
-            const tbody = document.getElementById('userFavoritesBody');
-            const token = localStorage.getItem('token');
-
-            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>';
-
-            try {
-                const response = await fetch(`${API_BASE}/interactions?type=favorites&user_id=${userId}&limit=20`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const favorites = data.data?.favorites || [];
-                    if (favorites.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无收藏记录</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        favorites.forEach(fav => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>
-                                    <a href="/admin/episodes.html?drama_id=${fav.drama_id}" style="color:var(--primary);">
-                                        ${fav.drama_title || '未知剧集'}
-                                    </a>
-                                </td>
-                                <td>${fav.created_at ? fav.created_at.substring(0,16) : '-'}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger" onclick="removeUserFavorite('${userId}', '${fav.drama_id}')">
-                                        <i class="fas fa-trash"></i>移除
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载收藏记录失败:', error);
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 加载用户观看历史
-        async function loadUserHistory(userId) {
-            const tbody = document.getElementById('userHistoryBody');
-            const token = localStorage.getItem('token');
-
-            tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载中...</td></tr>';
-
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}/history?limit=20`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const history = data.data || [];
-                    if (history.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">暂无观看历史</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        history.forEach(item => {
-                            const progress = item.progress || 0;
-                            const duration = item.duration || 1;
-                            const percent = Math.round((progress / duration) * 100);
-                            
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>
-                                    <a href="/admin/episodes.html?drama_id=${item.drama_id}" style="color:var(--primary);">
-                                        ${item.drama_title || '未知剧集'}
-                                    </a>
-                                </td>
-                                <td>第${item.episode_number}集</td>
-                                <td>
-                                    <div style="display:flex; align-items:center; gap:4px;">
-                                        <span>${percent}%</span>
-                                        <div style="width:60px; height:4px; background:var(--border); border-radius:2px;">
-                                            <div style="width:${percent}%; height:100%; background:var(--primary); border-radius:2px;"></div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>${item.watched_at ? item.watched_at.substring(0,16) : '-'}</td>
-                            `;
-                            tbody.appendChild(row);
-                        });
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载观看历史失败:', error);
+            } else {
                 tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
             }
+        } catch (error) {
+            console.error('加载解锁记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    window.removeUnlock = async function(userId, dramaId) {
+        if (!confirm('确定要移除该用户的解锁记录吗？')) return;
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}/unlocked-dramas/${dramaId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                await loadUnlockedDramas(userId);
+            } else {
+                alert('移除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    async function loadDramaSelectForUnlock() {
+        const select = document.getElementById('unlockDramaSelect');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/dramas?limit=100`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                select.innerHTML = '<option value="">请选择剧集</option>';
+                data.data.forEach(drama => {
+                    const option = document.createElement('option');
+                    option.value = drama.id;
+                    option.textContent = `${drama.title} (${drama.id.substring(0,8)}...)`;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('加载剧集列表失败:', error);
+        }
+    }
+
+    async function confirmUnlock() {
+        const dramaId = document.getElementById('unlockDramaSelect').value;
+        if (!dramaId || !currentUnlockUserId) {
+            alert('请选择剧集');
+            return;
         }
 
-        // 加载互动记录中的解锁记录
-        async function loadInteractionUnlocked(userId) {
-            const tbody = document.getElementById('interactionUnlockedBody');
-            const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token');
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${currentUnlockUserId}/unlocked-dramas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ drama_id: dramaId })
+            });
+            const data = await response.json();
 
-            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>';
+            if (data.success) {
+                adminCore.closeModal('selectDramaModal');
+                await loadUnlockedDramas(currentUnlockUserId);
+            } else {
+                alert('解锁失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
 
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}/unlocked-dramas`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+    // ========== 互动记录相关函数 ==========
 
-                if (data.success) {
-                    const dramas = data.data || [];
-                    if (dramas.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无解锁记录</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        dramas.forEach(d => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>
-                                    <a href="/admin/episodes.html?drama_id=${d.drama_id}" style="color:var(--primary);">
-                                        ${d.drama_title || '未知剧集'}
-                                    </a>
-                                </td>
-                                <td>${d.unlocked_at || '-'}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger" onclick="removeUnlock('${userId}', '${d.drama_id}')">
-                                        <i class="fas fa-trash"></i>移除
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
-                    }
+    window.showUserInteractions = async function(userId, userName) {
+        currentInteractionUserId = userId;
+        document.getElementById('interactionUserName').textContent = userName || '用户';
+        
+        await loadUserLikes(userId);
+        await loadUserFavorites(userId);
+        await loadUserHistory(userId);
+        await loadInteractionUnlocked(userId);
+        
+        adminCore.openModal('userInteractionsModal');
+    };
+
+    async function loadUserLikes(userId) {
+        const tbody = document.getElementById('userLikesBody');
+        const token = localStorage.getItem('token');
+
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>';
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/interactions?type=likes&user_id=${userId}&limit=20`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const likes = data.data?.likes || [];
+                if (likes.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无点赞记录</td></tr>';
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+                    tbody.innerHTML = '';
+                    likes.forEach(like => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <a href="/admin/episodes.html?drama_id=${like.drama_id}" style="color:var(--primary);">
+                                    ${like.drama_title || '未知剧集'}
+                                </a>
+                             </td>
+                            <td>${like.created_at ? like.created_at.substring(0,16) : '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="removeUserLike('${userId}', '${like.drama_id}')">
+                                    <i class="fas fa-trash"></i>移除
+                                </button>
+                             </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
                 }
-            } catch (error) {
-                console.error('加载解锁记录失败:', error);
+            } else {
+                tbody.innerHTML = '<td><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载点赞记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    async function loadUserFavorites(userId) {
+        const tbody = document.getElementById('userFavoritesBody');
+        const token = localStorage.getItem('token');
+
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>';
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/interactions?type=favorites&user_id=${userId}&limit=20`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const favorites = data.data?.favorites || [];
+                if (favorites.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无收藏记录</td></tr>';
+                } else {
+                    tbody.innerHTML = '';
+                    favorites.forEach(fav => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <a href="/admin/episodes.html?drama_id=${fav.drama_id}" style="color:var(--primary);">
+                                    ${fav.drama_title || '未知剧集'}
+                                </a>
+                             </td>
+                            <td>${fav.created_at ? fav.created_at.substring(0,16) : '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="removeUserFavorite('${userId}', '${fav.drama_id}')">
+                                    <i class="fas fa-trash"></i>移除
+                                </button>
+                             </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } else {
                 tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
             }
+        } catch (error) {
+            console.error('加载收藏记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
         }
+    }
 
-        // 移除用户点赞
-        window.removeUserLike = async function(userId, dramaId) {
-            if (!confirm('确定要移除该点赞记录吗？')) return;
-            const token = localStorage.getItem('token');
+    async function loadUserHistory(userId) {
+        const tbody = document.getElementById('userHistoryBody');
+        const token = localStorage.getItem('token');
 
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}/likes/${dramaId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    await loadUserLikes(userId);
-                } else {
-                    alert('移除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载中...</td></tr>';
 
-        // 移除用户收藏
-        window.removeUserFavorite = async function(userId, dramaId) {
-            if (!confirm('确定要移除该收藏记录吗？')) return;
-            const token = localStorage.getItem('token');
-
-            try {
-                const response = await fetch(`${API_BASE}/users/${userId}/favorites/${dramaId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    await loadUserFavorites(userId);
-                } else {
-                    alert('移除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 更新分页
-        function updatePagination(pagination) {
-            const container = document.getElementById('userPagination');
-            if (!container) return;
-
-            if (pagination.total_pages <= 1) {
-                container.style.display = 'none';
-                return;
-            }
-
-            container.style.display = 'flex';
-            let html = '';
-            for (let i = 1; i <= pagination.total_pages; i++) {
-                const activeClass = i === pagination.current_page ? 'active' : '';
-                html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
-            }
-            container.innerHTML = html;
-
-            container.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== pagination.current_page) {
-                        currentPage = page;
-                        loadUsers();
-                        
-                        container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}/history?limit=20`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
+            const data = await response.json();
+
+            if (data.success) {
+                const history = data.data || [];
+                if (history.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">暂无观看历史</td></tr>';
+                } else {
+                    tbody.innerHTML = '';
+                    history.forEach(item => {
+                        const progress = item.progress || 0;
+                        const duration = item.duration || 1;
+                        const percent = Math.round((progress / duration) * 100);
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <a href="/admin/episodes.html?drama_id=${item.drama_id}" style="color:var(--primary);">
+                                    ${item.drama_title || '未知剧集'}
+                                </a>
+                             </td>
+                            <td>第${item.episode_number}集</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span>${percent}%</span>
+                                    <div style="width:60px; height:4px; background:var(--border); border-radius:2px;">
+                                        <div style="width:${percent}%; height:100%; background:var(--primary); border-radius:2px;"></div>
+                                    </div>
+                                </div>
+                             </td>
+                            <td>${item.watched_at ? item.watched_at.substring(0,16) : '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载观看历史失败:', error);
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    async function loadInteractionUnlocked(userId) {
+        const tbody = document.getElementById('interactionUnlockedBody');
+        const token = localStorage.getItem('token');
+
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载中...</td></tr>';
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}/unlocked-dramas`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const dramas = data.data || [];
+                if (dramas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">暂无解锁记录</td></tr>';
+                } else {
+                    tbody.innerHTML = '';
+                    dramas.forEach(d => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <a href="/admin/episodes.html?drama_id=${d.drama_id}" style="color:var(--primary);">
+                                    ${d.drama_title || '未知剧集'}
+                                </a>
+                             </td>
+                            <td>${d.unlocked_at || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="removeUnlock('${userId}', '${d.drama_id}')">
+                                    <i class="fas fa-trash"></i>移除
+                                </button>
+                             </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载解锁记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    window.removeUserLike = async function(userId, dramaId) {
+        if (!confirm('确定要移除该点赞记录吗？')) return;
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}/likes/${dramaId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                await loadUserLikes(userId);
+            } else {
+                alert('移除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    window.removeUserFavorite = async function(userId, dramaId) {
+        if (!confirm('确定要移除该收藏记录吗？')) return;
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/users/${userId}/favorites/${dramaId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                await loadUserFavorites(userId);
+            } else {
+                alert('移除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    function updatePagination(pagination) {
+        const container = document.getElementById('userPagination');
+        if (!container) return;
+
+        if (pagination.total_pages <= 1) {
+            container.style.display = 'none';
+            return;
         }
 
-        // 防抖函数
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
+        container.style.display = 'flex';
+        let html = '';
+        for (let i = 1; i <= pagination.total_pages; i++) {
+            const activeClass = i === pagination.current_page ? 'active' : '';
+            html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
         }
-    </script>
+        container.innerHTML = html;
+
+        container.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== pagination.current_page) {
+                    currentPage = page;
+                    loadUsers();
+                    
+                    container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        });
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+</script>
 </body>
 </html>

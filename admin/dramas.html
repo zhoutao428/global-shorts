@@ -158,287 +158,296 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-content.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        const UPLOAD_BASE = 'https://global-shorts-api.z17756037070.workers.dev/upload';
-        let currentPage = 1;
-        let currentFilters = { search: '', category: '', status: '' };
-        let languageList = [];
-        let categoryList = [];
+<script src="js/admin-content.js"></script>
+<script>
+    // 使用 window.API_BASE 和 window.UPLOAD_BASE（已在 admin-core.js 中定义）
+    let currentPage = 1;
+    let currentFilters = { search: '', category: '', status: '' };
+    let languageList = [];
+    let categoryList = [];
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            if (!token) { window.location.href = '/login.html'; return; }
-            await loadLanguageList();
-            await loadCategoryList();
-            await loadDramas();
-            bindEvents();
-        });
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) { window.location.href = '/login.html'; return; }
+        await loadLanguageList();
+        await loadCategoryList();
+        await loadDramas();
+        bindEvents();
+    });
 
-        async function loadLanguageList() {
-    try {
-        const res = await fetch(`${API_BASE}/languages`, { 
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
-        });
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-            languageList = data.data;
-        } else {
-            console.error('语言列表加载失败:', data);
+    async function loadLanguageList() {
+        try {
+            const res = await fetch(`${window.API_BASE}/languages`, { 
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                languageList = data.data;
+            } else {
+                console.error('语言列表加载失败:', data);
+                languageList = [];
+            }
+        } catch (error) {
+            console.error('加载语言列表失败:', error);
             languageList = [];
         }
-    } catch (error) {
-        console.error('加载语言列表失败:', error);
-        languageList = [];
     }
-}
 
-async function loadCategoryList() {
-    try {
-        const res = await fetch(`${API_BASE}/categories`, { 
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
-        });
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-            categoryList = data.data;
-        } else {
-            console.error('分类列表加载失败:', data);
+    async function loadCategoryList() {
+        try {
+            const res = await fetch(`${window.API_BASE}/categories`, { 
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } 
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                categoryList = data.data;
+            } else {
+                console.error('分类列表加载失败:', data);
+                categoryList = [];
+            }
+        } catch (error) {
+            console.error('加载分类列表失败:', error);
             categoryList = [];
         }
-    } catch (error) {
-        console.error('加载分类列表失败:', error);
-        categoryList = [];
     }
-}
 
-        function renderCategorySelects(selectedCategory = '') {
-    const select = document.getElementById('dramaCategory');
-    if (select) {
-        if (categoryList.length === 0) {
-            select.innerHTML = '<option value="">加载中...</option>';
-            return;
+    function renderCategorySelects(selectedCategory = '') {
+        const select = document.getElementById('dramaCategory');
+        if (select) {
+            if (categoryList.length === 0) {
+                select.innerHTML = '<option value="">加载中...</option>';
+                return;
+            }
+            let options = '<option value="">选择分类</option>';
+            categoryList.forEach(cat => options += `<option value="${cat.id}" ${cat.id === selectedCategory ? 'selected' : ''}>${cat.name}</option>`);
+            select.innerHTML = options;
         }
-        let options = '<option value="">选择分类</option>';
-        categoryList.forEach(cat => options += `<option value="${cat.id}" ${cat.id === selectedCategory ? 'selected' : ''}>${cat.name}</option>`);
-        select.innerHTML = options;
+        const filterSelect = document.getElementById('dramaCategoryFilter');
+        if (filterSelect) {
+            if (categoryList.length === 0) {
+                filterSelect.innerHTML = '<option value="">所有分类</option>';
+                return;
+            }
+            let options = '<option value="">所有分类</option>';
+            categoryList.forEach(cat => options += `<option value="${cat.id}" ${cat.id === currentFilters.category ? 'selected' : ''}>${cat.name}</option>`);
+            filterSelect.innerHTML = options;
+        }
     }
-    const filterSelect = document.getElementById('dramaCategoryFilter');
-    if (filterSelect) {
-        if (categoryList.length === 0) {
-            filterSelect.innerHTML = '<option value="">所有分类</option>';
-            return;
+
+    function renderLanguageSelects(selectedLanguage = 'en-US', selectedSubtitles = []) {
+        const langSelect = document.getElementById('dramaLanguage');
+        if (langSelect) {
+            if (languageList.length === 0) {
+                langSelect.innerHTML = '<option value="">加载中...</option>';
+                return;
+            }
+            let options = '';
+            languageList.forEach(lang => options += `<option value="${lang.code}" ${lang.code === selectedLanguage ? 'selected' : ''}>${lang.name} (${lang.code})</option>`);
+            langSelect.innerHTML = options;
         }
-        let options = '<option value="">所有分类</option>';
-        categoryList.forEach(cat => options += `<option value="${cat.id}" ${cat.id === currentFilters.category ? 'selected' : ''}>${cat.name}</option>`);
-        filterSelect.innerHTML = options;
+        const subSelect = document.getElementById('dramaSubtitles');
+        if (subSelect) {
+            if (languageList.length === 0) {
+                subSelect.innerHTML = '<option value="">加载中...</option>';
+                return;
+            }
+            let options = '';
+            languageList.forEach(lang => options += `<option value="${lang.code}" ${selectedSubtitles.includes(lang.code) ? 'selected' : ''}>${lang.name} (${lang.code})</option>`);
+            subSelect.innerHTML = options;
+        }
     }
-}
 
-        function renderLanguageSelects(selectedLanguage = 'en-US', selectedSubtitles = []) {
-    const langSelect = document.getElementById('dramaLanguage');
-    if (langSelect) {
-        if (languageList.length === 0) {
-            langSelect.innerHTML = '<option value="">加载中...</option>';
-            return;
-        }
-        let options = '';
-        languageList.forEach(lang => options += `<option value="${lang.code}" ${lang.code === selectedLanguage ? 'selected' : ''}>${lang.name} (${lang.code})</option>`);
-        langSelect.innerHTML = options;
+    function bindEvents() {
+        document.getElementById('addDramaBtn').addEventListener('click', openAddModal);
+        document.getElementById('closeDramaModal').addEventListener('click', () => adminCore.closeModal('addDramaModal'));
+        document.getElementById('cancelDramaBtn').addEventListener('click', () => adminCore.closeModal('addDramaModal'));
+        document.getElementById('saveDramaBtn').addEventListener('click', saveDrama);
+        document.getElementById('uploadCoverBtn').addEventListener('click', uploadCover);
+        document.getElementById('dramaCover').addEventListener('input', previewCover);
+        document.getElementById('dramaSearch').addEventListener('input', debounce(searchDramas, 500));
+        document.getElementById('dramaCategoryFilter').addEventListener('change', filterDramas);
+        document.getElementById('dramaStatusFilter').addEventListener('change', filterDramas);
     }
-    const subSelect = document.getElementById('dramaSubtitles');
-    if (subSelect) {
-        if (languageList.length === 0) {
-            subSelect.innerHTML = '<option value="">加载中...</option>';
-            return;
-        }
-        let options = '';
-        languageList.forEach(lang => options += `<option value="${lang.code}" ${selectedSubtitles.includes(lang.code) ? 'selected' : ''}>${lang.name} (${lang.code})</option>`);
-        subSelect.innerHTML = options;
+
+    function previewCover(e) { 
+        if (e.target.value) { 
+            document.getElementById('coverPreview').src = e.target.value; 
+            document.getElementById('coverPreview').style.display = 'block'; 
+            document.getElementById('coverPlaceholder').style.display = 'none'; 
+        } 
     }
-}
 
-        function bindEvents() {
-            document.getElementById('addDramaBtn').addEventListener('click', openAddModal);
-            document.getElementById('closeDramaModal').addEventListener('click', () => adminCore.closeModal('addDramaModal'));
-            document.getElementById('cancelDramaBtn').addEventListener('click', () => adminCore.closeModal('addDramaModal'));
-            document.getElementById('saveDramaBtn').addEventListener('click', saveDrama);
-            document.getElementById('uploadCoverBtn').addEventListener('click', uploadCover);
-            document.getElementById('dramaCover').addEventListener('input', previewCover);
-            document.getElementById('dramaSearch').addEventListener('input', debounce(searchDramas, 500));
-            document.getElementById('dramaCategoryFilter').addEventListener('change', filterDramas);
-            document.getElementById('dramaStatusFilter').addEventListener('change', filterDramas);
+    async function uploadCover() {
+        const file = document.getElementById('coverFile').files[0];
+        if (!file) { alert('请选择要上传的图片'); return; }
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'cover');
+        try {
+            const btn = document.getElementById('uploadCoverBtn');
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
+            // 修改：使用 window.UPLOAD_BASE
+            const res = await fetch(`${window.UPLOAD_BASE}/image`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('dramaCover').value = data.url;
+                document.getElementById('coverPreview').src = data.url;
+                document.getElementById('coverPreview').style.display = 'block';
+                document.getElementById('coverPlaceholder').style.display = 'none';
+                alert('图片上传成功！');
+            } else alert('上传失败：' + data.error);
+        } catch (error) { alert('网络错误，请重试'); } finally { const btn = document.getElementById('uploadCoverBtn'); btn.disabled = false; btn.innerHTML = '上传并预览'; }
+    }
+
+    function openAddModal() {
+        document.getElementById('dramaId').value = '';
+        document.getElementById('dramaForm').reset();
+        document.getElementById('coverPreview').style.display = 'none';
+        document.getElementById('coverPlaceholder').style.display = 'block';
+        document.getElementById('dramaModalTitle').textContent = '添加新剧集';
+        renderCategorySelects('');
+        renderLanguageSelects(languageList[0]?.code || 'en-US', []);
+        adminCore.openModal('addDramaModal');
+    }
+
+    async function loadDramas() {
+        const tbody = document.getElementById('dramaTableBody');
+        const token = localStorage.getItem('token');
+        try {
+            const params = new URLSearchParams({ page: currentPage, limit: 10, search: currentFilters.search, category: currentFilters.category, status: currentFilters.status });
+            // 修改：使用 window.API_BASE
+            const res = await fetch(`${window.API_BASE}/dramas?${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) { renderDramas(data.data); if (data.pagination) updatePagination(data.pagination); }
+            else tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
+        } catch (error) { tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>'; }
+    }
+
+    function renderDramas(dramas) {
+        const tbody = document.getElementById('dramaTableBody');
+        if (!dramas || !dramas.length) { 
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无剧集</td></tr>'; 
+            return; 
         }
+        tbody.innerHTML = '';
+        dramas.forEach(drama => {
+            const statusClass = drama.status === 'published' ? 'status-active' : (drama.status === 'draft' ? 'status-inactive' : 'status-suspended');
+            const statusText = drama.status === 'published' ? '已发布' : (drama.status === 'draft' ? '草稿' : '隐藏');
+            
+            const langObj = languageList.find(l => l.code === drama.language);
+            const languageName = langObj ? langObj.name : (drama.language || '-');
+            
+            const catObj = categoryList.find(c => c.id === drama.category);
+            const categoryName = catObj ? catObj.name : (drama.category || '-');
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${drama.id.substring(0, 8)}...</td>
+                <td>${drama.cover_url ? `<img src="${drama.cover_url}" style="width:40px; height:50px; object-fit:cover; border-radius:4px;">` : '<span style="color:var(--gray);">无封面</span>'}</td>
+                <td><a href="/admin/episodes.html?drama_id=${drama.id}" style="color:var(--primary);">${drama.title}</a></td>
+                <td>${categoryName}</td>
+                <td>${languageName}</td>
+                <td>${drama.total_episodes || 0}</td>
+                <td>${(drama.view_count || 0).toLocaleString()}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editDrama('${drama.id}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteDrama('${drama.id}')"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
 
-        function previewCover(e) { if (e.target.value) { document.getElementById('coverPreview').src = e.target.value; document.getElementById('coverPreview').style.display = 'block'; document.getElementById('coverPlaceholder').style.display = 'none'; } }
-
-        async function uploadCover() {
-            const file = document.getElementById('coverFile').files[0];
-            if (!file) { alert('请选择要上传的图片'); return; }
-            const token = localStorage.getItem('token');
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('type', 'cover');
-            try {
-                const btn = document.getElementById('uploadCoverBtn');
-                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-                const res = await fetch(`${UPLOAD_BASE}/image`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-                const data = await res.json();
-                if (data.success) {
-                    document.getElementById('dramaCover').value = data.url;
-                    document.getElementById('coverPreview').src = data.url;
+    window.editDrama = async function(id) {
+        const token = localStorage.getItem('token');
+        try {
+            // 修改：使用 window.API_BASE
+            const res = await fetch(`${window.API_BASE}/dramas/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) {
+                const drama = data.data;
+                document.getElementById('dramaId').value = drama.id;
+                document.getElementById('dramaTitle').value = drama.title;
+                document.getElementById('dramaDescription').value = drama.description || '';
+                renderCategorySelects(drama.category || '');
+                renderLanguageSelects(drama.language || 'en-US', drama.subtitles || []);
+                document.getElementById('dramaRegion').value = drama.region || 'global';
+                document.getElementById('dramaTotalEpisodes').value = drama.total_episodes || 0;
+                document.getElementById('dramaStatus').value = drama.status || 'draft';
+                document.getElementById('dramaTags').value = drama.tags || '';
+                if (drama.cover_url) {
+                    document.getElementById('dramaCover').value = drama.cover_url;
+                    document.getElementById('coverPreview').src = drama.cover_url;
                     document.getElementById('coverPreview').style.display = 'block';
                     document.getElementById('coverPlaceholder').style.display = 'none';
-                    alert('图片上传成功！');
-                } else alert('上传失败：' + data.error);
-            } catch (error) { alert('网络错误，请重试'); } finally { const btn = document.getElementById('uploadCoverBtn'); btn.disabled = false; btn.innerHTML = '上传并预览'; }
-        }
-
-        function openAddModal() {
-            document.getElementById('dramaId').value = '';
-            document.getElementById('dramaForm').reset();
-            document.getElementById('coverPreview').style.display = 'none';
-            document.getElementById('coverPlaceholder').style.display = 'block';
-            document.getElementById('dramaModalTitle').textContent = '添加新剧集';
-            renderCategorySelects('');
-            renderLanguageSelects(languageList[0]?.code || 'en-US', []);
-            adminCore.openModal('addDramaModal');
-        }
-
-        async function loadDramas() {
-            const tbody = document.getElementById('dramaTableBody');
-            const token = localStorage.getItem('token');
-            try {
-                const params = new URLSearchParams({ page: currentPage, limit: 10, search: currentFilters.search, category: currentFilters.category, status: currentFilters.status });
-                const res = await fetch(`${API_BASE}/dramas?${params}`, { headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await res.json();
-                if (data.success) { renderDramas(data.data); if (data.pagination) updatePagination(data.pagination); }
-                else tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
-            } catch (error) { tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>'; }
-        }
-
-        function renderDramas(dramas) {
-    const tbody = document.getElementById('dramaTableBody');
-    if (!dramas || !dramas.length) { 
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无剧集</td></tr>'; 
-        return; 
-    }
-    tbody.innerHTML = '';
-    dramas.forEach(drama => {
-        const statusClass = drama.status === 'published' ? 'status-active' : (drama.status === 'draft' ? 'status-inactive' : 'status-suspended');
-        const statusText = drama.status === 'published' ? '已发布' : (drama.status === 'draft' ? '草稿' : '隐藏');
-        
-        // 查找语言名称，找不到则显示语言代码
-        const langObj = languageList.find(l => l.code === drama.language);
-        const languageName = langObj ? langObj.name : (drama.language || '-');
-        
-        // 查找分类名称，找不到则显示分类ID
-        const catObj = categoryList.find(c => c.id === drama.category);
-        const categoryName = catObj ? catObj.name : (drama.category || '-');
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${drama.id.substring(0, 8)}...</td>
-            <td>${drama.cover_url ? `<img src="${drama.cover_url}" style="width:40px; height:50px; object-fit:cover; border-radius:4px;">` : '<span style="color:var(--gray);">无封面</span>'}</td>
-            <td><a href="/admin/episodes.html?drama_id=${drama.id}" style="color:var(--primary);">${drama.title}</a></td>
-            <td>${categoryName}</td>
-            <td>${languageName}</td>
-            <td>${drama.total_episodes || 0}</td>
-            <td>${(drama.view_count || 0).toLocaleString()}</td>
-            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="editDrama('${drama.id}')"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-danger" onclick="deleteDrama('${drama.id}')"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-        window.editDrama = async function(id) {
-            const token = localStorage.getItem('token');
-            try {
-                const res = await fetch(`${API_BASE}/dramas/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await res.json();
-                if (data.success) {
-                    const drama = data.data;
-                    document.getElementById('dramaId').value = drama.id;
-                    document.getElementById('dramaTitle').value = drama.title;
-                    document.getElementById('dramaDescription').value = drama.description || '';
-                    renderCategorySelects(drama.category || '');
-                    renderLanguageSelects(drama.language || 'en-US', drama.subtitles || []);
-                    document.getElementById('dramaRegion').value = drama.region || 'global';
-                    document.getElementById('dramaTotalEpisodes').value = drama.total_episodes || 0;
-                    document.getElementById('dramaStatus').value = drama.status || 'draft';
-                    document.getElementById('dramaTags').value = drama.tags || '';
-                    if (drama.cover_url) {
-                        document.getElementById('dramaCover').value = drama.cover_url;
-                        document.getElementById('coverPreview').src = drama.cover_url;
-                        document.getElementById('coverPreview').style.display = 'block';
-                        document.getElementById('coverPlaceholder').style.display = 'none';
-                    } else {
-                        document.getElementById('dramaCover').value = '';
-                        document.getElementById('coverPreview').style.display = 'none';
-                        document.getElementById('coverPlaceholder').style.display = 'block';
-                    }
-                    document.getElementById('dramaModalTitle').textContent = '编辑剧集';
-                    adminCore.openModal('addDramaModal');
+                } else {
+                    document.getElementById('dramaCover').value = '';
+                    document.getElementById('coverPreview').style.display = 'none';
+                    document.getElementById('coverPlaceholder').style.display = 'block';
                 }
-            } catch (error) { alert('加载剧集失败'); }
+                document.getElementById('dramaModalTitle').textContent = '编辑剧集';
+                adminCore.openModal('addDramaModal');
+            }
+        } catch (error) { alert('加载剧集失败'); }
+    };
+
+    window.deleteDrama = async function(id) {
+        if (!confirm('确定要删除该剧集吗？此操作不可撤销。')) return;
+        const token = localStorage.getItem('token');
+        try {
+            // 修改：使用 window.API_BASE
+            const res = await fetch(`${window.API_BASE}/dramas/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) { await loadDramas(); alert('删除成功！'); }
+            else alert('删除失败：' + data.error);
+        } catch (error) { alert('网络错误，请重试'); }
+    };
+
+    async function saveDrama() {
+        const token = localStorage.getItem('token');
+        const dramaId = document.getElementById('dramaId').value;
+        const subtitleSelect = document.getElementById('dramaSubtitles');
+        const subtitles = Array.from(subtitleSelect.selectedOptions).map(o => o.value);
+        const formData = {
+            title: document.getElementById('dramaTitle').value,
+            description: document.getElementById('dramaDescription').value,
+            cover_url: document.getElementById('dramaCover').value,
+            category: document.getElementById('dramaCategory').value,
+            language: document.getElementById('dramaLanguage').value,
+            region: document.getElementById('dramaRegion').value,
+            total_episodes: parseInt(document.getElementById('dramaTotalEpisodes').value) || 0,
+            status: document.getElementById('dramaStatus').value,
+            tags: document.getElementById('dramaTags').value.split(',').map(t => t.trim()).filter(t => t),
+            subtitles: subtitles
         };
+        if (!formData.title || !formData.category) { alert('请填写必填字段'); return; }
+        const url = dramaId ? `${window.API_BASE}/dramas/${dramaId}` : `${window.API_BASE}/dramas`;
+        const method = dramaId ? 'PUT' : 'POST';
+        try {
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formData) });
+            const data = await res.json();
+            if (data.success) { adminCore.closeModal('addDramaModal'); await loadDramas(); alert('保存成功！'); }
+            else alert('保存失败：' + data.error);
+        } catch (error) { alert('网络错误，请重试'); }
+    }
 
-        window.deleteDrama = async function(id) {
-            if (!confirm('确定要删除该剧集吗？此操作不可撤销。')) return;
-            const token = localStorage.getItem('token');
-            try {
-                const res = await fetch(`${API_BASE}/dramas/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-                const data = await res.json();
-                if (data.success) { await loadDramas(); alert('删除成功！'); }
-                else alert('删除失败：' + data.error);
-            } catch (error) { alert('网络错误，请重试'); }
-        };
-
-        async function saveDrama() {
-            const token = localStorage.getItem('token');
-            const dramaId = document.getElementById('dramaId').value;
-            const subtitleSelect = document.getElementById('dramaSubtitles');
-            const subtitles = Array.from(subtitleSelect.selectedOptions).map(o => o.value);
-            const formData = {
-                title: document.getElementById('dramaTitle').value,
-                description: document.getElementById('dramaDescription').value,
-                cover_url: document.getElementById('dramaCover').value,
-                category: document.getElementById('dramaCategory').value,
-                language: document.getElementById('dramaLanguage').value,
-                region: document.getElementById('dramaRegion').value,
-                total_episodes: parseInt(document.getElementById('dramaTotalEpisodes').value) || 0,
-                status: document.getElementById('dramaStatus').value,
-                tags: document.getElementById('dramaTags').value.split(',').map(t => t.trim()).filter(t => t),
-                subtitles: subtitles
-            };
-            if (!formData.title || !formData.category) { alert('请填写必填字段'); return; }
-            const url = dramaId ? `${API_BASE}/dramas/${dramaId}` : `${API_BASE}/dramas`;
-            const method = dramaId ? 'PUT' : 'POST';
-            try {
-                const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(formData) });
-                const data = await res.json();
-                if (data.success) { adminCore.closeModal('addDramaModal'); await loadDramas(); alert('保存成功！'); }
-                else alert('保存失败：' + data.error);
-            } catch (error) { alert('网络错误，请重试'); }
-        }
-
-        function searchDramas() { currentFilters.search = document.getElementById('dramaSearch').value; currentPage = 1; loadDramas(); }
-        function filterDramas() { currentFilters.category = document.getElementById('dramaCategoryFilter').value; currentFilters.status = document.getElementById('dramaStatusFilter').value; currentPage = 1; loadDramas(); }
-        function updatePagination(pagination) {
-            const container = document.getElementById('dramaPagination');
-            if (!container) return;
-            if (pagination.total_pages <= 1) { container.style.display = 'none'; return; }
-            container.style.display = 'flex';
-            let html = '';
-            for (let i = 1; i <= pagination.total_pages; i++) html += `<div class="page-item ${i === pagination.current_page ? 'active' : ''}" data-page="${i}">${i}</div>`;
-            container.innerHTML = html;
-            container.querySelectorAll('.page-item').forEach(item => item.addEventListener('click', (e) => { const page = parseInt(e.target.dataset.page); if (page && page !== pagination.current_page) { currentPage = page; loadDramas(); } }));
-        }
-        function debounce(fn, delay) { let timer; return function() { clearTimeout(timer); timer = setTimeout(fn, delay); }; }
-    </script>
+    function searchDramas() { currentFilters.search = document.getElementById('dramaSearch').value; currentPage = 1; loadDramas(); }
+    function filterDramas() { currentFilters.category = document.getElementById('dramaCategoryFilter').value; currentFilters.status = document.getElementById('dramaStatusFilter').value; currentPage = 1; loadDramas(); }
+    
+    function updatePagination(pagination) {
+        const container = document.getElementById('dramaPagination');
+        if (!container) return;
+        if (pagination.total_pages <= 1) { container.style.display = 'none'; return; }
+        container.style.display = 'flex';
+        let html = '';
+        for (let i = 1; i <= pagination.total_pages; i++) html += `<div class="page-item ${i === pagination.current_page ? 'active' : ''}" data-page="${i}">${i}</div>`;
+        container.innerHTML = html;
+        container.querySelectorAll('.page-item').forEach(item => item.addEventListener('click', (e) => { const page = parseInt(e.target.dataset.page); if (page && page !== pagination.current_page) { currentPage = page; loadDramas(); } }));
+    }
+    
+    function debounce(fn, delay) { let timer; return function() { clearTimeout(timer); timer = setTimeout(fn, delay); }; }
+</script>
 </body>
 </html>

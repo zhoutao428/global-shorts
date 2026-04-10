@@ -612,623 +612,596 @@
     <script src="js/admin-core.js"></script>
     <script src="js/admin-system.js"></script>
     <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let currentFeaturedPage = 1;
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let currentFeaturedPage = 1;
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载数据
-            await loadCategories();
-            await loadDramaSelect();
-            await loadFeaturedList();
-            await loadAdPositions();
-            await loadHomepageDramas();
-            await loadThemeSettings();
+        await loadCategories();
+        await loadDramaSelect();
+        await loadFeaturedList();
+        await loadAdPositions();
+        await loadHomepageDramas();
+        await loadThemeSettings();
 
-            // 选项卡切换
-            document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    const tabId = tab.getAttribute('data-tab');
-                    document.getElementById(tabId + 'Tab').classList.add('active');
-                });
-            });
-
-            // 编辑横幅按钮
-            document.getElementById('editHeroBtn').addEventListener('click', () => {
-                document.getElementById('bannerForm').style.display = 'block';
-            });
-
-            document.getElementById('cancelBannerBtn').addEventListener('click', () => {
-                document.getElementById('bannerForm').style.display = 'none';
-            });
-
-            document.getElementById('saveBannerFormBtn').addEventListener('click', saveBanner);
-
-            // 推荐管理
-            document.getElementById('addFeaturedBtn').addEventListener('click', openFeaturedModal);
-            document.getElementById('closeFeaturedModal').addEventListener('click', () => {
-                adminCore.closeModal('addFeaturedModal');
-            });
-            document.getElementById('cancelFeaturedBtn').addEventListener('click', () => {
-                adminCore.closeModal('addFeaturedModal');
-            });
-            document.getElementById('saveFeaturedBtn').addEventListener('click', saveFeatured);
-
-            // 广告管理
-            document.getElementById('addAdPositionBtn').addEventListener('click', openAdModal);
-            document.getElementById('closeAdModal').addEventListener('click', () => {
-                adminCore.closeModal('addAdModal');
-            });
-            document.getElementById('cancelAdBtn').addEventListener('click', () => {
-                adminCore.closeModal('addAdModal');
-            });
-            document.getElementById('saveAdBtn').addEventListener('click', saveAdPosition);
-
-            // 首页推荐剧集
-            document.getElementById('addHomepageDramaBtn').addEventListener('click', openHomepageDramaModal);
-            document.getElementById('closeHomepageDramaModal').addEventListener('click', () => {
-                adminCore.closeModal('addHomepageDramaModal');
-            });
-            document.getElementById('cancelHomepageDramaBtn').addEventListener('click', () => {
-                adminCore.closeModal('addHomepageDramaModal');
-            });
-            document.getElementById('saveHomepageDramaBtn').addEventListener('click', saveHomepageDrama);
-
-            // 保存分类排序
-            document.getElementById('saveCategoryOrderBtn').addEventListener('click', saveCategoryOrder);
-
-            // 保存主题
-            document.getElementById('saveThemeBtn').addEventListener('click', saveTheme);
-
-            // 颜色输入同步
-            document.getElementById('primaryColor').addEventListener('input', (e) => {
-                document.getElementById('primaryColorText').value = e.target.value;
-            });
-            document.getElementById('primaryColorText').addEventListener('input', (e) => {
-                document.getElementById('primaryColor').value = e.target.value;
-            });
-
-            // 推荐类型切换
-            document.getElementById('featuredType').addEventListener('change', (e) => {
-                const dramaSelect = document.getElementById('featuredDramaSelect');
-                const linkField = document.getElementById('featuredLinkField');
-                if (e.target.value === 'link') {
-                    dramaSelect.style.display = 'none';
-                    linkField.style.display = 'block';
-                } else {
-                    dramaSelect.style.display = 'block';
-                    linkField.style.display = 'none';
-                }
-            });
-
-            // 筛选
-            document.getElementById('featuredPositionFilter').addEventListener('change', () => {
-                currentFeaturedPage = 1;
-                loadFeaturedList();
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId + 'Tab').classList.add('active');
             });
         });
 
-        // 加载分类
-        async function loadCategories() {
-            const container = document.getElementById('categorySortList');
-            const token = localStorage.getItem('token');
+        document.getElementById('editHeroBtn').addEventListener('click', () => {
+            document.getElementById('bannerForm').style.display = 'block';
+        });
 
-            try {
-                const response = await fetch(`${API_BASE}/categories`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('cancelBannerBtn').addEventListener('click', () => {
+            document.getElementById('bannerForm').style.display = 'none';
+        });
 
-                if (data.success) {
-                    renderCategorySortList(data.data);
-                }
-            } catch (error) {
-                console.error('加载分类失败:', error);
+        document.getElementById('saveBannerFormBtn').addEventListener('click', saveBanner);
+
+        document.getElementById('addFeaturedBtn').addEventListener('click', openFeaturedModal);
+        document.getElementById('closeFeaturedModal').addEventListener('click', () => {
+            adminCore.closeModal('addFeaturedModal');
+        });
+        document.getElementById('cancelFeaturedBtn').addEventListener('click', () => {
+            adminCore.closeModal('addFeaturedModal');
+        });
+        document.getElementById('saveFeaturedBtn').addEventListener('click', saveFeatured);
+
+        document.getElementById('addAdPositionBtn').addEventListener('click', openAdModal);
+        document.getElementById('closeAdModal').addEventListener('click', () => {
+            adminCore.closeModal('addAdModal');
+        });
+        document.getElementById('cancelAdBtn').addEventListener('click', () => {
+            adminCore.closeModal('addAdModal');
+        });
+        document.getElementById('saveAdBtn').addEventListener('click', saveAdPosition);
+
+        document.getElementById('addHomepageDramaBtn').addEventListener('click', openHomepageDramaModal);
+        document.getElementById('closeHomepageDramaModal').addEventListener('click', () => {
+            adminCore.closeModal('addHomepageDramaModal');
+        });
+        document.getElementById('cancelHomepageDramaBtn').addEventListener('click', () => {
+            adminCore.closeModal('addHomepageDramaModal');
+        });
+        document.getElementById('saveHomepageDramaBtn').addEventListener('click', saveHomepageDrama);
+
+        document.getElementById('saveCategoryOrderBtn').addEventListener('click', saveCategoryOrder);
+        document.getElementById('saveThemeBtn').addEventListener('click', saveTheme);
+
+        document.getElementById('primaryColor').addEventListener('input', (e) => {
+            document.getElementById('primaryColorText').value = e.target.value;
+        });
+        document.getElementById('primaryColorText').addEventListener('input', (e) => {
+            document.getElementById('primaryColor').value = e.target.value;
+        });
+
+        document.getElementById('featuredType').addEventListener('change', (e) => {
+            const dramaSelect = document.getElementById('featuredDramaSelect');
+            const linkField = document.getElementById('featuredLinkField');
+            if (e.target.value === 'link') {
+                dramaSelect.style.display = 'none';
+                linkField.style.display = 'block';
+            } else {
+                dramaSelect.style.display = 'block';
+                linkField.style.display = 'none';
             }
-        }
+        });
 
-        // 渲染分类排序列表
-        function renderCategorySortList(categories) {
-            const container = document.getElementById('categorySortList');
-            
-            if (!categories || categories.length === 0) {
-                container.innerHTML = '<div class="empty-placeholder">暂无分类</div>';
-                return;
-            }
+        document.getElementById('featuredPositionFilter').addEventListener('change', () => {
+            currentFeaturedPage = 1;
+            loadFeaturedList();
+        });
+    });
 
-            container.innerHTML = '';
-            categories.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(cat => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display:flex; align-items:center; gap:16px; margin-bottom:8px; padding:8px; background:white; border-radius:4px; cursor:move;';
-                item.setAttribute('data-id', cat.id);
-                item.innerHTML = `
-                    <i class="fas fa-grip-vertical" style="color:var(--gray);"></i>
-                    <span style="flex:1;">${cat.name}</span>
-                    <span style="color:var(--gray); font-size:13px;">${cat.drama_count || 0}部剧集</span>
-                `;
-                container.appendChild(item);
+    async function loadCategories() {
+        const container = document.getElementById('categorySortList');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/categories`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
+            const data = await response.json();
+
+            if (data.success) {
+                renderCategorySortList(data.data);
+            }
+        } catch (error) {
+            console.error('加载分类失败:', error);
+        }
+    }
+
+    function renderCategorySortList(categories) {
+        const container = document.getElementById('categorySortList');
+        
+        if (!categories || categories.length === 0) {
+            container.innerHTML = '<div class="empty-placeholder">暂无分类</div>';
+            return;
         }
 
-        // 保存分类排序
-        async function saveCategoryOrder() {
-            const items = document.querySelectorAll('#categorySortList > div');
-            const updates = [];
-            
-            items.forEach((item, index) => {
-                const id = item.getAttribute('data-id');
-                updates.push({ id, sort_order: index + 1 });
+        container.innerHTML = '';
+        categories.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(cat => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display:flex; align-items:center; gap:16px; margin-bottom:8px; padding:8px; background:white; border-radius:4px; cursor:move;';
+            item.setAttribute('data-id', cat.id);
+            item.innerHTML = `
+                <i class="fas fa-grip-vertical" style="color:var(--gray);"></i>
+                <span style="flex:1;">${cat.name}</span>
+                <span style="color:var(--gray); font-size:13px;">${cat.drama_count || 0}部剧集</span>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    async function saveCategoryOrder() {
+        const items = document.querySelectorAll('#categorySortList > div');
+        const updates = [];
+        
+        items.forEach((item, index) => {
+            const id = item.getAttribute('data-id');
+            updates.push({ id, sort_order: index + 1 });
+        });
+
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/categories/batch-sort`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ updates })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('分类排序已保存');
+            }
+        } catch (error) {
+            alert('保存失败');
+        }
+    }
+
+    async function loadDramaSelect() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/dramas?limit=100`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const selects = ['bannerDrama', 'featuredDrama', 'homepageDramaSelect'];
+                selects.forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    if (select) {
+                        select.innerHTML = '<option value="">请选择剧集</option>';
+                        data.data.forEach(drama => {
+                            const option = document.createElement('option');
+                            option.value = drama.id;
+                            option.textContent = drama.title;
+                            select.appendChild(option);
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('加载剧集列表失败:', error);
+        }
+    }
+
+    async function saveBanner() {
+        const token = localStorage.getItem('token');
+        
+        const bannerData = {
+            title: document.getElementById('bannerTitle').value,
+            subtitle: document.getElementById('bannerSubtitle').value,
+            drama_id: document.getElementById('bannerDrama').value,
+            link: document.getElementById('bannerLink').value
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/banner`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(bannerData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('横幅已保存');
+                document.getElementById('bannerForm').style.display = 'none';
+                document.getElementById('currentBannerTitle').textContent = bannerData.title;
+                document.getElementById('currentBannerSubtitle').textContent = bannerData.subtitle;
+            }
+        } catch (error) {
+            alert('保存失败');
+        }
+    }
+
+    async function loadFeaturedList() {
+        const tbody = document.getElementById('featuredListBody');
+        const token = localStorage.getItem('token');
+        const position = document.getElementById('featuredPositionFilter').value;
+
+        try {
+            const params = new URLSearchParams({
+                page: currentFeaturedPage,
+                limit: 10,
+                position: position
             });
 
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/categories/batch-sort`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ updates })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('分类排序已保存');
-                }
-            } catch (error) {
-                alert('保存失败');
-            }
-        }
-
-        // 加载剧集下拉框
-        async function loadDramaSelect() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/dramas?limit=100`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const selects = ['bannerDrama', 'featuredDrama', 'homepageDramaSelect'];
-                    selects.forEach(selectId => {
-                        const select = document.getElementById(selectId);
-                        if (select) {
-                            select.innerHTML = '<option value="">请选择剧集</option>';
-                            data.data.forEach(drama => {
-                                const option = document.createElement('option');
-                                option.value = drama.id;
-                                option.textContent = drama.title;
-                                select.appendChild(option);
-                            });
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('加载剧集列表失败:', error);
-            }
-        }
-
-        // 保存横幅
-        async function saveBanner() {
-            const token = localStorage.getItem('token');
-            
-            const bannerData = {
-                title: document.getElementById('bannerTitle').value,
-                subtitle: document.getElementById('bannerSubtitle').value,
-                drama_id: document.getElementById('bannerDrama').value,
-                link: document.getElementById('bannerLink').value
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/frontend/banner`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(bannerData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('横幅已保存');
-                    document.getElementById('bannerForm').style.display = 'none';
-                    // 更新预览
-                    document.getElementById('currentBannerTitle').textContent = bannerData.title;
-                    document.getElementById('currentBannerSubtitle').textContent = bannerData.subtitle;
-                }
-            } catch (error) {
-                alert('保存失败');
-            }
-        }
-
-        // 加载推荐列表
-        async function loadFeaturedList() {
-            const tbody = document.getElementById('featuredListBody');
-            const token = localStorage.getItem('token');
-            const position = document.getElementById('featuredPositionFilter').value;
-
-            try {
-                const params = new URLSearchParams({
-                    page: currentFeaturedPage,
-                    limit: 10,
-                    position: position
-                });
-
-                const response = await fetch(`${API_BASE}/frontend/featured?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderFeaturedList(data.data);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无推荐内容</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载推荐列表失败:', error);
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 渲染推荐列表
-        function renderFeaturedList(featured) {
-            const tbody = document.getElementById('featuredListBody');
-            tbody.innerHTML = '';
-
-            featured.forEach(item => {
-                const row = document.createElement('tr');
-                const statusClass = item.is_active ? 'status-active' : 'status-inactive';
-                const statusText = item.is_active ? '启用' : '禁用';
-
-                row.innerHTML = `
-                    <td>${item.position_name}</td>
-                    <td>${item.content_title}</td>
-                    <td>${item.content_type}</td>
-                    <td>${item.regions || '全球'}</td>
-                    <td>${item.start_date || '-'}</td>
-                    <td>${item.end_date || '-'}</td>
-                    <td>${item.priority}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editFeatured('${item.id}')">编辑</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteFeatured('${item.id}')">删除</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/featured?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-        }
+            const data = await response.json();
 
-        // 打开推荐模态框
-        function openFeaturedModal() {
-            document.getElementById('featuredForm').reset();
-            adminCore.openModal('addFeaturedModal');
-        }
-
-        // 保存推荐
-        async function saveFeatured() {
-            const token = localStorage.getItem('token');
-            
-            const featuredData = {
-                position: document.getElementById('featuredPosition').value,
-                type: document.getElementById('featuredType').value,
-                drama_id: document.getElementById('featuredDrama').value,
-                link: document.getElementById('featuredLink').value,
-                regions: Array.from(document.getElementById('featuredRegion').selectedOptions).map(o => o.value),
-                start_date: document.getElementById('featuredStart').value,
-                end_date: document.getElementById('featuredEnd').value,
-                priority: parseInt(document.getElementById('featuredPriority').value)
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/frontend/featured`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(featuredData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addFeaturedModal');
-                    loadFeaturedList();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+            if (data.success && data.data.length > 0) {
+                renderFeaturedList(data.data);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无推荐内容</td></tr>';
             }
+        } catch (error) {
+            console.error('加载推荐列表失败:', error);
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>';
         }
+    }
 
-        // 编辑推荐
-        window.editFeatured = function(id) {
-            alert('编辑推荐 ID: ' + id);
+    function renderFeaturedList(featured) {
+        const tbody = document.getElementById('featuredListBody');
+        tbody.innerHTML = '';
+
+        featured.forEach(item => {
+            const row = document.createElement('tr');
+            const statusClass = item.is_active ? 'status-active' : 'status-inactive';
+            const statusText = item.is_active ? '启用' : '禁用';
+
+            row.innerHTML = `
+                <td>${item.position_name}</td>
+                <td>${item.content_title}</td>
+                <td>${item.content_type}</td>
+                <td>${item.regions || '全球'}</td>
+                <td>${item.start_date || '-'}</td>
+                <td>${item.end_date || '-'}</td>
+                <td>${item.priority}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editFeatured('${item.id}')">编辑</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteFeatured('${item.id}')">删除</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function openFeaturedModal() {
+        document.getElementById('featuredForm').reset();
+        adminCore.openModal('addFeaturedModal');
+    }
+
+    async function saveFeatured() {
+        const token = localStorage.getItem('token');
+        
+        const featuredData = {
+            position: document.getElementById('featuredPosition').value,
+            type: document.getElementById('featuredType').value,
+            drama_id: document.getElementById('featuredDrama').value,
+            link: document.getElementById('featuredLink').value,
+            regions: Array.from(document.getElementById('featuredRegion').selectedOptions).map(o => o.value),
+            start_date: document.getElementById('featuredStart').value,
+            end_date: document.getElementById('featuredEnd').value,
+            priority: parseInt(document.getElementById('featuredPriority').value)
         };
 
-        // 删除推荐
-        window.deleteFeatured = function(id) {
-            if (confirm('确定要删除该推荐吗？')) {
-                alert('删除功能待对接API');
-            }
-        };
-
-        // 加载广告位
-        async function loadAdPositions() {
-            const container = document.getElementById('adPositionList');
-            const token = localStorage.getItem('token');
-
-            try {
-                const response = await fetch(`${API_BASE}/frontend/ad-positions`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderAdPositions(data.data);
-                } else {
-                    container.innerHTML = '<div class="empty-placeholder">暂无广告位</div>';
-                }
-            } catch (error) {
-                console.error('加载广告位失败:', error);
-                container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
-            }
-        }
-
-        // 渲染广告位
-        function renderAdPositions(positions) {
-            const container = document.getElementById('adPositionList');
-            container.innerHTML = '';
-
-            positions.forEach(pos => {
-                const card = document.createElement('div');
-                card.style.cssText = 'border:1px solid var(--border); border-radius:8px; padding:16px;';
-                const statusClass = pos.is_active ? 'status-active' : 'status-inactive';
-                const statusText = pos.is_active ? '启用' : '禁用';
-
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <h4 style="margin:0;">${pos.name}</h4>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                    </div>
-                    <p style="color:var(--gray); margin-bottom:8px;">代码: <code>${pos.code}</code></p>
-                    <p style="color:var(--gray); margin-bottom:8px;">尺寸: ${pos.width}x${pos.height}</p>
-                    <p style="color:var(--gray); margin-bottom:12px;">类型: ${pos.type}</p>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-sm btn-secondary" onclick="editAdPosition('${pos.id}')">配置</button>
-                        <button class="btn btn-sm btn-${pos.is_active ? 'warning' : 'success'}" onclick="toggleAdPosition('${pos.id}')">
-                            ${pos.is_active ? '禁用' : '启用'}
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/featured`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(featuredData)
             });
-        }
+            const data = await response.json();
 
-        // 打开广告位模态框
-        function openAdModal() {
-            document.getElementById('adForm').reset();
-            adminCore.openModal('addAdModal');
-        }
-
-        // 保存广告位
-        async function saveAdPosition() {
-            const token = localStorage.getItem('token');
-            
-            const adData = {
-                name: document.getElementById('adName').value,
-                code: document.getElementById('adCode').value,
-                width: parseInt(document.getElementById('adWidth').value),
-                height: parseInt(document.getElementById('adHeight').value),
-                type: document.getElementById('adType').value,
-                default_url: document.getElementById('adDefaultUrl').value,
-                default_link: document.getElementById('adDefaultLink').value
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/frontend/ad-positions`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(adData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addAdModal');
-                    loadAdPositions();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+            if (data.success) {
+                adminCore.closeModal('addFeaturedModal');
+                loadFeaturedList();
+            } else {
+                alert('保存失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    }
 
-        // 编辑广告位
-        window.editAdPosition = function(id) {
-            alert('配置广告位 ID: ' + id);
-        };
+    window.editFeatured = function(id) {
+        alert('编辑推荐 ID: ' + id);
+    };
 
-        // 切换广告位状态
-        window.toggleAdPosition = function(id) {
-            alert('切换广告位状态 ID: ' + id);
-        };
-
-        // 加载首页推荐剧集
-        async function loadHomepageDramas() {
-            const tbody = document.getElementById('homepageDramasBody');
-            const token = localStorage.getItem('token');
-
-            try {
-                const response = await fetch(`${API_BASE}/frontend/homepage-dramas`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderHomepageDramas(data.data);
-                }
-            } catch (error) {
-                console.error('加载首页推荐剧集失败:', error);
-            }
+    window.deleteFeatured = function(id) {
+        if (confirm('确定要删除该推荐吗？')) {
+            alert('删除功能待对接API');
         }
+    };
 
-        // 渲染首页推荐剧集
-        function renderHomepageDramas(dramas) {
-            const tbody = document.getElementById('homepageDramasBody');
-            tbody.innerHTML = '';
+    async function loadAdPositions() {
+        const container = document.getElementById('adPositionList');
+        const token = localStorage.getItem('token');
 
-            dramas.sort((a, b) => a.sort_order - b.sort_order).forEach(drama => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${drama.sort_order}</td>
-                    <td>${drama.title}</td>
-                    <td>${drama.category}</td>
-                    <td><img src="${drama.image || drama.cover}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editHomepageDrama('${drama.id}')">编辑</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteHomepageDrama('${drama.id}')">删除</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/ad-positions`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-        }
+            const data = await response.json();
 
-        // 打开首页推荐剧集模态框
-        function openHomepageDramaModal() {
-            document.getElementById('homepageDramaForm').reset();
-            adminCore.openModal('addHomepageDramaModal');
-        }
-
-        // 保存首页推荐剧集
-        async function saveHomepageDrama() {
-            const token = localStorage.getItem('token');
-            
-            const data = {
-                drama_id: document.getElementById('homepageDramaSelect').value,
-                sort_order: parseInt(document.getElementById('homepageDramaSort').value),
-                image: document.getElementById('homepageDramaImage').value
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/frontend/homepage-dramas`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(data)
-                });
-                const responseData = await response.json();
-
-                if (responseData.success) {
-                    adminCore.closeModal('addHomepageDramaModal');
-                    loadHomepageDramas();
-                } else {
-                    alert('保存失败：' + responseData.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+            if (data.success && data.data.length > 0) {
+                renderAdPositions(data.data);
+            } else {
+                container.innerHTML = '<div class="empty-placeholder">暂无广告位</div>';
             }
+        } catch (error) {
+            console.error('加载广告位失败:', error);
+            container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
         }
+    }
 
-        // 编辑首页推荐剧集
-        window.editHomepageDrama = function(id) {
-            alert('编辑首页推荐剧集 ID: ' + id);
+    function renderAdPositions(positions) {
+        const container = document.getElementById('adPositionList');
+        container.innerHTML = '';
+
+        positions.forEach(pos => {
+            const card = document.createElement('div');
+            card.style.cssText = 'border:1px solid var(--border); border-radius:8px; padding:16px;';
+            const statusClass = pos.is_active ? 'status-active' : 'status-inactive';
+            const statusText = pos.is_active ? '启用' : '禁用';
+
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h4 style="margin:0;">${pos.name}</h4>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                <p style="color:var(--gray); margin-bottom:8px;">代码: <code>${pos.code}</code></p>
+                <p style="color:var(--gray); margin-bottom:8px;">尺寸: ${pos.width}x${pos.height}</p>
+                <p style="color:var(--gray); margin-bottom:12px;">类型: ${pos.type}</p>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-sm btn-secondary" onclick="editAdPosition('${pos.id}')">配置</button>
+                    <button class="btn btn-sm btn-${pos.is_active ? 'warning' : 'success'}" onclick="toggleAdPosition('${pos.id}')">
+                        ${pos.is_active ? '禁用' : '启用'}
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function openAdModal() {
+        document.getElementById('adForm').reset();
+        adminCore.openModal('addAdModal');
+    }
+
+    async function saveAdPosition() {
+        const token = localStorage.getItem('token');
+        
+        const adData = {
+            name: document.getElementById('adName').value,
+            code: document.getElementById('adCode').value,
+            width: parseInt(document.getElementById('adWidth').value),
+            height: parseInt(document.getElementById('adHeight').value),
+            type: document.getElementById('adType').value,
+            default_url: document.getElementById('adDefaultUrl').value,
+            default_link: document.getElementById('adDefaultLink').value
         };
 
-        // 删除首页推荐剧集
-        window.deleteHomepageDrama = function(id) {
-            if (confirm('确定要移除该剧集吗？')) {
-                alert('删除功能待对接API');
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/ad-positions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(adData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('addAdModal');
+                loadAdPositions();
+            } else {
+                alert('保存失败：' + data.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    window.editAdPosition = function(id) {
+        alert('配置广告位 ID: ' + id);
+    };
+
+    window.toggleAdPosition = function(id) {
+        alert('切换广告位状态 ID: ' + id);
+    };
+
+    async function loadHomepageDramas() {
+        const tbody = document.getElementById('homepageDramasBody');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/homepage-dramas`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                renderHomepageDramas(data.data);
+            }
+        } catch (error) {
+            console.error('加载首页推荐剧集失败:', error);
+        }
+    }
+
+    function renderHomepageDramas(dramas) {
+        const tbody = document.getElementById('homepageDramasBody');
+        tbody.innerHTML = '';
+
+        dramas.sort((a, b) => a.sort_order - b.sort_order).forEach(drama => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${drama.sort_order}</td>
+                <td>${drama.title}</td>
+                <td>${drama.category}</td>
+                <td><img src="${drama.image || drama.cover}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editHomepageDrama('${drama.id}')">编辑</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteHomepageDrama('${drama.id}')">删除</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function openHomepageDramaModal() {
+        document.getElementById('homepageDramaForm').reset();
+        adminCore.openModal('addHomepageDramaModal');
+    }
+
+    async function saveHomepageDrama() {
+        const token = localStorage.getItem('token');
+        
+        const data = {
+            drama_id: document.getElementById('homepageDramaSelect').value,
+            sort_order: parseInt(document.getElementById('homepageDramaSort').value),
+            image: document.getElementById('homepageDramaImage').value
         };
 
-        // 加载主题设置
-        async function loadThemeSettings() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/frontend/theme`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/homepage-dramas`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+            const responseData = await response.json();
 
-                if (data.success) {
-                    const theme = data.data;
-                    document.getElementById('primaryColor').value = theme.primary_color || '#1890ff';
-                    document.getElementById('primaryColorText').value = theme.primary_color || '#1890ff';
-                    document.getElementById('accentColor').value = theme.accent_color || '#52c41a';
-                    document.getElementById('accentColorText').value = theme.accent_color || '#52c41a';
-                    document.getElementById('bgColor').value = theme.background_color || '#f0f2f5';
-                    document.getElementById('bgColorText').value = theme.background_color || '#f0f2f5';
-                    document.getElementById('textColor').value = theme.text_color || '#000000';
-                    document.getElementById('textColorText').value = theme.text_color || '#000000';
-                    document.getElementById('fontFamily').value = theme.font_family || 'system-ui';
-                    document.getElementById('homeLayout').value = theme.home_layout || 'grid';
-                    document.getElementById('dramasPerRow').value = theme.dramas_per_row || 4;
-                    document.getElementById('showViews').checked = theme.show_views !== false;
-                    document.getElementById('showLikes').checked = theme.show_likes !== false;
-                }
-            } catch (error) {
-                console.error('加载主题设置失败:', error);
+            if (responseData.success) {
+                adminCore.closeModal('addHomepageDramaModal');
+                loadHomepageDramas();
+            } else {
+                alert('保存失败：' + responseData.error);
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
+    }
 
-        // 保存主题
-        async function saveTheme() {
-            const token = localStorage.getItem('token');
-            
-            const themeData = {
-                primary_color: document.getElementById('primaryColor').value,
-                accent_color: document.getElementById('accentColor').value,
-                background_color: document.getElementById('bgColor').value,
-                text_color: document.getElementById('textColor').value,
-                font_family: document.getElementById('fontFamily').value,
-                home_layout: document.getElementById('homeLayout').value,
-                dramas_per_row: parseInt(document.getElementById('dramasPerRow').value),
-                show_views: document.getElementById('showViews').checked,
-                show_likes: document.getElementById('showLikes').checked
-            };
+    window.editHomepageDrama = function(id) {
+        alert('编辑首页推荐剧集 ID: ' + id);
+    };
 
-            try {
-                const response = await fetch(`${API_BASE}/frontend/theme`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(themeData)
-                });
-                const data = await response.json();
+    window.deleteHomepageDrama = function(id) {
+        if (confirm('确定要移除该剧集吗？')) {
+            alert('删除功能待对接API');
+        }
+    };
 
-                if (data.success) {
-                    alert('主题保存成功');
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
+    async function loadThemeSettings() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/theme`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const theme = data.data;
+                document.getElementById('primaryColor').value = theme.primary_color || '#1890ff';
+                document.getElementById('primaryColorText').value = theme.primary_color || '#1890ff';
+                document.getElementById('accentColor').value = theme.accent_color || '#52c41a';
+                document.getElementById('accentColorText').value = theme.accent_color || '#52c41a';
+                document.getElementById('bgColor').value = theme.background_color || '#f0f2f5';
+                document.getElementById('bgColorText').value = theme.background_color || '#f0f2f5';
+                document.getElementById('textColor').value = theme.text_color || '#000000';
+                document.getElementById('textColorText').value = theme.text_color || '#000000';
+                document.getElementById('fontFamily').value = theme.font_family || 'system-ui';
+                document.getElementById('homeLayout').value = theme.home_layout || 'grid';
+                document.getElementById('dramasPerRow').value = theme.dramas_per_row || 4;
+                document.getElementById('showViews').checked = theme.show_views !== false;
+                document.getElementById('showLikes').checked = theme.show_likes !== false;
             }
+        } catch (error) {
+            console.error('加载主题设置失败:', error);
         }
-    </script>
+    }
+
+    async function saveTheme() {
+        const token = localStorage.getItem('token');
+        
+        const themeData = {
+            primary_color: document.getElementById('primaryColor').value,
+            accent_color: document.getElementById('accentColor').value,
+            background_color: document.getElementById('bgColor').value,
+            text_color: document.getElementById('textColor').value,
+            font_family: document.getElementById('fontFamily').value,
+            home_layout: document.getElementById('homeLayout').value,
+            dramas_per_row: parseInt(document.getElementById('dramasPerRow').value),
+            show_views: document.getElementById('showViews').checked,
+            show_likes: document.getElementById('showLikes').checked
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/frontend/theme`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(themeData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('主题保存成功');
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+</script>
 </body>
 </html>

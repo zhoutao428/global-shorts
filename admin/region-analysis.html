@@ -334,329 +334,277 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let regionPieChart, preferenceChart;
-        let currentPage = 1;
-        let currentRegion = 'all';
-        let currentTimeRange = 'month';
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let regionPieChart, preferenceChart;
+    let currentPage = 1;
+    let currentRegion = 'all';
+    let currentTimeRange = 'month';
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 初始化图表
-            initCharts();
+        initCharts();
+        await loadRegionData();
 
-            // 加载地区数据
-            await loadRegionData();
+        document.querySelectorAll('.region-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentRegion = e.target.dataset.region;
+                loadRegionData();
+            });
+        });
 
-            // 绑定地区选择器事件
-            document.querySelectorAll('.region-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('applyFilterBtn').addEventListener('click', () => {
+            currentTimeRange = document.getElementById('timeRange').value;
+            currentPage = 1;
+            loadRegionData();
+        });
+
+        document.getElementById('refreshMapBtn').addEventListener('click', () => {
+            loadRegionData();
+        });
+
+        document.getElementById('exportRegionBtn').addEventListener('click', exportRegionData);
+
+        document.getElementById('preferenceRegion').addEventListener('change', (e) => {
+            updatePreferenceChart(e.target.value);
+        });
+
+        document.querySelectorAll('#regionPagination .page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentPage) {
+                    currentPage = page;
+                    loadRegionTable();
+                    
+                    document.querySelectorAll('#regionPagination .page-item').forEach(p => p.classList.remove('active'));
                     e.target.classList.add('active');
-                    currentRegion = e.target.dataset.region;
-                    loadRegionData();
-                });
-            });
-
-            // 绑定筛选事件
-            document.getElementById('applyFilterBtn').addEventListener('click', () => {
-                currentTimeRange = document.getElementById('timeRange').value;
-                currentPage = 1;
-                loadRegionData();
-            });
-
-            document.getElementById('refreshMapBtn').addEventListener('click', () => {
-                loadRegionData();
-            });
-
-            document.getElementById('exportRegionBtn').addEventListener('click', exportRegionData);
-
-            document.getElementById('preferenceRegion').addEventListener('change', (e) => {
-                updatePreferenceChart(e.target.value);
-            });
-
-            // 分页点击
-            document.querySelectorAll('#regionPagination .page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentPage) {
-                        currentPage = page;
-                        loadRegionTable();
-                        
-                        document.querySelectorAll('#regionPagination .page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
+                }
             });
         });
+    });
 
-        // 初始化图表
-        function initCharts() {
-            // 地区占比饼图
-            const pieCtx = document.getElementById('regionPieChart').getContext('2d');
-            regionPieChart = new Chart(pieCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['北美', '欧洲', '亚洲', '其他'],
-                    datasets: [{
-                        data: [32, 28, 24, 16],
-                        backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#f5222d']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    }
+    function initCharts() {
+        const pieCtx = document.getElementById('regionPieChart').getContext('2d');
+        regionPieChart = new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['北美', '欧洲', '亚洲', '其他'],
+                datasets: [{
+                    data: [32, 28, 24, 16],
+                    backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#f5222d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
                 }
-            });
-
-            // 内容偏好图表
-            const prefCtx = document.getElementById('preferenceChart').getContext('2d');
-            preferenceChart = new Chart(prefCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['CEO系列', '悬疑', '爱情', '喜剧', '玄幻'],
-                    datasets: [{
-                        label: '观看占比 (%)',
-                        data: [45, 30, 25, 20, 15],
-                        backgroundColor: '#1890ff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    }
-                }
-            });
-        }
-
-        // 加载地区数据
-        async function loadRegionData() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const params = new URLSearchParams({
-                    region: currentRegion,
-                    timeRange: currentTimeRange
-                });
-
-                const response = await fetch(`${API_BASE}/region/overview?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    updateRegionStats(data.data.stats);
-                    updateRegionPie(data.data.distribution);
-                    updateRegionDistribution(data.data.distribution);
-                }
-            } catch (error) {
-                console.error('加载地区数据失败:', error);
             }
-
-            // 加载表格数据
-            await loadRegionTable();
-        }
-
-        
-        // 更新统计卡片
-function updateRegionStats(stats) {
-    // 直接使用后端返回的值，如果没有就显示0
-    document.getElementById('totalCountries').textContent = stats.totalCountries || 0;
-    document.getElementById('overseasUsers').textContent = (stats.overseasUsers || 0).toLocaleString();
-    document.getElementById('overseasGrowth').textContent = (stats.overseasGrowth || 0) + '%';
-    document.getElementById('overseasRevenue').textContent = '$' + (stats.overseasRevenue || 0).toLocaleString();
-    
-    // 可选：当所有数据都是0时显示提示
-    if (stats.totalCountries === 0 && stats.overseasUsers === 0 && stats.overseasRevenue === 0) {
-        console.log('暂无地区统计数据');
-    }
-}
-
-        // 更新地区占比饼图
-function updateRegionPie(distribution) {
-    const data = [
-        distribution.north_america || 0,
-        distribution.europe || 0,
-        distribution.asia || 0,
-        distribution.other || 0
-    ];
-    
-    regionPieChart.data.datasets[0].data = data;
-    regionPieChart.update();
-
-    // 更新百分比列表
-    const percentList = document.getElementById('regionPercentList');
-    percentList.innerHTML = `
-        <div style="margin-bottom:8px;">
-            <i class="fas fa-circle" style="color:#1890ff;"></i> 北美 <span style="float:right;">${data[0]}%</span>
-        </div>
-        <div style="margin-bottom:8px;">
-            <i class="fas fa-circle" style="color:#52c41a;"></i> 欧洲 <span style="float:right;">${data[1]}%</span>
-        </div>
-        <div style="margin-bottom:8px;">
-            <i class="fas fa-circle" style="color:#faad14;"></i> 亚洲 <span style="float:right;">${data[2]}%</span>
-        </div>
-        <div>
-            <i class="fas fa-circle" style="color:#f5222d;"></i> 其他 <span style="float:right;">${data[3]}%</span>
-        </div>
-    `;
-}
-
-       // 更新地区分布文本
-function updateRegionDistribution(distribution) {
-    // 直接从 distribution 对象获取值，没有就显示 0
-    const northAmerica = distribution.north_america || 0;
-    const europe = distribution.europe || 0;
-    const asia = distribution.asia || 0;
-    const other = distribution.other || 0;
-    
-    document.getElementById('regionDistribution').innerHTML = 
-        `北美 ${northAmerica}% | 欧洲 ${europe}% | 亚洲 ${asia}% | 其他 ${other}%`;
-    
-    // 如果所有值都是0，显示提示信息
-    if (northAmerica === 0 && europe === 0 && asia === 0 && other === 0) {
-        document.getElementById('regionDistribution').innerHTML = '暂无地区分布数据';
-    }
-}
-
-        // 更新内容偏好图表
-function updatePreferenceChart(region) {
-    // 从API获取真实数据
-    fetch(`${API_BASE}/region/preference?region=${region}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            preferenceChart.data.labels = data.data.categories;
-            preferenceChart.data.datasets[0].data = data.data.percentages;
-            preferenceChart.update();
-        }
-    })
-    .catch(err => console.error('加载偏好数据失败:', err));
-}
-
-// 在 loadRegionData 函数中，添加加载偏好数据
-async function loadRegionData() {
-    const token = localStorage.getItem('token');
-    
-    try {
-        const params = new URLSearchParams({
-            region: currentRegion,
-            timeRange: currentTimeRange
         });
 
-        // 并行获取概览和排行榜数据
-        const [overviewRes, topRes] = await Promise.all([
-            fetch(`${API_BASE}/region/overview?${params}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }),
-            fetch(`${API_BASE}/region/top?page=${currentPage}&limit=10&region=${currentRegion}&timeRange=${currentTimeRange}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-        ]);
-
-        const overview = await overviewRes.json();
-        const top = await topRes.json();
-
-        if (overview.success) {
-            updateRegionStats(overview.data.stats);
-            updateRegionPie(overview.data.distribution);
-            updateRegionDistribution(overview.data.distribution);
-        }
-        
-        if (top.success) {
-            renderRegionTable(top.data);
-        }
-
-        // 加载默认地区的偏好数据
-        updatePreferenceChart(document.getElementById('preferenceRegion').value);
-    } catch (error) {
-        console.error('加载地区数据失败:', error);
-    }
-}
-
-        // 渲染地区表格
-        function renderRegionTable(regions) {
-            const tbody = document.getElementById('regionTableBody');
-            tbody.innerHTML = '';
-
-            regions.forEach((region, index) => {
-                const row = document.createElement('tr');
-                const growthClass = region.growth >= 0 ? 'var(--success)' : 'var(--error)';
-                const growthSign = region.growth >= 0 ? '+' : '';
-
-                row.innerHTML = `
-                    <td>${(currentPage - 1) * 10 + index + 1}</td>
-                    <td><strong>${region.country}</strong></td>
-                    <td>${region.users.toLocaleString()}</td>
-                    <td><span style="color:${growthClass};">${growthSign}${region.growth}%</span></td>
-                    <td>${region.popularContent}</td>
-                    <td>$${region.revenue.toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewRegionDetail('${region.code}')">
-                            <i class="fas fa-eye"></i>详情
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // 查看地区详情
-        window.viewRegionDetail = function(code) {
-            alert('查看地区详情：' + code);
-        };
-
-        // 导出地区数据
-        async function exportRegionData() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const params = new URLSearchParams({
-                    region: currentRegion,
-                    timeRange: currentTimeRange
-                });
-
-                const response = await fetch(`${API_BASE}/region/export?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `region_analysis_${new Date().toISOString().split('T')[0]}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    alert('导出失败');
+        const prefCtx = document.getElementById('preferenceChart').getContext('2d');
+        preferenceChart = new Chart(prefCtx, {
+            type: 'bar',
+            data: {
+                labels: ['CEO系列', '悬疑', '爱情', '喜剧', '玄幻'],
+                datasets: [{
+                    label: '观看占比 (%)',
+                    data: [45, 30, 25, 20, 15],
+                    backgroundColor: '#1890ff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
                 }
-            } catch (error) {
-                console.error('导出失败:', error);
-                alert('导出失败，请重试');
             }
+        });
+    }
+
+    async function loadRegionData() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            const params = new URLSearchParams({
+                region: currentRegion,
+                timeRange: currentTimeRange
+            });
+
+            // 修改：使用 window.API_BASE
+            const [overviewRes, topRes] = await Promise.all([
+                fetch(`${window.API_BASE}/region/overview?${params}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${window.API_BASE}/region/top?page=${currentPage}&limit=10&region=${currentRegion}&timeRange=${currentTimeRange}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            const overview = await overviewRes.json();
+            const top = await topRes.json();
+
+            if (overview.success) {
+                updateRegionStats(overview.data.stats);
+                updateRegionPie(overview.data.distribution);
+                updateRegionDistribution(overview.data.distribution);
+            }
+            
+            if (top.success) {
+                renderRegionTable(top.data);
+            }
+
+            updatePreferenceChart(document.getElementById('preferenceRegion').value);
+        } catch (error) {
+            console.error('加载地区数据失败:', error);
         }
-    </script>
+    }
+
+    function updateRegionStats(stats) {
+        document.getElementById('totalCountries').textContent = stats.totalCountries || 0;
+        document.getElementById('overseasUsers').textContent = (stats.overseasUsers || 0).toLocaleString();
+        document.getElementById('overseasGrowth').textContent = (stats.overseasGrowth || 0) + '%';
+        document.getElementById('overseasRevenue').textContent = '$' + (stats.overseasRevenue || 0).toLocaleString();
+        
+        if (stats.totalCountries === 0 && stats.overseasUsers === 0 && stats.overseasRevenue === 0) {
+            console.log('暂无地区统计数据');
+        }
+    }
+
+    function updateRegionPie(distribution) {
+        const data = [
+            distribution.north_america || 0,
+            distribution.europe || 0,
+            distribution.asia || 0,
+            distribution.other || 0
+        ];
+        
+        regionPieChart.data.datasets[0].data = data;
+        regionPieChart.update();
+
+        const percentList = document.getElementById('regionPercentList');
+        percentList.innerHTML = `
+            <div style="margin-bottom:8px;">
+                <i class="fas fa-circle" style="color:#1890ff;"></i> 北美 <span style="float:right;">${data[0]}%</span>
+            </div>
+            <div style="margin-bottom:8px;">
+                <i class="fas fa-circle" style="color:#52c41a;"></i> 欧洲 <span style="float:right;">${data[1]}%</span>
+            </div>
+            <div style="margin-bottom:8px;">
+                <i class="fas fa-circle" style="color:#faad14;"></i> 亚洲 <span style="float:right;">${data[2]}%</span>
+            </div>
+            <div>
+                <i class="fas fa-circle" style="color:#f5222d;"></i> 其他 <span style="float:right;">${data[3]}%</span>
+            </div>
+        `;
+    }
+
+    function updateRegionDistribution(distribution) {
+        const northAmerica = distribution.north_america || 0;
+        const europe = distribution.europe || 0;
+        const asia = distribution.asia || 0;
+        const other = distribution.other || 0;
+        
+        document.getElementById('regionDistribution').innerHTML = 
+            `北美 ${northAmerica}% | 欧洲 ${europe}% | 亚洲 ${asia}% | 其他 ${other}%`;
+        
+        if (northAmerica === 0 && europe === 0 && asia === 0 && other === 0) {
+            document.getElementById('regionDistribution').innerHTML = '暂无地区分布数据';
+        }
+    }
+
+    function updatePreferenceChart(region) {
+        // 修改：使用 window.API_BASE
+        fetch(`${window.API_BASE}/region/preference?region=${region}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                preferenceChart.data.labels = data.data.categories;
+                preferenceChart.data.datasets[0].data = data.data.percentages;
+                preferenceChart.update();
+            }
+        })
+        .catch(err => console.error('加载偏好数据失败:', err));
+    }
+
+    function renderRegionTable(regions) {
+        const tbody = document.getElementById('regionTableBody');
+        tbody.innerHTML = '';
+
+        regions.forEach((region, index) => {
+            const row = document.createElement('tr');
+            const growthClass = region.growth >= 0 ? 'var(--success)' : 'var(--error)';
+            const growthSign = region.growth >= 0 ? '+' : '';
+
+            row.innerHTML = `
+                <td>${(currentPage - 1) * 10 + index + 1}</td>
+                <td><strong>${region.country}</strong></td>
+                <td>${region.users.toLocaleString()}</td>
+                <td><span style="color:${growthClass};">${growthSign}${region.growth}%</span></td>
+                <td>${region.popularContent}</td>
+                <td>$${region.revenue.toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="viewRegionDetail('${region.code}')">
+                        <i class="fas fa-eye"></i>详情
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    window.viewRegionDetail = function(code) {
+        alert('查看地区详情：' + code);
+    };
+
+    async function exportRegionData() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            const params = new URLSearchParams({
+                region: currentRegion,
+                timeRange: currentTimeRange
+            });
+
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/region/export?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `region_analysis_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('导出失败');
+            }
+        } catch (error) {
+            console.error('导出失败:', error);
+            alert('导出失败，请重试');
+        }
+    }
+</script>
 </body>
 </html>

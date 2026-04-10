@@ -210,7 +210,7 @@
         </main>
     </div>
 
-    <!-- 添加/编辑分集模态框（修改：免费/收费单选） -->
+    <!-- 添加/编辑分集模态框 -->
     <div class="modal-overlay" id="addEpisodeModal">
         <div class="modal">
             <div class="modal-header">
@@ -221,10 +221,10 @@
                 <form id="episodeForm">
                     <input type="hidden" id="episodeId">
                     <div class="form-group">
-    <label class="form-label">解锁价格 (金币)</label>
-    <input type="number" class="form-control" id="episodePrice" name="price" min="0" step="1" value="0">
-    <small>设置为0表示免费观看</small>
-</div>
+                        <label class="form-label">解锁价格 (金币)</label>
+                        <input type="number" class="form-control" id="episodePrice" name="price" min="0" step="1" value="0">
+                        <small>设置为0表示免费观看</small>
+                    </div>
                     <div class="form-group">
                         <label class="form-label">标题 <span style="color:var(--error);">*</span></label>
                         <input type="text" class="form-control" id="episodeTitle" required>
@@ -238,15 +238,12 @@
                         <label class="form-label">时长(秒)</label>
                         <input type="number" class="form-control" id="episodeDuration" placeholder="例如: 300">
                     </div>
-                    <!-- 语言下拉框（动态加载） -->
                     <div class="form-group">
                         <label class="form-label">语言</label>
-                        <select class="form-control" id="episodeLanguage">
-                            <!-- 选项由JS动态生成 -->
-                        </select>
+                        <select class="form-control" id="episodeLanguage"></select>
                         <small style="color:var(--gray);">从区域语言管理同步</small>
                     </div>
-                                        <div class="form-group">
+                    <div class="form-group">
                         <label class="form-label">状态</label>
                         <select class="form-control" id="episodeStatus">
                             <option value="published">已发布</option>
@@ -270,11 +267,12 @@
     <script src="js/admin-content.js"></script>
 
     <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
+        // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+        // 所有 fetch 请求都使用 window.API_BASE 拼接路径
         let currentDramaId = null;
-        let currentDramaAccessType = 'free'; // 保留用于显示剧集类型，但不再影响分集免费设置
+        let currentDramaAccessType = 'free';
         let languageList = [];
-        let episodesList = []; // 存储当前分集数据
+        let episodesList = [];
 
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
@@ -297,7 +295,6 @@
                 document.getElementById('addEpisodeBtn').disabled = false;
             }
 
-            // 绑定事件
             document.getElementById('dramaSelect').addEventListener('change', async (e) => {
                 currentDramaId = e.target.value;
                 if (currentDramaId) {
@@ -323,7 +320,7 @@
                 document.getElementById('episodeId').value = '';
                 document.getElementById('episodeForm').reset();
                 document.getElementById('episodeModalTitle').textContent = '添加分集';
-                setDefaultLanguage(); // 设置默认语言
+                setDefaultLanguage();
                 
                 adminCore.openModal('addEpisodeModal');
             });
@@ -338,15 +335,13 @@
 
             document.getElementById('saveEpisodeBtn').addEventListener('click', saveEpisode);
 
-            // 批量删除事件
             document.getElementById('selectAllCheckboxHeader').addEventListener('change', toggleSelectAll);
             document.getElementById('bulkDeleteBtn').addEventListener('click', handleBulkDelete);
         });
 
-        // 加载语言列表
         async function loadLanguageList() {
             try {
-                const response = await fetch(`${API_BASE}/languages`, {
+                const response = await fetch(`${window.API_BASE}/languages`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await response.json();
@@ -384,7 +379,7 @@
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`${API_BASE}/dramas?limit=100`, {
+                const response = await fetch(`${window.API_BASE}/dramas?limit=100`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -404,59 +399,58 @@
         }
 
         async function loadDramaInfo(dramaId) {
-    const token = localStorage.getItem('token');
-    
-    try {
-        const response = await fetch(`${API_BASE}/dramas/${dramaId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            const drama = data.data;
-            document.getElementById('currentDramaTitle').textContent = drama.title;
-            document.getElementById('dramaDescription').textContent = drama.description || '暂无描述';
-            document.getElementById('dramaTotalEpisodes').textContent = drama.total_episodes || 0;
+            const token = localStorage.getItem('token');
             
-            const coverImg = document.getElementById('dramaCover');
-            if (drama.cover_url) {
-                coverImg.src = drama.cover_url;
-                coverImg.style.display = 'block';
-            } else {
-                coverImg.style.display = 'none';
-            }
+            try {
+                const response = await fetch(`${window.API_BASE}/dramas/${dramaId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
 
-            const statusBadge = document.getElementById('dramaStatusBadge');
-            if (drama.status === 'published') {
-                statusBadge.textContent = '已发布';
-                statusBadge.className = 'status-badge status-active';
-            } else if (drama.status === 'draft') {
-                statusBadge.textContent = '草稿';
-                statusBadge.className = 'status-badge status-inactive';
-            } else {
-                statusBadge.textContent = '隐藏';
-                statusBadge.className = 'status-badge status-suspended';
-            }
+                if (data.success) {
+                    const drama = data.data;
+                    document.getElementById('currentDramaTitle').textContent = drama.title;
+                    document.getElementById('dramaDescription').textContent = drama.description || '暂无描述';
+                    document.getElementById('dramaTotalEpisodes').textContent = drama.total_episodes || 0;
+                    
+                    const coverImg = document.getElementById('dramaCover');
+                    if (drama.cover_url) {
+                        coverImg.src = drama.cover_url;
+                        coverImg.style.display = 'block';
+                    } else {
+                        coverImg.style.display = 'none';
+                    }
 
-            // 删除 access_type 相关代码，只显示剧集信息
-            const accessBadge = document.getElementById('dramaAccessTypeBadge');
-            if (accessBadge) {
-                accessBadge.style.display = 'none'; // 隐藏权限徽章
-            }
+                    const statusBadge = document.getElementById('dramaStatusBadge');
+                    if (drama.status === 'published') {
+                        statusBadge.textContent = '已发布';
+                        statusBadge.className = 'status-badge status-active';
+                    } else if (drama.status === 'draft') {
+                        statusBadge.textContent = '草稿';
+                        statusBadge.className = 'status-badge status-inactive';
+                    } else {
+                        statusBadge.textContent = '隐藏';
+                        statusBadge.className = 'status-badge status-suspended';
+                    }
 
-            document.getElementById('dramaInfoCard').style.display = 'block';
+                    const accessBadge = document.getElementById('dramaAccessTypeBadge');
+                    if (accessBadge) {
+                        accessBadge.style.display = 'none';
+                    }
+
+                    document.getElementById('dramaInfoCard').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('加载剧集信息失败:', error);
+            }
         }
-    } catch (error) {
-        console.error('加载剧集信息失败:', error);
-    }
-}
 
         async function loadEpisodes(dramaId) {
             const tbody = document.getElementById('episodeTableBody');
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(`${API_BASE}/episodes?drama_id=${dramaId}`, {
+                const response = await fetch(`${window.API_BASE}/episodes?drama_id=${dramaId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -552,7 +546,6 @@
             document.getElementById('bulkDeleteBtn').disabled = selectedCount === 0;
         }
 
-        // 监听每行复选框的变化
         document.addEventListener('change', (e) => {
             if (e.target.classList.contains('episode-select')) {
                 updateBulkDeleteButton();
@@ -575,7 +568,7 @@
 
             for (const id of selectedIds) {
                 try {
-                    const response = await fetch(`${API_BASE}/episodes/${id}`, {
+                    const response = await fetch(`${window.API_BASE}/episodes/${id}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -598,58 +591,49 @@
             }
         }
 
-        // 编辑分集
-       window.editEpisode = async function(id) {
-    if (!currentDramaId) {
-        const urlParams = new URLSearchParams(window.location.search);
-        currentDramaId = urlParams.get('drama_id');
-        if (!currentDramaId) {
-            alert('请先选择剧集');
-            return;
-        }
-    }
-    const token = localStorage.getItem('token');
-    
-    try {
-        const response = await fetch(`${API_BASE}/episodes/${id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
+        window.editEpisode = async function(id) {
+            if (!currentDramaId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                currentDramaId = urlParams.get('drama_id');
+                if (!currentDramaId) {
+                    alert('请先选择剧集');
+                    return;
+                }
+            }
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${window.API_BASE}/episodes/${id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
 
-        if (data.success) {
-            const ep = data.data;
-            document.getElementById('episodeId').value = ep.id;
-            
-            document.getElementById('episodeTitle').value = ep.title;
-            document.getElementById('videoUrl').value = ep.video_url || '';
-            document.getElementById('episodeDuration').value = ep.duration || '';
-            
-            // ✅ 关键：读取并设置价格
-            document.getElementById('episodePrice').value = ep.price !== undefined ? ep.price : 0;
-            
-            // 删除 is_free 相关代码（因为只用 price）
-            // 不再设置免费/收费单选按钮
-            
-            document.getElementById('episodeStatus').value = ep.status || 'published';
-            
-            renderLanguageSelect(ep.language || 'en-US');
-            
-            document.getElementById('episodeModalTitle').textContent = '编辑分集';
-            adminCore.openModal('addEpisodeModal');
-        }
-    } catch (error) {
-        alert('加载分集失败');
-    }
-};
+                if (data.success) {
+                    const ep = data.data;
+                    document.getElementById('episodeId').value = ep.id;
+                    document.getElementById('episodeTitle').value = ep.title;
+                    document.getElementById('videoUrl').value = ep.video_url || '';
+                    document.getElementById('episodeDuration').value = ep.duration || '';
+                    document.getElementById('episodePrice').value = ep.price !== undefined ? ep.price : 0;
+                    document.getElementById('episodeStatus').value = ep.status || 'published';
+                    
+                    renderLanguageSelect(ep.language || 'en-US');
+                    
+                    document.getElementById('episodeModalTitle').textContent = '编辑分集';
+                    adminCore.openModal('addEpisodeModal');
+                }
+            } catch (error) {
+                alert('加载分集失败');
+            }
+        };
 
-        // 删除分集
         window.deleteEpisode = async function(id) {
             if (!confirm('确定要删除该分集吗？')) return;
             
             const token = localStorage.getItem('token');
             
             try {
-                const response = await fetch(`${API_BASE}/episodes/${id}`, {
+                const response = await fetch(`${window.API_BASE}/episodes/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -668,81 +652,69 @@
             }
         };
 
-        // 保存分集
-async function saveEpisode() {
-    console.log('=== saveEpisode 调试 ===');
-    console.log('episodePrice 元素:', document.getElementById('episodePrice'));
-    console.log('episodePrice 值:', document.getElementById('episodePrice')?.value);
-    
-    if (!currentDramaId) {
-        alert('请先选择剧集');
-        return;
-    }
+        async function saveEpisode() {
+            if (!currentDramaId) {
+                alert('请先选择剧集');
+                return;
+            }
 
-    const token = localStorage.getItem('token');
-    const episodeId = document.getElementById('episodeId').value;
+            const token = localStorage.getItem('token');
+            const episodeId = document.getElementById('episodeId').value;
+            const price = parseInt(document.getElementById('episodePrice').value) || 0;
 
-    // 获取价格
-    const price = parseInt(document.getElementById('episodePrice').value) || 0;
+            let episodeNumber = 0;
+            if (episodeId) {
+                const originalEp = episodesList.find(ep => ep.id === episodeId);
+                if (originalEp) {
+                    episodeNumber = originalEp.episode_number;
+                }
+            } else {
+                const maxNum = Math.max(0, ...episodesList.map(ep => ep.episode_number));
+                episodeNumber = maxNum + 1;
+            }
 
-    // 获取集数
-    let episodeNumber = 0;
-    if (episodeId) {
-        // 编辑时，从原有数据中获取集数
-        const originalEp = episodesList.find(ep => ep.id === episodeId);
-        if (originalEp) {
-            episodeNumber = originalEp.episode_number;
+            const formData = {
+                drama_id: currentDramaId,
+                episode_number: episodeNumber,
+                title: document.getElementById('episodeTitle').value,
+                video_url: document.getElementById('videoUrl').value,
+                duration: parseInt(document.getElementById('episodeDuration').value) || 0,
+                price: price,
+                status: document.getElementById('episodeStatus').value,
+                language: document.getElementById('episodeLanguage').value
+            };
+
+            if (!formData.video_url) {
+                alert('请输入视频链接');
+                return;
+            }
+
+            const url = episodeId ? `${window.API_BASE}/episodes/${episodeId}` : `${window.API_BASE}/episodes`;
+            const method = episodeId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCore.closeModal('addEpisodeModal');
+                    await loadEpisodes(currentDramaId);
+                    alert('保存成功！');
+                } else {
+                    alert('保存失败：' + data.error);
+                }
+            } catch (error) {
+                console.error('保存错误:', error);
+                alert('网络错误，请重试');
+            }
         }
-    } else {
-        // 新增时，自动计算最大集数+1
-        const maxNum = Math.max(0, ...episodesList.map(ep => ep.episode_number));
-        episodeNumber = maxNum + 1;
-    }
-
-    const formData = {
-        drama_id: currentDramaId,
-        episode_number: episodeNumber,  // ✅ 添加这个字段！
-        title: document.getElementById('episodeTitle').value,
-        video_url: document.getElementById('videoUrl').value,
-        duration: parseInt(document.getElementById('episodeDuration').value) || 0,
-        price: price,
-        status: document.getElementById('episodeStatus').value,
-        language: document.getElementById('episodeLanguage').value
-    };
-
-    console.log('提交的 formData:', formData);  // 调试用
-
-    if (!formData.video_url) {
-        alert('请输入视频链接');
-        return;
-    }
-
-    const url = episodeId ? `${API_BASE}/episodes/${episodeId}` : `${API_BASE}/episodes`;
-    const method = episodeId ? 'PUT' : 'POST';
-
-    try {
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(formData)
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            adminCore.closeModal('addEpisodeModal');
-            await loadEpisodes(currentDramaId);
-            alert('保存成功！');
-        } else {
-            alert('保存失败：' + data.error);
-        }
-    } catch (error) {
-        console.error('保存错误:', error);
-        alert('网络错误，请重试');
-    }
-}
     </script>
 </body>
 </html>

@@ -1,10 +1,115 @@
 // admin-core.js
 (function() {
+    // ---------- API 基础路径配置 ----------
+    window.API_BASE = '/api/admin';
+    window.UPLOAD_BASE = '/upload';
+    
+    // ---------- 全局工具函数 ----------
+    
+    // 统一处理 API 请求（自动添加 token）
+    window.apiRequest = async function(endpoint, options = {}) {
+        const token = localStorage.getItem('token');
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+        };
+        
+        const response = await fetch(`${window.API_BASE}${endpoint}`, {
+            ...options,
+            headers: { ...defaultHeaders, ...options.headers }
+        });
+        
+        // 401 未授权，跳转登录页
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/login.html';
+            throw new Error('Unauthorized');
+        }
+        
+        return response;
+    };
+    
+    // 显示提示消息（可选的 toast 通知）
+    window.showToast = function(message, type = 'info') {
+        // 简单实现，可根据需要扩展
+        alert(message);
+    };
+    
     // ---------- 多语言文本 ----------
     const translations = {
-        zh: { /* 保持不变 */ },
-        en: { /* 保持不变 */ }
+        zh: {
+            'dashboard': '仪表盘',
+            'users': '用户管理',
+            'dramas': '剧集管理',
+            'episodes': '分集管理',
+            'categories': '分类管理',
+            'vipPlans': 'VIP套餐',
+            'coinPackages': '金币套餐',
+            'adPositions': '广告位',
+            'languages': '语言管理',
+            'translations': '翻译管理',
+            'settings': '系统设置',
+            'statistics': '数据统计',
+            'revenue': '收入统计',
+            'logs': '系统日志',
+            'profile': '个人资料',
+            'logout': '退出登录',
+            'welcome': '欢迎回来',
+            'loading': '加载中...',
+            'save': '保存',
+            'cancel': '取消',
+            'confirm': '确认',
+            'delete': '删除',
+            'edit': '编辑',
+            'add': '添加',
+            'search': '搜索',
+            'filter': '筛选',
+            'refresh': '刷新',
+            'export': '导出',
+            'import': '导入',
+            'success': '操作成功',
+            'failed': '操作失败',
+            'networkError': '网络错误',
+            'unauthorized': '未授权，请重新登录'
+        },
+        en: {
+            'dashboard': 'Dashboard',
+            'users': 'Users',
+            'dramas': 'Dramas',
+            'episodes': 'Episodes',
+            'categories': 'Categories',
+            'vipPlans': 'VIP Plans',
+            'coinPackages': 'Coin Packages',
+            'adPositions': 'Ad Positions',
+            'languages': 'Languages',
+            'translations': 'Translations',
+            'settings': 'Settings',
+            'statistics': 'Statistics',
+            'revenue': 'Revenue',
+            'logs': 'Logs',
+            'profile': 'Profile',
+            'logout': 'Logout',
+            'welcome': 'Welcome Back',
+            'loading': 'Loading...',
+            'save': 'Save',
+            'cancel': 'Cancel',
+            'confirm': 'Confirm',
+            'delete': 'Delete',
+            'edit': 'Edit',
+            'add': 'Add',
+            'search': 'Search',
+            'filter': 'Filter',
+            'refresh': 'Refresh',
+            'export': 'Export',
+            'import': 'Import',
+            'success': 'Success',
+            'failed': 'Failed',
+            'networkError': 'Network Error',
+            'unauthorized': 'Unauthorized, please login again'
+        }
     };
+    
     let currentLang = 'zh';
 
     function switchLanguage(lang) {
@@ -20,28 +125,32 @@
                 }
             }
         });
-        document.getElementById('currentLanguage').textContent = lang === 'zh' ? '中文' : 'English';
+        const langSpan = document.getElementById('currentLanguage');
+        if (langSpan) {
+            langSpan.textContent = lang === 'zh' ? '中文' : 'English';
+        }
     }
 
-    // ---------- 侧边栏展开/收起（只保留移动端汉堡菜单）----------
+    // ---------- 侧边栏展开/收起 ----------
     function initSidebar() {
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('adminSidebar');
-        if (menuToggle) {
+        if (menuToggle && sidebar) {
             menuToggle.addEventListener('click', () => {
                 sidebar.classList.toggle('active');
             });
         }
-        
-        // 🗑️ 已删除：子菜单展开/收起的 JS 代码（现在由纯CSS控制）
     }
 
     // ---------- 模态框通用 ----------
     function openModal(modalId) {
-        document.getElementById(modalId)?.classList.add('active');
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('active');
     }
+    
     function closeModal(modalId) {
-        document.getElementById(modalId)?.classList.remove('active');
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('active');
     }
 
     // 点击外部关闭模态框
@@ -66,13 +175,11 @@
                 dropdown.style.display = 'none';
             });
 
-            // 防止点击下拉菜单本身时关闭
             dropdown.addEventListener('click', (e) => {
                 e.stopPropagation();
             });
         }
 
-        // 退出登录
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', (e) => {
@@ -109,9 +216,8 @@
         });
     }
 
-    // ---------- 页面跳转（处理 /admin/ 路径）----------
+    // ---------- 页面跳转 ----------
     function initPageNavigation() {
-        // 处理所有带 data-page 属性的菜单项（如果有的话）
         document.querySelectorAll('.menu-item[data-page], .submenu-item[data-page]').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -123,22 +229,8 @@
         });
     }
 
-    // 暴露全局工具
-    window.adminCore = {
-        switchLanguage,
-        openModal,
-        closeModal,
-        currentLang: () => currentLang
-    };
-
-    // DOM 加载完成后初始化
-    document.addEventListener('DOMContentLoaded', () => {
-        initSidebar();              // 移动端汉堡菜单
-        initUserMenu();             // 用户下拉菜单
-        initLanguageSwitcher();     // 语言切换
-        initPageNavigation();       // 页面跳转（可选）
-        
-        // 获取并显示用户信息（如果有）
+    // 加载用户信息到界面
+    function loadUserInfo() {
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
         if (userInfo.name) {
             const nameEls = document.querySelectorAll('#adminName, #profileName');
@@ -146,10 +238,17 @@
                 if (el) el.textContent = userInfo.name;
             });
             
-            const avatarEls = document.querySelectorAll('.user-avatar, #profileAvatar');
+            const avatarEls = document.querySelectorAll('.user-avatar');
             avatarEls.forEach(el => {
-                if (el) el.textContent = userInfo.name.charAt(0).toUpperCase();
+                if (el && !el.querySelector('img')) {
+                    el.textContent = userInfo.name.charAt(0).toUpperCase();
+                }
             });
+            
+            const avatarText = document.getElementById('avatarText');
+            if (avatarText) {
+                avatarText.textContent = userInfo.name.charAt(0).toUpperCase();
+            }
         }
         if (userInfo.role) {
             const roleEls = document.querySelectorAll('#adminRole, #profileRole');
@@ -157,5 +256,41 @@
                 if (el) el.textContent = userInfo.role;
             });
         }
+        if (userInfo.avatar) {
+            const avatarImage = document.getElementById('avatarImage');
+            const avatarText = document.getElementById('avatarText');
+            const userAvatar = document.getElementById('userAvatar');
+            
+            if (avatarImage) {
+                avatarText.style.display = 'none';
+                avatarImage.style.display = 'block';
+                avatarImage.src = userInfo.avatar;
+            }
+            if (userAvatar) {
+                userAvatar.style.background = 'transparent';
+                userAvatar.innerHTML = `<img src="${userInfo.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            }
+        }
+    }
+
+    // 暴露全局工具
+    window.adminCore = {
+        switchLanguage,
+        openModal,
+        closeModal,
+        currentLang: () => currentLang,
+        API_BASE: window.API_BASE,
+        UPLOAD_BASE: window.UPLOAD_BASE,
+        apiRequest: window.apiRequest,
+        showToast: window.showToast
+    };
+
+    // DOM 加载完成后初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        initSidebar();
+        initUserMenu();
+        initLanguageSwitcher();
+        initPageNavigation();
+        loadUserInfo();
     });
 })();

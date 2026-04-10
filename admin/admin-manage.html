@@ -423,523 +423,487 @@
 
     <!-- JS 脚本 -->
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let currentAdminPage = 1;
-        let currentLogPage = 1;
-        let searchTimer = null;
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let currentAdminPage = 1;
+    let currentLogPage = 1;
+    let searchTimer = null;
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载数据
-            await loadAdmins();
-            await loadRoles();
-            await loadLoginHistory();
+        await loadAdmins();
+        await loadRoles();
+        await loadLoginHistory();
 
-            // 绑定事件
-            document.getElementById('addAdminBtn').addEventListener('click', () => {
-                document.getElementById('adminId').value = '';
-                document.getElementById('adminForm').reset();
-                document.getElementById('passwordField').style.display = 'block';
-                document.getElementById('adminModalTitle').textContent = '添加管理员';
-                adminCore.openModal('addAdminModal');
-            });
-
-            document.getElementById('closeAddAdminModal').addEventListener('click', () => {
-                adminCore.closeModal('addAdminModal');
-            });
-
-            document.getElementById('cancelAddAdminBtn').addEventListener('click', () => {
-                adminCore.closeModal('addAdminModal');
-            });
-
-            document.getElementById('saveAdminBtn').addEventListener('click', saveAdmin);
-
-            document.getElementById('addRoleBtn').addEventListener('click', () => {
-                adminCore.openModal('addRoleModal');
-            });
-
-            document.getElementById('closeRoleModal').addEventListener('click', () => {
-                adminCore.closeModal('addRoleModal');
-            });
-
-            document.getElementById('cancelRoleBtn').addEventListener('click', () => {
-                adminCore.closeModal('addRoleModal');
-            });
-
-            document.getElementById('saveRoleBtn').addEventListener('click', saveRole);
-
-            document.getElementById('closePermissionsModal').addEventListener('click', () => {
-                adminCore.closeModal('editPermissionsModal');
-            });
-
-            document.getElementById('cancelPermissionsBtn').addEventListener('click', () => {
-                adminCore.closeModal('editPermissionsModal');
-            });
-
-            document.getElementById('savePermissionsBtn').addEventListener('click', savePermissions);
-
-            document.getElementById('exportAdminsBtn').addEventListener('click', exportAdmins);
-
-            document.getElementById('refreshLogsBtn').addEventListener('click', () => {
-                currentLogPage = 1;
-                loadLoginHistory();
-            });
-
-            // 搜索功能
-            document.getElementById('adminSearch').addEventListener('input', (e) => {
-                if (searchTimer) clearTimeout(searchTimer);
-                searchTimer = setTimeout(() => {
-                    currentAdminPage = 1;
-                    loadAdmins();
-                }, 300);
-            });
-
-            // 筛选
-            document.getElementById('adminStatusFilter').addEventListener('change', () => {
-                currentAdminPage = 1;
-                loadAdmins();
-            });
-
-            document.getElementById('adminRoleFilter').addEventListener('change', () => {
-                currentAdminPage = 1;
-                loadAdmins();
-            });
-
-            // 分页点击
-            setupPagination();
+        document.getElementById('addAdminBtn').addEventListener('click', () => {
+            document.getElementById('adminId').value = '';
+            document.getElementById('adminForm').reset();
+            document.getElementById('passwordField').style.display = 'block';
+            document.getElementById('adminModalTitle').textContent = '添加管理员';
+            adminCore.openModal('addAdminModal');
         });
 
-        // 加载管理员列表
-        async function loadAdmins() {
-            const tbody = document.getElementById('adminTableBody');
-            const token = localStorage.getItem('token');
+        document.getElementById('closeAddAdminModal').addEventListener('click', () => {
+            adminCore.closeModal('addAdminModal');
+        });
 
-            try {
-                // 构建查询参数
-                const params = new URLSearchParams({
-                    page: currentAdminPage,
-                    limit: 10,
-                    search: document.getElementById('adminSearch').value,
-                    status: document.getElementById('adminStatusFilter').value,
-                    role: document.getElementById('adminRoleFilter').value
-                });
+        document.getElementById('cancelAddAdminBtn').addEventListener('click', () => {
+            adminCore.closeModal('addAdminModal');
+        });
 
-                const response = await fetch(`${API_BASE}/admins?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    renderAdmins(data.data);
-                    updateAdminStats(data.data);
-                    if (data.pagination) {
-                        updatePagination('adminPagination', data.pagination, (page) => {
-                            currentAdminPage = page;
-                            loadAdmins();
-                        });
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载管理员失败:', error);
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 渲染管理员列表
-        function renderAdmins(admins) {
-            const tbody = document.getElementById('adminTableBody');
-            
-            if (!admins || admins.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无管理员</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '';
-            
-            admins.forEach(admin => {
-                const row = document.createElement('tr');
-                
-                // 角色徽章
-                let roleBadge = '';
-                if (admin.role === 'superadmin') {
-                    roleBadge = '<span class="role-badge role-superadmin">超级管理员</span>';
-                } else {
-                    roleBadge = '<span class="role-badge role-admin">管理员</span>';
-                }
-
-                // 状态徽章
-                const statusBadge = admin.is_active ? 
-                    '<span class="status-badge status-active">活跃</span>' : 
-                    '<span class="status-badge status-inactive">禁用</span>';
-
-                row.innerHTML = `
-                    <td>${admin.username}</td>
-                    <td>${admin.full_name || '-'}</td>
-                    <td>${admin.email}</td>
-                    <td>${roleBadge}</td>
-                    <td>${statusBadge}</td>
-                    <td>${admin.last_login || '-'}</td>
-                    <td>${admin.created_at ? admin.created_at.substring(0,10) : '-'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="editAdmin('${admin.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteAdmin('${admin.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <button class="btn btn-sm btn-secondary" onclick="editPermissions('${admin.id}')">
-                            <i class="fas fa-key"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // 更新统计卡片
-        function updateAdminStats(admins) {
-            const total = admins.length;
-            const active = admins.filter(a => a.is_active).length;
-            const superAdmins = admins.filter(a => a.role === 'superadmin').length;
-            const inactive = total - active;
-            
-            document.getElementById('totalAdmins').textContent = total;
-            document.getElementById('activeAdmins').textContent = active;
-            document.getElementById('superAdmins').textContent = superAdmins;
-            document.getElementById('inactiveAdmins').textContent = inactive;
-        }
-
-        // 编辑管理员
-        window.editAdmin = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/admins/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const admin = data.data;
-                    document.getElementById('adminId').value = admin.id;
-                    document.getElementById('adminUsername').value = admin.username;
-                    document.getElementById('adminEmail').value = admin.email;
-                    document.getElementById('adminFullName').value = admin.full_name || '';
-                    document.getElementById('adminRole').value = admin.role;
-                    document.getElementById('adminStatus').value = admin.is_active ? 'active' : 'inactive';
-                    
-                    document.getElementById('passwordField').style.display = 'none';
-                    document.getElementById('adminModalTitle').textContent = '编辑管理员';
-                    adminCore.openModal('addAdminModal');
-                }
-            } catch (error) {
-                alert('加载管理员失败');
-            }
-        };
-
-        // 删除管理员
-        window.deleteAdmin = async function(id) {
-            if (!confirm('确定要删除该管理员吗？')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/admins/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    await loadAdmins();
-                } else {
-                    alert('删除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 保存管理员
-        async function saveAdmin() {
-            const token = localStorage.getItem('token');
-            const adminId = document.getElementById('adminId').value;
-
-            const formData = {
-                username: document.getElementById('adminUsername').value,
-                email: document.getElementById('adminEmail').value,
-                full_name: document.getElementById('adminFullName').value,
-                role: document.getElementById('adminRole').value,
-                is_active: document.getElementById('adminStatus').value === 'active'
-            };
-
-            // 如果是新增，需要密码
-            if (!adminId) {
-                const password = document.getElementById('adminPassword').value;
-                if (!password) {
-                    alert('密码不能为空');
-                    return;
-                }
-                formData.password = password;
-            }
-
-            const url = adminId ? `${API_BASE}/admins/${adminId}` : `${API_BASE}/admins`;
-            const method = adminId ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addAdminModal');
-                    await loadAdmins();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 加载角色列表
-        async function loadRoles() {
-            const container = document.getElementById('roleListContainer');
-            const token = localStorage.getItem('token');
-
-            try {
-                const response = await fetch(`${API_BASE}/roles`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderRoles(data.data);
-                } else {
-                    container.innerHTML = '<div class="empty-placeholder">暂无角色，点击"添加角色"创建</div>';
-                }
-            } catch (error) {
-                console.error('加载角色失败:', error);
-                container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
-            }
-        }
-
-        // 渲染角色卡片
-        function renderRoles(roles) {
-            const container = document.getElementById('roleListContainer');
-            container.innerHTML = '';
-
-            roles.forEach(role => {
-                const card = document.createElement('div');
-                card.style.cssText = 'border:1px solid var(--border); border-radius:8px; padding:16px; background:white;';
-                
-                let roleClass = 'role-admin';
-                if (role.name.includes('超级')) roleClass = 'role-superadmin';
-                
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <h4 style="font-weight:600;">${role.name}</h4>
-                        <span class="role-badge ${roleClass}">${role.admin_count || 0}人</span>
-                    </div>
-                    <p style="color:var(--gray); font-size:13px; margin-bottom:16px;">${role.description || '暂无描述'}</p>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-sm btn-secondary" onclick="editRole('${role.id}')">
-                            <i class="fas fa-edit"></i>编辑权限
-                        </button>
-                        ${!role.is_system ? 
-                            `<button class="btn btn-sm btn-danger" onclick="deleteRole('${role.id}')">
-                                <i class="fas fa-trash"></i>删除
-                            </button>` : ''
-                        }
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // 编辑权限
-        window.editPermissions = function(adminId) {
-            // 加载权限树
-            const tree = document.getElementById('permissionTree');
-            tree.innerHTML = generatePermissionTree();
-            document.getElementById('permissionModalTitle').textContent = '编辑权限 - 管理员';
-            adminCore.openModal('editPermissionsModal');
-        };
-
-        window.editRole = function(roleId) {
-            // 加载权限树
-            const tree = document.getElementById('permissionTree');
-            tree.innerHTML = generatePermissionTree();
-            document.getElementById('permissionModalTitle').textContent = '编辑权限 - 角色';
-            adminCore.openModal('editPermissionsModal');
-        };
-
-        // 生成权限树（示例）
-        function generatePermissionTree() {
-            return `
-                <div class="permission-group">
-                    <h4 class="group-title">用户管理</h4>
-                    <div class="permission-item"><input type="checkbox" checked> 查看用户</div>
-                    <div class="permission-item"><input type="checkbox" checked> 编辑用户</div>
-                    <div class="permission-item"><input type="checkbox"> 删除用户</div>
-                    <div class="permission-item"><input type="checkbox" checked> 管理VIP</div>
-                </div>
-                <div class="permission-group">
-                    <h4 class="group-title">内容管理</h4>
-                    <div class="permission-item"><input type="checkbox" checked> 查看剧集</div>
-                    <div class="permission-item"><input type="checkbox" checked> 编辑剧集</div>
-                    <div class="permission-item"><input type="checkbox"> 删除剧集</div>
-                    <div class="permission-item"><input type="checkbox"> 发布剧集</div>
-                </div>
-                <div class="permission-group">
-                    <h4 class="group-title">系统管理</h4>
-                    <div class="permission-item"><input type="checkbox"> 管理员管理</div>
-                    <div class="permission-item"><input type="checkbox"> 系统设置</div>
-                    <div class="permission-item"><input type="checkbox"> 查看日志</div>
-                </div>
-            `;
-        }
-
-        // 保存权限
-        async function savePermissions() {
-            alert('权限保存成功（演示）');
-            adminCore.closeModal('editPermissionsModal');
-        }
-
-        // 删除角色
-        window.deleteRole = async function(id) {
-            if (!confirm('确定要删除该角色吗？')) return;
-            alert('删除角色功能待对接API');
-        };
-
-        // 保存角色
-        async function saveRole() {
-            const roleName = document.getElementById('roleName').value;
-            if (!roleName) {
-                alert('角色名称不能为空');
-                return;
-            }
-            alert('角色保存成功（演示）');
+        document.getElementById('saveAdminBtn').addEventListener('click', saveAdmin);
+        document.getElementById('addRoleBtn').addEventListener('click', () => {
+            adminCore.openModal('addRoleModal');
+        });
+        document.getElementById('closeRoleModal').addEventListener('click', () => {
             adminCore.closeModal('addRoleModal');
-        }
+        });
+        document.getElementById('cancelRoleBtn').addEventListener('click', () => {
+            adminCore.closeModal('addRoleModal');
+        });
+        document.getElementById('saveRoleBtn').addEventListener('click', saveRole);
+        document.getElementById('closePermissionsModal').addEventListener('click', () => {
+            adminCore.closeModal('editPermissionsModal');
+        });
+        document.getElementById('cancelPermissionsBtn').addEventListener('click', () => {
+            adminCore.closeModal('editPermissionsModal');
+        });
+        document.getElementById('savePermissionsBtn').addEventListener('click', savePermissions);
+        document.getElementById('exportAdminsBtn').addEventListener('click', exportAdmins);
+        document.getElementById('refreshLogsBtn').addEventListener('click', () => {
+            currentLogPage = 1;
+            loadLoginHistory();
+        });
 
-        // 加载登录历史
-        async function loadLoginHistory() {
-            const tbody = document.getElementById('loginHistoryBody');
-            const token = localStorage.getItem('token');
+        document.getElementById('adminSearch').addEventListener('input', (e) => {
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentAdminPage = 1;
+                loadAdmins();
+            }, 300);
+        });
 
-            try {
-                const response = await fetch(`${API_BASE}/admin-logins?page=${currentLogPage}&limit=5`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('adminStatusFilter').addEventListener('change', () => {
+            currentAdminPage = 1;
+            loadAdmins();
+        });
 
-                if (data.success && data.data.length > 0) {
-                    renderLoginHistory(data.data);
-                    if (data.pagination) {
-                        updatePagination('logPagination', data.pagination, (page) => {
-                            currentLogPage = page;
-                            loadLoginHistory();
-                        });
-                    }
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">暂无登录记录</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载登录历史失败:', error);
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
+        document.getElementById('adminRoleFilter').addEventListener('change', () => {
+            currentAdminPage = 1;
+            loadAdmins();
+        });
 
-        // 渲染登录历史
-        function renderLoginHistory(logs) {
-            const tbody = document.getElementById('loginHistoryBody');
-            tbody.innerHTML = '';
+        setupPagination();
+    });
 
-            logs.forEach(log => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${log.username}</td>
-                    <td>${log.login_time}</td>
-                    <td>${log.ip}</td>
-                    <td>${log.method}</td>
-                    <td><span class="status-badge ${log.status === 'success' ? 'status-active' : 'status-inactive'}">${log.status}</span></td>
-                    <td>${log.location}</td>
-                `;
-                tbody.appendChild(row);
+    async function loadAdmins() {
+        const tbody = document.getElementById('adminTableBody');
+        const token = localStorage.getItem('token');
+
+        try {
+            const params = new URLSearchParams({
+                page: currentAdminPage,
+                limit: 10,
+                search: document.getElementById('adminSearch').value,
+                status: document.getElementById('adminStatusFilter').value,
+                role: document.getElementById('adminRoleFilter').value
             });
-        }
 
-        // 导出管理员列表
-        function exportAdmins() {
-            alert('导出管理员列表功能待对接API');
-        }
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/admins?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
 
-        // 设置分页
-        function setupPagination() {
-            document.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== currentAdminPage) {
+            if (data.success) {
+                renderAdmins(data.data);
+                updateAdminStats(data.data);
+                if (data.pagination) {
+                    updatePagination('adminPagination', data.pagination, (page) => {
                         currentAdminPage = page;
                         loadAdmins();
-                        
-                        // 更新激活状态
-                        document.querySelectorAll('#adminPagination .page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
+                    });
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载管理员失败:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderAdmins(admins) {
+        const tbody = document.getElementById('adminTableBody');
+        
+        if (!admins || admins.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无管理员</td></tr>';
+            return;
         }
 
-        // 更新分页（通用）
-        function updatePagination(containerId, pagination, callback) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
+        tbody.innerHTML = '';
+        
+        admins.forEach(admin => {
+            const row = document.createElement('tr');
+            
+            let roleBadge = '';
+            if (admin.role === 'superadmin') {
+                roleBadge = '<span class="role-badge role-superadmin">超级管理员</span>';
+            } else {
+                roleBadge = '<span class="role-badge role-admin">管理员</span>';
+            }
 
-            if (pagination.total_pages <= 1) {
-                container.style.display = 'none';
+            const statusBadge = admin.is_active ? 
+                '<span class="status-badge status-active">活跃</span>' : 
+                '<span class="status-badge status-inactive">禁用</span>';
+
+            row.innerHTML = `
+                <td>${admin.username}</td>
+                <td>${admin.full_name || '-'}</td>
+                <td>${admin.email}</td>
+                <td>${roleBadge}</td>
+                <td>${statusBadge}</td>
+                <td>${admin.last_login || '-'}</td>
+                <td>${admin.created_at ? admin.created_at.substring(0,10) : '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="editAdmin('${admin.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteAdmin('${admin.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="editPermissions('${admin.id}')">
+                        <i class="fas fa-key"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function updateAdminStats(admins) {
+        const total = admins.length;
+        const active = admins.filter(a => a.is_active).length;
+        const superAdmins = admins.filter(a => a.role === 'superadmin').length;
+        const inactive = total - active;
+        
+        document.getElementById('totalAdmins').textContent = total;
+        document.getElementById('activeAdmins').textContent = active;
+        document.getElementById('superAdmins').textContent = superAdmins;
+        document.getElementById('inactiveAdmins').textContent = inactive;
+    }
+
+    window.editAdmin = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/admins/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const admin = data.data;
+                document.getElementById('adminId').value = admin.id;
+                document.getElementById('adminUsername').value = admin.username;
+                document.getElementById('adminEmail').value = admin.email;
+                document.getElementById('adminFullName').value = admin.full_name || '';
+                document.getElementById('adminRole').value = admin.role;
+                document.getElementById('adminStatus').value = admin.is_active ? 'active' : 'inactive';
+                
+                document.getElementById('passwordField').style.display = 'none';
+                document.getElementById('adminModalTitle').textContent = '编辑管理员';
+                adminCore.openModal('addAdminModal');
+            }
+        } catch (error) {
+            alert('加载管理员失败');
+        }
+    };
+
+    window.deleteAdmin = async function(id) {
+        if (!confirm('确定要删除该管理员吗？')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/admins/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                await loadAdmins();
+            } else {
+                alert('删除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    async function saveAdmin() {
+        const token = localStorage.getItem('token');
+        const adminId = document.getElementById('adminId').value;
+
+        const formData = {
+            username: document.getElementById('adminUsername').value,
+            email: document.getElementById('adminEmail').value,
+            full_name: document.getElementById('adminFullName').value,
+            role: document.getElementById('adminRole').value,
+            is_active: document.getElementById('adminStatus').value === 'active'
+        };
+
+        if (!adminId) {
+            const password = document.getElementById('adminPassword').value;
+            if (!password) {
+                alert('密码不能为空');
                 return;
             }
-
-            container.style.display = 'flex';
-            let html = '';
-            for (let i = 1; i <= pagination.total_pages; i++) {
-                const activeClass = i === pagination.current_page ? 'active' : '';
-                html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
-            }
-            container.innerHTML = html;
-
-            // 重新绑定事件
-            container.querySelectorAll('.page-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    const page = parseInt(e.target.dataset.page);
-                    if (page && page !== pagination.current_page) {
-                        callback(page);
-                        
-                        container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
-                        e.target.classList.add('active');
-                    }
-                });
-            });
+            formData.password = password;
         }
-    </script>
+
+        const url = adminId ? `${window.API_BASE}/admins/${adminId}` : `${window.API_BASE}/admins`;
+        const method = adminId ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('addAdminModal');
+                await loadAdmins();
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    async function loadRoles() {
+        const container = document.getElementById('roleListContainer');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/roles`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                renderRoles(data.data);
+            } else {
+                container.innerHTML = '<div class="empty-placeholder">暂无角色，点击"添加角色"创建</div>';
+            }
+        } catch (error) {
+            console.error('加载角色失败:', error);
+            container.innerHTML = '<div class="empty-placeholder">加载失败</div>';
+        }
+    }
+
+    function renderRoles(roles) {
+        const container = document.getElementById('roleListContainer');
+        container.innerHTML = '';
+
+        roles.forEach(role => {
+            const card = document.createElement('div');
+            card.style.cssText = 'border:1px solid var(--border); border-radius:8px; padding:16px; background:white;';
+            
+            let roleClass = 'role-admin';
+            if (role.name.includes('超级')) roleClass = 'role-superadmin';
+            
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h4 style="font-weight:600;">${role.name}</h4>
+                    <span class="role-badge ${roleClass}">${role.admin_count || 0}人</span>
+                </div>
+                <p style="color:var(--gray); font-size:13px; margin-bottom:16px;">${role.description || '暂无描述'}</p>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-sm btn-secondary" onclick="editRole('${role.id}')">
+                        <i class="fas fa-edit"></i>编辑权限
+                    </button>
+                    ${!role.is_system ? 
+                        `<button class="btn btn-sm btn-danger" onclick="deleteRole('${role.id}')">
+                            <i class="fas fa-trash"></i>删除
+                        </button>` : ''
+                    }
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    window.editPermissions = function(adminId) {
+        const tree = document.getElementById('permissionTree');
+        tree.innerHTML = generatePermissionTree();
+        document.getElementById('permissionModalTitle').textContent = '编辑权限 - 管理员';
+        adminCore.openModal('editPermissionsModal');
+    };
+
+    window.editRole = function(roleId) {
+        const tree = document.getElementById('permissionTree');
+        tree.innerHTML = generatePermissionTree();
+        document.getElementById('permissionModalTitle').textContent = '编辑权限 - 角色';
+        adminCore.openModal('editPermissionsModal');
+    };
+
+    function generatePermissionTree() {
+        return `
+            <div class="permission-group">
+                <h4 class="group-title">用户管理</h4>
+                <div class="permission-item"><input type="checkbox" checked> 查看用户</div>
+                <div class="permission-item"><input type="checkbox" checked> 编辑用户</div>
+                <div class="permission-item"><input type="checkbox"> 删除用户</div>
+                <div class="permission-item"><input type="checkbox" checked> 管理VIP</div>
+            </div>
+            <div class="permission-group">
+                <h4 class="group-title">内容管理</h4>
+                <div class="permission-item"><input type="checkbox" checked> 查看剧集</div>
+                <div class="permission-item"><input type="checkbox" checked> 编辑剧集</div>
+                <div class="permission-item"><input type="checkbox"> 删除剧集</div>
+                <div class="permission-item"><input type="checkbox"> 发布剧集</div>
+            </div>
+            <div class="permission-group">
+                <h4 class="group-title">系统管理</h4>
+                <div class="permission-item"><input type="checkbox"> 管理员管理</div>
+                <div class="permission-item"><input type="checkbox"> 系统设置</div>
+                <div class="permission-item"><input type="checkbox"> 查看日志</div>
+            </div>
+        `;
+    }
+
+    async function savePermissions() {
+        alert('权限保存成功（演示）');
+        adminCore.closeModal('editPermissionsModal');
+    }
+
+    window.deleteRole = async function(id) {
+        if (!confirm('确定要删除该角色吗？')) return;
+        alert('删除角色功能待对接API');
+    };
+
+    async function saveRole() {
+        const roleName = document.getElementById('roleName').value;
+        if (!roleName) {
+            alert('角色名称不能为空');
+            return;
+        }
+        alert('角色保存成功（演示）');
+        adminCore.closeModal('addRoleModal');
+    }
+
+    async function loadLoginHistory() {
+        const tbody = document.getElementById('loginHistoryBody');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/admin-logins?page=${currentLogPage}&limit=5`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                renderLoginHistory(data.data);
+                if (data.pagination) {
+                    updatePagination('logPagination', data.pagination, (page) => {
+                        currentLogPage = page;
+                        loadLoginHistory();
+                    });
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">暂无登录记录</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载登录历史失败:', error);
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderLoginHistory(logs) {
+        const tbody = document.getElementById('loginHistoryBody');
+        tbody.innerHTML = '';
+
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${log.username}</td>
+                <td>${log.login_time}</td>
+                <td>${log.ip}</td>
+                <td>${log.method}</td>
+                <td><span class="status-badge ${log.status === 'success' ? 'status-active' : 'status-inactive'}">${log.status}</span></td>
+                <td>${log.location}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function exportAdmins() {
+        alert('导出管理员列表功能待对接API');
+    }
+
+    function setupPagination() {
+        document.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== currentAdminPage) {
+                    currentAdminPage = page;
+                    loadAdmins();
+                    
+                    document.querySelectorAll('#adminPagination .page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        });
+    }
+
+    function updatePagination(containerId, pagination, callback) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        if (pagination.total_pages <= 1) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'flex';
+        let html = '';
+        for (let i = 1; i <= pagination.total_pages; i++) {
+            const activeClass = i === pagination.current_page ? 'active' : '';
+            html += `<div class="page-item ${activeClass}" data-page="${i}">${i}</div>`;
+        }
+        container.innerHTML = html;
+
+        container.querySelectorAll('.page-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const page = parseInt(e.target.dataset.page);
+                if (page && page !== pagination.current_page) {
+                    callback(page);
+                    
+                    container.querySelectorAll('.page-item').forEach(p => p.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        });
+    }
+</script>
 </body>
 </html>

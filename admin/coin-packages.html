@@ -477,536 +477,522 @@
     </div>
 
     <script src="js/admin-core.js"></script>
-    <script src="js/admin-system.js"></script>
-    <script>
-        const API_BASE = 'https://global-shorts-api.z17756037070.workers.dev/api/admin';
-        let packages = [];
-        let purchasePage = 1;
+<script src="js/admin-system.js"></script>
+<script>
+    // 使用 window.API_BASE（已在 admin-core.js 中定义为 '/api/admin'）
+    let packages = [];
+    let purchasePage = 1;
 
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 检查登录状态
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // 加载数据
-            await loadCoinPackages();
-            await loadPurchaseRecords();
-            await loadGlobalSettings();
+        await loadCoinPackages();
+        await loadPurchaseRecords();
+        await loadGlobalSettings();
 
-            // 绑定事件
-            document.getElementById('addCoinPackageBtn').addEventListener('click', () => {
-                document.getElementById('packageId').value = '';
-                document.getElementById('coinPackageForm').reset();
-                document.getElementById('packageStatus').value = 'active';
-                document.getElementById('coinPackageModalTitle').textContent = '添加金币套餐';
-                adminCore.openModal('addCoinPackageModal');
-            });
-
-            document.getElementById('closeCoinPackageModal').addEventListener('click', () => {
-                adminCore.closeModal('addCoinPackageModal');
-            });
-
-            document.getElementById('cancelCoinPackageBtn').addEventListener('click', () => {
-                adminCore.closeModal('addCoinPackageModal');
-            });
-
-            document.getElementById('saveCoinPackageBtn').addEventListener('click', saveCoinPackage);
-
-            document.getElementById('sortPackagesBtn').addEventListener('click', openSortModal);
-            document.getElementById('refreshPackagesBtn').addEventListener('click', loadCoinPackages);
-            document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalSettings);
-
-            document.getElementById('closeSortModal')?.addEventListener('click', () => {
-                adminCore.closeModal('sortPackageModal');
-            });
-
-            document.getElementById('cancelSortBtn')?.addEventListener('click', () => {
-                adminCore.closeModal('sortPackageModal');
-            });
-
-            document.getElementById('saveSortBtn')?.addEventListener('click', saveSortOrder);
-
-            // 记录筛选
-            document.getElementById('recordStatusFilter').addEventListener('change', () => {
-                purchasePage = 1;
-                loadPurchaseRecords();
-            });
+        document.getElementById('addCoinPackageBtn').addEventListener('click', () => {
+            document.getElementById('packageId').value = '';
+            document.getElementById('coinPackageForm').reset();
+            document.getElementById('packageStatus').value = 'active';
+            document.getElementById('coinPackageModalTitle').textContent = '添加金币套餐';
+            adminCore.openModal('addCoinPackageModal');
         });
 
-        // 加载金币套餐
-        async function loadCoinPackages() {
-            const container = document.getElementById('packageList');
-            const token = localStorage.getItem('token');
+        document.getElementById('closeCoinPackageModal').addEventListener('click', () => {
+            adminCore.closeModal('addCoinPackageModal');
+        });
 
-            try {
-                const response = await fetch(`${API_BASE}/coin-packages`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
+        document.getElementById('cancelCoinPackageBtn').addEventListener('click', () => {
+            adminCore.closeModal('addCoinPackageModal');
+        });
 
-                if (data.success) {
-                    packages = data.data;
-                    renderCoinPackages(packages);
-                    updatePackageStats(packages);
-                } else {
-                    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">加载失败</div>';
-                }
-            } catch (error) {
-                console.error('加载金币套餐失败:', error);
+        document.getElementById('saveCoinPackageBtn').addEventListener('click', saveCoinPackage);
+
+        document.getElementById('sortPackagesBtn').addEventListener('click', openSortModal);
+        document.getElementById('refreshPackagesBtn').addEventListener('click', loadCoinPackages);
+        document.getElementById('saveGlobalSettings').addEventListener('click', saveGlobalSettings);
+
+        document.getElementById('closeSortModal')?.addEventListener('click', () => {
+            adminCore.closeModal('sortPackageModal');
+        });
+
+        document.getElementById('cancelSortBtn')?.addEventListener('click', () => {
+            adminCore.closeModal('sortPackageModal');
+        });
+
+        document.getElementById('saveSortBtn')?.addEventListener('click', saveSortOrder);
+
+        document.getElementById('recordStatusFilter').addEventListener('change', () => {
+            purchasePage = 1;
+            loadPurchaseRecords();
+        });
+    });
+
+    async function loadCoinPackages() {
+        const container = document.getElementById('packageList');
+        const token = localStorage.getItem('token');
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/coin-packages`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                packages = data.data;
+                renderCoinPackages(packages);
+                updatePackageStats(packages);
+            } else {
                 container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">加载失败</div>';
             }
+        } catch (error) {
+            console.error('加载金币套餐失败:', error);
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">加载失败</div>';
+        }
+    }
+
+    function renderCoinPackages(packages) {
+        const container = document.getElementById('packageList');
+        
+        if (!packages || packages.length === 0) {
+            container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">暂无金币套餐，点击"新增金币套餐"创建</div>';
+            return;
         }
 
-        // 渲染金币套餐卡片
-        function renderCoinPackages(packages) {
-            const container = document.getElementById('packageList');
+        container.innerHTML = '';
+        
+        packages.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(pkg => {
+            const card = document.createElement('div');
             
-            if (!packages || packages.length === 0) {
-                container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--gray);">暂无金币套餐，点击"新增金币套餐"创建</div>';
-                return;
+            let cardClass = 'package-card';
+            if (pkg.tag === 'popular' || pkg.is_popular) {
+                cardClass += ' popular';
+            } else if (pkg.tag === 'best') {
+                cardClass += ' best-value';
+            }
+            
+            card.className = cardClass;
+
+            const totalCoins = pkg.base_coins + (pkg.bonus_coins || 0);
+            const unitPrice = (pkg.price_usd / totalCoins).toFixed(4);
+
+            let tagBadge = '';
+            if (pkg.tag === 'popular' || pkg.is_popular) {
+                tagBadge = '<span class="status-badge status-active">热销</span>';
+            } else if (pkg.tag === 'best') {
+                tagBadge = '<span class="status-badge status-active">最划算</span>';
+            } else if (pkg.tag === 'new') {
+                tagBadge = '<span class="status-badge status-vip">新品</span>';
+            } else if (pkg.tag === 'limited') {
+                tagBadge = '<span class="status-badge status-warning">限时</span>';
             }
 
-            container.innerHTML = '';
-            
-            packages.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(pkg => {
-                const card = document.createElement('div');
-                
-                // 根据标签添加特殊类
-                let cardClass = 'package-card';
-                if (pkg.tag === 'popular' || pkg.is_popular) {
-                    cardClass += ' popular';
-                } else if (pkg.tag === 'best') {
-                    cardClass += ' best-value';
-                }
-                
-                card.className = cardClass;
+            const statusBadge = pkg.is_active ? 
+                '<span class="status-badge status-active">启用</span>' : 
+                '<span class="status-badge status-inactive">禁用</span>';
 
-                // 计算单价
-                const totalCoins = pkg.base_coins + (pkg.bonus_coins || 0);
-                const unitPrice = (pkg.price_usd / totalCoins).toFixed(4);
-
-                // 标签徽章
-                let tagBadge = '';
-                if (pkg.tag === 'popular' || pkg.is_popular) {
-                    tagBadge = '<span class="status-badge status-active">热销</span>';
-                } else if (pkg.tag === 'best') {
-                    tagBadge = '<span class="status-badge status-active">最划算</span>';
-                } else if (pkg.tag === 'new') {
-                    tagBadge = '<span class="status-badge status-vip">新品</span>';
-                } else if (pkg.tag === 'limited') {
-                    tagBadge = '<span class="status-badge status-warning">限时</span>';
-                }
-
-                // 状态徽章
-                const statusBadge = pkg.is_active ? 
-                    '<span class="status-badge status-active">启用</span>' : 
-                    '<span class="status-badge status-inactive">禁用</span>';
-
-                card.innerHTML = `
-                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <i class="fas fa-coins coin-icon"></i>
-                            <h3 class="card-title">${pkg.base_coins} 金币</h3>
+            card.innerHTML = `
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-coins coin-icon"></i>
+                        <h3 class="card-title">${pkg.base_coins} 金币</h3>
+                    </div>
+                    <div>
+                        ${tagBadge}
+                        ${statusBadge}
+                    </div>
+                </div>
+                <div class="card-content" style="text-align:center;">
+                    <div style="margin-bottom:8px;">
+                        <span class="price-tag">$${pkg.price_usd}</span>
+                        ${pkg.original_price ? `<span class="original-price">$${pkg.original_price}</span>` : ''}
+                    </div>
+                    
+                    <div style="color:var(--gray); margin-bottom:12px; font-size:13px;">
+                        单价: $${unitPrice}/金币
+                    </div>
+                    
+                    <div style="background:var(--gray-light); padding:12px; border-radius:8px; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span>基础金币</span>
+                            <strong>${pkg.base_coins}</strong>
                         </div>
-                        <div>
-                            ${tagBadge}
-                            ${statusBadge}
+                        ${pkg.bonus_coins ? `
+                            <div style="display:flex; justify-content:space-between; color:var(--success);">
+                                <span>赠送金币 <span class="bonus-badge">+${Math.round(pkg.bonus_coins / pkg.base_coins * 100)}%</span></span>
+                                <strong>+${pkg.bonus_coins}</strong>
+                            </div>
+                        ` : ''}
+                        <div style="border-top:1px dashed var(--border); margin:8px 0; padding-top:8px; display:flex; justify-content:space-between; font-weight:700;">
+                            <span>总计</span>
+                            <span>${pkg.base_coins + (pkg.bonus_coins || 0)} 金币</span>
                         </div>
                     </div>
-                    <div class="card-content" style="text-align:center;">
-                        <div style="margin-bottom:8px;">
-                            <span class="price-tag">$${pkg.price_usd}</span>
-                            ${pkg.original_price ? `<span class="original-price">$${pkg.original_price}</span>` : ''}
-                        </div>
-                        
-                        <div style="color:var(--gray); margin-bottom:12px; font-size:13px;">
-                            单价: $${unitPrice}/金币
-                        </div>
-                        
-                        <div style="background:var(--gray-light); padding:12px; border-radius:8px; margin-bottom:16px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                                <span>基础金币</span>
-                                <strong>${pkg.base_coins}</strong>
-                            </div>
-                            ${pkg.bonus_coins ? `
-                                <div style="display:flex; justify-content:space-between; color:var(--success);">
-                                    <span>赠送金币 <span class="bonus-badge">+${Math.round(pkg.bonus_coins / pkg.base_coins * 100)}%</span></span>
-                                    <strong>+${pkg.bonus_coins}</strong>
-                                </div>
-                            ` : ''}
-                            <div style="border-top:1px dashed var(--border); margin:8px 0; padding-top:8px; display:flex; justify-content:space-between; font-weight:700;">
-                                <span>总计</span>
-                                <span>${pkg.base_coins + (pkg.bonus_coins || 0)} 金币</span>
-                            </div>
-                        </div>
-                        
-                        <div style="display:flex; gap:8px; justify-content:center;">
-                            <button class="btn btn-sm btn-secondary" onclick="editCoinPackage('${pkg.id}')">
-                                <i class="fas fa-edit"></i>编辑
-                            </button>
-                            <button class="btn btn-sm btn-${pkg.is_active ? 'warning' : 'success'}" onclick="toggleCoinPackage('${pkg.id}')">
-                                <i class="fas fa-${pkg.is_active ? 'ban' : 'check'}"></i>
-                                ${pkg.is_active ? '禁用' : '启用'}
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteCoinPackage('${pkg.id}')">
-                                <i class="fas fa-trash"></i>删除
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-        }
-
-        // 更新统计
-        function updatePackageStats(packages) {
-            const total = packages.length;
-            const active = packages.filter(p => p.is_active).length;
-            
-            // 计算平均单价
-            let totalUnitPrice = 0;
-            let count = 0;
-            packages.forEach(pkg => {
-                if (pkg.is_active) {
-                    const totalCoins = pkg.base_coins + (pkg.bonus_coins || 0);
-                    totalUnitPrice += pkg.price_usd / totalCoins;
-                    count++;
-                }
-            });
-            const avgPrice = count > 0 ? (totalUnitPrice / count) : 0;
-
-            document.getElementById('totalPackages').textContent = total;
-            document.getElementById('activePackages').textContent = active;
-            document.getElementById('avgPrice').textContent = '$' + avgPrice.toFixed(4);
-            document.getElementById('totalSales').textContent = '128'; // 模拟数据
-        }
-
-        // 编辑金币套餐
-        window.editCoinPackage = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/coin-packages/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const pkg = data.data;
-                    document.getElementById('packageId').value = pkg.id;
-                    document.getElementById('packageName').value = pkg.name || '';
-                    document.getElementById('baseCoins').value = pkg.base_coins;
-                    document.getElementById('bonusCoins').value = pkg.bonus_coins || 0;
-                    document.getElementById('packagePrice').value = pkg.price_usd;
-                    document.getElementById('originalPrice').value = pkg.original_price || '';
-                    document.getElementById('packageTag').value = pkg.tag || '';
-                    document.getElementById('packageSort').value = pkg.sort_order || 1;
-                    document.getElementById('packageStatus').value = pkg.is_active ? 'active' : 'inactive';
-                    document.getElementById('packageDescription').value = pkg.description || '';
-                    document.getElementById('packageIsPopular').checked = pkg.is_popular || false;
                     
-                    document.getElementById('coinPackageModalTitle').textContent = '编辑金币套餐';
-                    adminCore.openModal('addCoinPackageModal');
-                }
-            } catch (error) {
-                alert('加载金币套餐失败');
-            }
-        };
-
-        // 切换套餐状态
-        window.toggleCoinPackage = async function(id) {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/coin-packages/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const pkg = data.data;
-                    const action = pkg.is_active ? '禁用' : '启用';
-                    
-                    if (!confirm(`确定要${action}该套餐吗？`)) return;
-
-                    const updateRes = await fetch(`${API_BASE}/coin-packages/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ is_active: !pkg.is_active })
-                    });
-                    const updateData = await updateRes.json();
-
-                    if (updateData.success) {
-                        loadCoinPackages();
-                    } else {
-                        alert('操作失败：' + updateData.error);
-                    }
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 删除套餐
-        window.deleteCoinPackage = async function(id) {
-            if (!confirm('确定要删除该金币套餐吗？此操作不可撤销。')) return;
-            
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/coin-packages/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    loadCoinPackages();
-                } else {
-                    alert('删除失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        };
-
-        // 保存金币套餐
-        async function saveCoinPackage() {
-            const token = localStorage.getItem('token');
-            const packageId = document.getElementById('packageId').value;
-
-            const formData = {
-                name: document.getElementById('packageName').value,
-                base_coins: parseInt(document.getElementById('baseCoins').value),
-                bonus_coins: parseInt(document.getElementById('bonusCoins').value) || 0,
-                price_usd: parseFloat(document.getElementById('packagePrice').value),
-                original_price: document.getElementById('originalPrice').value ? parseFloat(document.getElementById('originalPrice').value) : null,
-                tag: document.getElementById('packageTag').value,
-                sort_order: parseInt(document.getElementById('packageSort').value) || 1,
-                is_active: document.getElementById('packageStatus').value === 'active',
-                description: document.getElementById('packageDescription').value,
-                is_popular: document.getElementById('packageIsPopular').checked
-            };
-
-            if (!formData.name || !formData.base_coins || !formData.price_usd) {
-                alert('请填写必填字段');
-                return;
-            }
-
-            const url = packageId ? `${API_BASE}/coin-packages/${packageId}` : `${API_BASE}/coin-packages`;
-            const method = packageId ? 'PUT' : 'POST';
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(formData)
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('addCoinPackageModal');
-                    loadCoinPackages();
-                } else {
-                    alert('保存失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 打开排序模态框
-        function openSortModal() {
-            const container = document.getElementById('sortablePackageList');
-            
-            container.innerHTML = '';
-            packages.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(pkg => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:move;';
-                item.setAttribute('data-id', pkg.id);
-                item.innerHTML = `
-                    <i class="fas fa-grip-vertical" style="color:var(--gray);"></i>
-                    <i class="fas fa-coins" style="color:#faad14;"></i>
-                    <span style="flex:1;">${pkg.name || pkg.base_coins + '金币'}</span>
-                    <span style="color:var(--gray);">$${pkg.price_usd}</span>
-                `;
-                container.appendChild(item);
-            });
-
-            adminCore.openModal('sortPackageModal');
-        }
-
-        // 保存排序
-        async function saveSortOrder() {
-            const items = document.querySelectorAll('#sortablePackageList > div');
-            const updates = [];
-            
-            items.forEach((item, index) => {
-                const id = item.getAttribute('data-id');
-                updates.push({ id, sort_order: index + 1 });
-            });
-
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/coin-packages/batch-sort`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ updates })
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    adminCore.closeModal('sortPackageModal');
-                    loadCoinPackages();
-                } else {
-                    alert('保存排序失败：' + data.error);
-                }
-            } catch (error) {
-                alert('网络错误，请重试');
-            }
-        }
-
-        // 加载购买记录
-        async function loadPurchaseRecords() {
-            const tbody = document.getElementById('purchaseRecordsBody');
-            const token = localStorage.getItem('token');
-            const statusFilter = document.getElementById('recordStatusFilter').value;
-
-            try {
-                const params = new URLSearchParams({
-                    page: purchasePage,
-                    limit: 5,
-                    status: statusFilter
-                });
-
-                const response = await fetch(`${API_BASE}/coin-purchases?${params}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success && data.data.length > 0) {
-                    renderPurchaseRecords(data.data);
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无购买记录</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载购买记录失败:', error);
-                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
-            }
-        }
-
-        // 渲染购买记录
-        function renderPurchaseRecords(records) {
-            const tbody = document.getElementById('purchaseRecordsBody');
-            tbody.innerHTML = '';
-
-            records.forEach(record => {
-                const row = document.createElement('tr');
-                
-                let statusClass = '';
-                let statusText = '';
-                if (record.status === 'success') {
-                    statusClass = 'status-active';
-                    statusText = '成功';
-                } else if (record.status === 'pending') {
-                    statusClass = 'status-inactive';
-                    statusText = '处理中';
-                } else {
-                    statusClass = 'status-suspended';
-                    statusText = '失败';
-                }
-
-                row.innerHTML = `
-                    <td>${record.username || '-'}</td>
-                    <td>${record.package_name || record.base_coins + '金币'}</td>
-                    <td>${record.base_coins}</td>
-                    <td>${record.bonus_coins || 0}</td>
-                    <td><strong>$${record.amount}</strong></td>
-                    <td>${record.created_at}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewPurchaseDetail('${record.id}')">
-                            <i class="fas fa-eye"></i>
+                    <div style="display:flex; gap:8px; justify-content:center;">
+                        <button class="btn btn-sm btn-secondary" onclick="editCoinPackage('${pkg.id}')">
+                            <i class="fas fa-edit"></i>编辑
                         </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
+                        <button class="btn btn-sm btn-${pkg.is_active ? 'warning' : 'success'}" onclick="toggleCoinPackage('${pkg.id}')">
+                            <i class="fas fa-${pkg.is_active ? 'ban' : 'check'}"></i>
+                            ${pkg.is_active ? '禁用' : '启用'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCoinPackage('${pkg.id}')">
+                            <i class="fas fa-trash"></i>删除
+                        </button>
+                    </div>
+                </div>
+            `;
 
-        // 查看购买详情
-        window.viewPurchaseDetail = function(id) {
-            alert('查看购买详情 ID: ' + id);
-        };
+            container.appendChild(card);
+        });
+    }
 
-        // 加载全局设置
-        async function loadGlobalSettings() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/settings/coin`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    const settings = data.data;
-                    document.getElementById('baseRate').value = settings.base_rate || 100;
-                    document.getElementById('minAmount').value = settings.min_amount || 0.99;
-                    document.getElementById('maxAmount').value = settings.max_amount || 99.99;
-                    document.getElementById('defaultBonus').value = settings.default_bonus || 5;
-                }
-            } catch (error) {
-                console.error('加载全局设置失败:', error);
+    function updatePackageStats(packages) {
+        const total = packages.length;
+        const active = packages.filter(p => p.is_active).length;
+        
+        let totalUnitPrice = 0;
+        let count = 0;
+        packages.forEach(pkg => {
+            if (pkg.is_active) {
+                const totalCoins = pkg.base_coins + (pkg.bonus_coins || 0);
+                totalUnitPrice += pkg.price_usd / totalCoins;
+                count++;
             }
+        });
+        const avgPrice = count > 0 ? (totalUnitPrice / count) : 0;
+
+        document.getElementById('totalPackages').textContent = total;
+        document.getElementById('activePackages').textContent = active;
+        document.getElementById('avgPrice').textContent = '$' + avgPrice.toFixed(4);
+        document.getElementById('totalSales').textContent = '128';
+    }
+
+    window.editCoinPackage = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/coin-packages/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const pkg = data.data;
+                document.getElementById('packageId').value = pkg.id;
+                document.getElementById('packageName').value = pkg.name || '';
+                document.getElementById('baseCoins').value = pkg.base_coins;
+                document.getElementById('bonusCoins').value = pkg.bonus_coins || 0;
+                document.getElementById('packagePrice').value = pkg.price_usd;
+                document.getElementById('originalPrice').value = pkg.original_price || '';
+                document.getElementById('packageTag').value = pkg.tag || '';
+                document.getElementById('packageSort').value = pkg.sort_order || 1;
+                document.getElementById('packageStatus').value = pkg.is_active ? 'active' : 'inactive';
+                document.getElementById('packageDescription').value = pkg.description || '';
+                document.getElementById('packageIsPopular').checked = pkg.is_popular || false;
+                
+                document.getElementById('coinPackageModalTitle').textContent = '编辑金币套餐';
+                adminCore.openModal('addCoinPackageModal');
+            }
+        } catch (error) {
+            alert('加载金币套餐失败');
         }
+    };
 
-        // 保存全局设置
-        async function saveGlobalSettings() {
-            const token = localStorage.getItem('token');
-            
-            const settings = {
-                base_rate: parseInt(document.getElementById('baseRate').value) || 100,
-                min_amount: parseFloat(document.getElementById('minAmount').value) || 0.99,
-                max_amount: parseFloat(document.getElementById('maxAmount').value) || 99.99,
-                default_bonus: parseInt(document.getElementById('defaultBonus').value) || 5
-            };
+    window.toggleCoinPackage = async function(id) {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/coin-packages/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
 
-            try {
-                const response = await fetch(`${API_BASE}/settings/coin`, {
+            if (data.success) {
+                const pkg = data.data;
+                const action = pkg.is_active ? '禁用' : '启用';
+                
+                if (!confirm(`确定要${action}该套餐吗？`)) return;
+
+                // 修改：使用 window.API_BASE
+                const updateRes = await fetch(`${window.API_BASE}/coin-packages/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(settings)
+                    body: JSON.stringify({ is_active: !pkg.is_active })
                 });
-                const data = await response.json();
+                const updateData = await updateRes.json();
 
-                if (data.success) {
-                    alert('全局设置保存成功');
+                if (updateData.success) {
+                    loadCoinPackages();
                 } else {
-                    alert('保存失败：' + data.error);
+                    alert('操作失败：' + updateData.error);
                 }
-            } catch (error) {
-                alert('网络错误，请重试');
             }
+        } catch (error) {
+            alert('网络错误，请重试');
         }
-    </script>
+    };
+
+    window.deleteCoinPackage = async function(id) {
+        if (!confirm('确定要删除该金币套餐吗？此操作不可撤销。')) return;
+        
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/coin-packages/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                loadCoinPackages();
+            } else {
+                alert('删除失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    };
+
+    async function saveCoinPackage() {
+        const token = localStorage.getItem('token');
+        const packageId = document.getElementById('packageId').value;
+
+        const formData = {
+            name: document.getElementById('packageName').value,
+            base_coins: parseInt(document.getElementById('baseCoins').value),
+            bonus_coins: parseInt(document.getElementById('bonusCoins').value) || 0,
+            price_usd: parseFloat(document.getElementById('packagePrice').value),
+            original_price: document.getElementById('originalPrice').value ? parseFloat(document.getElementById('originalPrice').value) : null,
+            tag: document.getElementById('packageTag').value,
+            sort_order: parseInt(document.getElementById('packageSort').value) || 1,
+            is_active: document.getElementById('packageStatus').value === 'active',
+            description: document.getElementById('packageDescription').value,
+            is_popular: document.getElementById('packageIsPopular').checked
+        };
+
+        if (!formData.name || !formData.base_coins || !formData.price_usd) {
+            alert('请填写必填字段');
+            return;
+        }
+
+        const url = packageId ? `${window.API_BASE}/coin-packages/${packageId}` : `${window.API_BASE}/coin-packages`;
+        const method = packageId ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('addCoinPackageModal');
+                loadCoinPackages();
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    function openSortModal() {
+        const container = document.getElementById('sortablePackageList');
+        
+        container.innerHTML = '';
+        packages.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(pkg => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border); cursor:move;';
+            item.setAttribute('data-id', pkg.id);
+            item.innerHTML = `
+                <i class="fas fa-grip-vertical" style="color:var(--gray);"></i>
+                <i class="fas fa-coins" style="color:#faad14;"></i>
+                <span style="flex:1;">${pkg.name || pkg.base_coins + '金币'}</span>
+                <span style="color:var(--gray);">$${pkg.price_usd}</span>
+            `;
+            container.appendChild(item);
+        });
+
+        adminCore.openModal('sortPackageModal');
+    }
+
+    async function saveSortOrder() {
+        const items = document.querySelectorAll('#sortablePackageList > div');
+        const updates = [];
+        
+        items.forEach((item, index) => {
+            const id = item.getAttribute('data-id');
+            updates.push({ id, sort_order: index + 1 });
+        });
+
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/coin-packages/batch-sort`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ updates })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                adminCore.closeModal('sortPackageModal');
+                loadCoinPackages();
+            } else {
+                alert('保存排序失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+
+    async function loadPurchaseRecords() {
+        const tbody = document.getElementById('purchaseRecordsBody');
+        const token = localStorage.getItem('token');
+        const statusFilter = document.getElementById('recordStatusFilter').value;
+
+        try {
+            const params = new URLSearchParams({
+                page: purchasePage,
+                limit: 5,
+                status: statusFilter
+            });
+
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/coin-purchases?${params}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.length > 0) {
+                renderPurchaseRecords(data.data);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">暂无购买记录</td></tr>';
+            }
+        } catch (error) {
+            console.error('加载购买记录失败:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-placeholder">加载失败</td></tr>';
+        }
+    }
+
+    function renderPurchaseRecords(records) {
+        const tbody = document.getElementById('purchaseRecordsBody');
+        tbody.innerHTML = '';
+
+        records.forEach(record => {
+            const row = document.createElement('tr');
+            
+            let statusClass = '';
+            let statusText = '';
+            if (record.status === 'success') {
+                statusClass = 'status-active';
+                statusText = '成功';
+            } else if (record.status === 'pending') {
+                statusClass = 'status-inactive';
+                statusText = '处理中';
+            } else {
+                statusClass = 'status-suspended';
+                statusText = '失败';
+            }
+
+            row.innerHTML = `
+                <td>${record.username || '-'}</td>
+                <td>${record.package_name || record.base_coins + '金币'}</td>
+                <td>${record.base_coins}</td>
+                <td>${record.bonus_coins || 0}</td>
+                <td><strong>$${record.amount}</strong></td>
+                <td>${record.created_at}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="viewPurchaseDetail('${record.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    window.viewPurchaseDetail = function(id) {
+        alert('查看购买详情 ID: ' + id);
+    };
+
+    async function loadGlobalSettings() {
+        const token = localStorage.getItem('token');
+        
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/coin`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const settings = data.data;
+                document.getElementById('baseRate').value = settings.base_rate || 100;
+                document.getElementById('minAmount').value = settings.min_amount || 0.99;
+                document.getElementById('maxAmount').value = settings.max_amount || 99.99;
+                document.getElementById('defaultBonus').value = settings.default_bonus || 5;
+            }
+        } catch (error) {
+            console.error('加载全局设置失败:', error);
+        }
+    }
+
+    async function saveGlobalSettings() {
+        const token = localStorage.getItem('token');
+        
+        const settings = {
+            base_rate: parseInt(document.getElementById('baseRate').value) || 100,
+            min_amount: parseFloat(document.getElementById('minAmount').value) || 0.99,
+            max_amount: parseFloat(document.getElementById('maxAmount').value) || 99.99,
+            default_bonus: parseInt(document.getElementById('defaultBonus').value) || 5
+        };
+
+        try {
+            // 修改：使用 window.API_BASE
+            const response = await fetch(`${window.API_BASE}/settings/coin`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(settings)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                alert('全局设置保存成功');
+            } else {
+                alert('保存失败：' + data.error);
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        }
+    }
+</script>
 </body>
 </html>
