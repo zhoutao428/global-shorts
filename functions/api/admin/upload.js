@@ -16,7 +16,7 @@ export async function uploadGeneric(request, env) {
     await env.MY_BUCKET.put(filename, file.stream(), {
       httpMetadata: { contentType: file.type },
     });
-    const publicUrl = `https://cdn.globalshorts.com/${filename}`;
+    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
 
     return jsonResponse({ success: true, url: publicUrl });
   } catch (error) {
@@ -41,7 +41,7 @@ export async function uploadImage(request, env) {
     await env.MY_BUCKET.put(filename, file.stream(), {
       httpMetadata: { contentType: file.type },
     });
-    const publicUrl = `https://cdn.globalshorts.com/${filename}`;
+    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
     return jsonResponse({ success: true, url: publicUrl });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
@@ -65,7 +65,7 @@ export async function uploadVideo(request, env) {
     await env.MY_BUCKET.put(filename, file.stream(), {
       httpMetadata: { contentType: file.type || 'video/mp4' },
     });
-    const publicUrl = `https://cdn.globalshorts.com/${filename}`;
+    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
     return jsonResponse({ success: true, url: publicUrl, filename, size: file.size });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
