@@ -21,17 +21,17 @@ export async function onRequest(context) {
 
     try {
         // ---------- 🚩 新增：上传路由（放在最前面，不需要 /api 前缀）----------
-        if (path === '/upload/image' && method === 'POST') {
+        if (path === '/api/upload/image' && method === 'POST') {
             const response = await uploadImage(request, env);
             return addCors(response);
         }
         
-        if (path === '/upload/video' && method === 'POST') {
+        if (path === '/api/upload/video' && method === 'POST') {
             const response = await uploadVideo(request, env);
             return addCors(response);
         }
 
-        if (path === '/upload' && method === 'POST') {
+        if (path === '/api/upload' && method === 'POST') {
             const response = await uploadGeneric(request, env);
             return addCors(response);
         }
