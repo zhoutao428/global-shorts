@@ -288,7 +288,7 @@
             const btn = document.getElementById('uploadCoverBtn');
             btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
             // 修改：使用 window.UPLOAD_BASE
-            const res = await fetch(`${window.UPLOAD_BASE}/image`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+            const res = await fetch(`${window.UPLOAD_BASE}/upload/image`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
             const data = await res.json();
             if (data.success) {
                 document.getElementById('dramaCover').value = data.url;

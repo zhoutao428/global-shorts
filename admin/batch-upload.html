@@ -579,100 +579,108 @@
         const btn = document.getElementById('startUploadBtn');
         btn.disabled = !(currentDramaId && uploadQueue.length > 0 && !isUploading);
     }
+ // 开始上传
+async function startUpload() {
+    if (!currentDramaId) {
+        alert('请先选择或创建剧集');
+        return;
+    }
 
-    // 开始上传
-    async function startUpload() {
-        if (!currentDramaId) {
-            alert('请先选择或创建剧集');
-            return;
-        }
+    isUploading = true;
+    document.getElementById('startUploadBtn').disabled = true;
+    document.getElementById('cancelUploadBtn').disabled = false;
+    document.getElementById('uploadProgress').style.display = 'block';
 
-        isUploading = true;
-        document.getElementById('startUploadBtn').disabled = true;
-        document.getElementById('cancelUploadBtn').disabled = false;
-        document.getElementById('uploadProgress').style.display = 'block';
+    let completed = 0;
+    const total = uploadQueue.length;
+    const token = localStorage.getItem('token');
 
-        let completed = 0;
-        const total = uploadQueue.length;
-        const token = localStorage.getItem('token');
-
-        for (let i = 0; i < uploadQueue.length; i++) {
-            const item = uploadQueue[i];
+    for (let i = 0; i < uploadQueue.length; i++) {
+        const item = uploadQueue[i];
+        
+        try {
+            let videoUrl = '';
             
-            try {
-                let videoUrl = '';
-                
-                if (item.type === 'file') {
-                    const formData = new FormData();
-                    formData.append('file', item.file);
-                    formData.append('type', 'video');
+            if (item.type === 'file') {
+                const formData = new FormData();
+                formData.append('file', item.file);
+                formData.append('type', 'video');
 
-                    document.getElementById('progressPercent').textContent = `正在上传第${i+1}/${total}个文件...`;
+                document.getElementById('progressPercent').textContent = `正在上传第${i+1}/${total}个文件...`;
 
-                    // 修改：使用 window.UPLOAD_BASE
-                    const uploadRes = await fetch(`${window.UPLOAD_BASE}/video`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: formData
-                    });
-
-                    const uploadData = await uploadRes.json();
-                    if (!uploadData.success) {
-                        throw new Error(uploadData.error || '上传失败');
-                    }
-                    videoUrl = uploadData.url;
-                } else {
-                    videoUrl = item.url;
-                }
-
-                const episodeData = {
-                    drama_id: currentDramaId,
-                    episode_number: item.episode,
-                    title: item.title,
-                    video_url: videoUrl,
-                    duration: 0,
-                    status: 'published',
-                    language: item.language
-                };
-
-                // 修改：使用 window.API_BASE
-                const episodeRes = await fetch(`${window.API_BASE}/episodes`, {
+                // ✅ 使用 API_BASE + /upload/video（因为 Worker 路由是 /api/upload/video）
+                const uploadRes = await fetch(`${window.API_BASE}/upload/video`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(episodeData)
+                    body: formData
                 });
 
-                const episodeData_ = await episodeRes.json();
-                if (!episodeData_.success) {
-                    throw new Error(episodeData_.error || '创建分集失败');
+                // 检查响应状态
+                if (!uploadRes.ok) {
+                    throw new Error(`HTTP ${uploadRes.status}: ${uploadRes.statusText}`);
                 }
 
-            } catch (error) {
-                console.error('上传失败:', error);
-                alert(`第${item.episode}集上传失败：${error.message}`);
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) {
+                    throw new Error(uploadData.error || '上传失败');
+                }
+                videoUrl = uploadData.url;
+            } else {
+                videoUrl = item.url;
             }
 
-            completed++;
-            const percent = Math.round((completed / total) * 100);
-            document.getElementById('progressPercent').textContent = percent + '%';
-            document.getElementById('progressBar').style.width = percent + '%';
+            const episodeData = {
+                drama_id: currentDramaId,
+                episode_number: item.episode,
+                title: item.title,
+                video_url: videoUrl,
+                duration: 0,
+                status: 'published',
+                language: item.language
+            };
+
+            // 使用 API_BASE
+            const episodeRes = await fetch(`${window.API_BASE}/episodes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(episodeData)
+            });
+
+            if (!episodeRes.ok) {
+                throw new Error(`HTTP ${episodeRes.status}`);
+            }
+
+            const episodeData_ = await episodeRes.json();
+            if (!episodeData_.success) {
+                throw new Error(episodeData_.error || '创建分集失败');
+            }
+
+        } catch (error) {
+            console.error('上传失败:', error);
+            alert(`第${item.episode}集上传失败：${error.message}`);
         }
 
-        alert(`上传完成！成功创建 ${completed} 个分集`);
-        
-        uploadQueue = [];
-        renderUploadList();
-        
-        isUploading = false;
-        document.getElementById('startUploadBtn').disabled = false;
-        document.getElementById('cancelUploadBtn').disabled = true;
-        document.getElementById('uploadProgress').style.display = 'none';
+        completed++;
+        const percent = Math.round((completed / total) * 100);
+        document.getElementById('progressPercent').textContent = percent + '%';
+        document.getElementById('progressBar').style.width = percent + '%';
     }
+
+    alert(`上传完成！成功创建 ${completed} 个分集`);
+    
+    uploadQueue = [];
+    renderUploadList();
+    
+    isUploading = false;
+    document.getElementById('startUploadBtn').disabled = false;
+    document.getElementById('cancelUploadBtn').disabled = true;
+    document.getElementById('uploadProgress').style.display = 'none';
+}
 
     function cancelUpload() {
         isUploading = false;
