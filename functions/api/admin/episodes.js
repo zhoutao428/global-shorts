@@ -35,62 +35,33 @@ export async function getEpisode(request, env, id) {
 export async function createEpisode(request, env) {
   try {
     const body = await request.json();
-    console.log('收到请求体:', JSON.stringify(body, null, 2));
+    const { drama_id, episode_number, title, video_url, duration, price, status, language } = body;
     
-    const { 
-      drama_id, 
-      episode_number, 
-      title, 
-      video_url, 
-      duration, 
-      price, 
-      status, 
-      language 
-    } = body;
+    // 验证必填字段
+    const missing = [];
+    if (!drama_id) missing.push('drama_id');
+    if (episode_number === undefined || episode_number === null) missing.push('episode_number');
+    if (!title) missing.push('title');
+    if (!video_url) missing.push('video_url');
     
-    // ========== 必填字段验证 ==========
-    const missingFields = [];
-    if (!drama_id) missingFields.push('drama_id');
-    if (episode_number === undefined || episode_number === null) missingFields.push('episode_number');
-    if (!title) missingFields.push('title');
-    if (!video_url) missingFields.push('video_url');
-    
-    if (missingFields.length > 0) {
-      return jsonResponse({ 
-        error: `缺少必填字段: ${missingFields.join(', ')}`,
-        received: { drama_id, episode_number, title, video_url, duration, price, status, language }
-      }, 400);
+    if (missing.length) {
+      return jsonResponse({ error: `缺少必填字段: ${missing.join(', ')}` }, 400);
     }
     
-    // ========== episode_number 必须是数字 ==========
-    const episodeNumber = parseInt(episode_number);
-    if (isNaN(episodeNumber)) {
-      return jsonResponse({ error: `集数必须是数字，收到: ${episode_number}` }, 400);
-    }
-    
-    // ========== 其他字段默认值 ==========
     const id = crypto.randomUUID();
     const finalPrice = (price !== undefined && price !== null) ? price : 0;
     const finalStatus = status || 'published';
     const finalLanguage = language || 'en-US';
     const finalDuration = duration || 0;
     
+    // ✅ 不包含 created_at 和 updated_at，与您的表结构匹配
     await env.MY_DB.prepare(
       `INSERT INTO episodes 
-       (id, drama_id, episode_number, title, video_url, duration, price, status, language, created_at, updated_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (id, drama_id, episode_number, title, video_url, duration, price, status, language) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      id, 
-      drama_id, 
-      episodeNumber,  // 使用转换后的数字
-      title, 
-      video_url, 
-      finalDuration, 
-      finalPrice, 
-      finalStatus, 
-      finalLanguage,
-      new Date().toISOString(),
-      new Date().toISOString()
+      id, drama_id, episode_number, title, video_url, 
+      finalDuration, finalPrice, finalStatus, finalLanguage
     ).run();
     
     return jsonResponse({ success: true, id });
@@ -105,27 +76,17 @@ export async function updateEpisode(request, env, id) {
     const body = await request.json();
     const { episode_number, title, video_url, duration, price, status, language } = body;
     
-    // episode_number 必须是数字
-    const episodeNumber = parseInt(episode_number);
-    if (isNaN(episodeNumber)) {
-      return jsonResponse({ error: `集数必须是数字，收到: ${episode_number}` }, 400);
-    }
-    
     const finalPrice = (price !== undefined && price !== null) ? price : 0;
     
     await env.MY_DB.prepare(
-      'UPDATE episodes SET episode_number = ?, title = ?, video_url = ?, duration = ?, price = ?, status = ?, language = ?, updated_at = ? WHERE id = ?'
+      `UPDATE episodes 
+       SET episode_number = ?, title = ?, video_url = ?, duration = ?, price = ?, status = ?, language = ? 
+       WHERE id = ?`
     ).bind(
-      episodeNumber, 
-      title, 
-      video_url, 
-      duration || 0,
-      finalPrice,
-      status || 'published', 
-      language || 'en-US',
-      new Date().toISOString(),
-      id
+      episode_number, title, video_url, duration || 0, finalPrice,
+      status || 'published', language || 'en-US', id
     ).run();
+    
     return jsonResponse({ success: true });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
@@ -151,30 +112,16 @@ export async function batchCreateEpisodes(request, env) {
     for (const ep of episodes) {
       try {
         const id = crypto.randomUUID();
-        const episodeNumber = parseInt(ep.episode_number);
-        if (isNaN(episodeNumber)) {
-          errors.push({ episode: ep.episode_number, error: '集数必须是数字' });
-          continue;
-        }
         const finalPrice = (ep.price !== undefined && ep.price !== null) ? ep.price : 0;
         await env.MY_DB.prepare(
           `INSERT INTO episodes 
-           (id, drama_id, episode_number, title, video_url, duration, price, status, language, created_at, updated_at) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+           (id, drama_id, episode_number, title, video_url, duration, price, status, language) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
-          id, 
-          drama_id, 
-          episodeNumber, 
-          ep.title, 
-          ep.video_url, 
-          ep.duration || 0,
-          finalPrice,
-          ep.status || 'published', 
-          ep.language || 'en-US',
-          new Date().toISOString(),
-          new Date().toISOString()
+          id, drama_id, ep.episode_number, ep.title, ep.video_url, 
+          ep.duration || 0, finalPrice, ep.status || 'published', ep.language || 'en-US'
         ).run();
-        results.push({ id, episode_number: episodeNumber, title: ep.title });
+        results.push({ id, episode_number: ep.episode_number, title: ep.title });
       } catch (e) {
         errors.push({ episode: ep.episode_number, error: e.message });
       }
