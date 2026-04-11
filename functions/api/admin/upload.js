@@ -16,7 +16,7 @@ export async function uploadGeneric(request, env) {
     await env.MY_BUCKET.put(filename, file.stream(), {
       httpMetadata: { contentType: file.type },
     });
-    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
+    const publicUrl = `https://cdn.globalshorts.com/${filename}`;
 
     return jsonResponse({ success: true, url: publicUrl });
   } catch (error) {
@@ -41,7 +41,7 @@ export async function uploadImage(request, env) {
     await env.MY_BUCKET.put(filename, file.stream(), {
       httpMetadata: { contentType: file.type },
     });
-    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
+    const publicUrl = `https://cdn.globalshorts.com/${filename}`;
     return jsonResponse({ success: true, url: publicUrl });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
@@ -49,29 +49,43 @@ export async function uploadImage(request, env) {
 }
 
 // 上传视频
+// upload.js - 修改上传函数支持自定义路径
 export async function uploadVideo(request, env) {
-  try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    if (!file) {
-      return jsonResponse({ error: '没有上传文件' }, 400);
+    try {
+        const url = new URL(request.url);
+        const customPath = url.searchParams.get('path');
+        
+        const formData = await request.formData();
+        const file = formData.get('file');
+        
+        if (!file) {
+            return jsonResponse({ error: '没有上传文件' }, 400);
+        }
+        
+        const allowedExt = ['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'];
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!allowedExt.includes(ext)) {
+            return jsonResponse({ error: '不支持的视频格式' }, 400);
+        }
+        
+        // 使用自定义路径或默认路径
+        let filename;
+        if (customPath) {
+            filename = customPath;
+        } else {
+            filename = `videos/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        }
+        
+        await env.MY_BUCKET.put(filename, file.stream(), {
+            httpMetadata: { contentType: file.type || 'video/mp4' },
+        });
+        
+        const publicUrl = `https://${env.BUCKET_PUBLIC_URL}/${filename}`;
+        return jsonResponse({ success: true, url: publicUrl, filename, size: file.size });
+    } catch (error) {
+        return jsonResponse({ error: error.message }, 500);
     }
-    const allowedExt = ['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'];
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!allowedExt.includes(ext)) {
-      return jsonResponse({ error: '不支持的视频格式' }, 400);
-    }
-    const filename = `videos/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    await env.MY_BUCKET.put(filename, file.stream(), {
-      httpMetadata: { contentType: file.type || 'video/mp4' },
-    });
-    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
-    return jsonResponse({ success: true, url: publicUrl, filename, size: file.size });
-  } catch (error) {
-    return jsonResponse({ error: error.message }, 500);
-  }
 }
-
 // 获取上传任务状态（模拟）
 export async function getUploadStatus(request, env, url) {
   try {
