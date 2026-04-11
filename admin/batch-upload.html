@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/admin-common.css">
     <style>
-        /* 原有样式保持不变，新增免费标签样式 */
         .free-badge {
             background: #52c41a;
             color: white;
@@ -49,98 +48,35 @@
 
     <div class="admin-container">
         <aside class="admin-sidebar" id="adminSidebar">
-    <div class="sidebar-menu">
-        <!-- 仪表盘 -->
-        <a href="/admin/dashboard.html" class="menu-item">
-            <i class="fas fa-tachometer-alt"></i><span>仪表盘</span>
-        </a>
-        
-        <!-- ===== 用户管理（子菜单）===== -->
-        <div class="menu-item has-submenu">
-            <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
-            <label for="toggle-user-menu">
-                <i class="fas fa-users"></i>
-                <span>用户管理</span>
-                <i class="fas fa-chevron-down arrow"></i>
-            </label>
-            <div class="submenu" id="userSubmenu">
-                <a href="/admin/users.html" class="submenu-item">用户列表</a>
-                <a href="/admin/vip-users.html" class="submenu-item">VIP用户</a>
-                <a href="/admin/user-analysis.html" class="submenu-item">用户分析</a>
+            <div class="sidebar-menu">
+                <a href="/admin/dashboard.html" class="menu-item"><i class="fas fa-tachometer-alt"></i><span>仪表盘</span></a>
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-user-menu" class="submenu-toggle">
+                    <label for="toggle-user-menu"><i class="fas fa-users"></i><span>用户管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu"><a href="/admin/users.html" class="submenu-item">用户列表</a><a href="/admin/vip-users.html" class="submenu-item">VIP用户</a><a href="/admin/user-analysis.html" class="submenu-item">用户分析</a></div>
+                </div>
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
+                    <label for="toggle-content-menu"><i class="fas fa-film"></i><span>内容管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu"><a href="/admin/dramas.html" class="submenu-item">剧集管理</a><a href="/admin/episodes.html" class="submenu-item">分集管理</a><a href="/admin/batch-upload.html" class="submenu-item">批量上传</a><a href="/admin/categories.html" class="submenu-item">分类管理</a></div>
+                </div>
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
+                    <label for="toggle-operation-menu"><i class="fas fa-chart-line"></i><span>运营分析</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu"><a href="/admin/revenue.html" class="submenu-item">收入分析</a><a href="/admin/region-analysis.html" class="submenu-item">地区分析</a><a href="/admin/content-performance.html" class="submenu-item">内容表现</a></div>
+                </div>
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
+                    <label for="toggle-system-menu"><i class="fas fa-cog"></i><span>系统管理</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu"><a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a><a href="/admin/region-language.html" class="submenu-item">区域语言</a><a href="/admin/payment-interface.html" class="submenu-item">支付接口</a><a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a><a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a><a href="/admin/withdrawals.html" class="submenu-item">提现管理</a><a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a><a href="/admin/system-settings.html" class="submenu-item">系统设置</a><a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a></div>
+                </div>
+                <div class="menu-item has-submenu">
+                    <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
+                    <label for="toggle-personal-menu"><i class="fas fa-user-cog"></i><span>个人设置</span><i class="fas fa-chevron-down arrow"></i></label>
+                    <div class="submenu"><a href="/admin/profile.html" class="submenu-item">个人资料</a><a href="/admin/change-password.html" class="submenu-item">修改密码</a><a href="/admin/settings.html" class="submenu-item">账户设置</a></div>
+                </div>
             </div>
-        </div>
-        
-        <!-- ===== 内容管理（子菜单）===== -->
-        <div class="menu-item has-submenu">
-            <input type="checkbox" id="toggle-content-menu" class="submenu-toggle">
-            <label for="toggle-content-menu">
-                <i class="fas fa-film"></i>
-                <span>内容管理</span>
-                <i class="fas fa-chevron-down arrow"></i>
-            </label>
-            <div class="submenu" id="contentSubmenu">
-                <a href="/admin/dramas.html" class="submenu-item">剧集管理</a>
-                <a href="/admin/episodes.html" class="submenu-item">分集管理</a>
-                <a href="/admin/batch-upload.html" class="submenu-item">批量上传</a>
-                <a href="/admin/categories.html" class="submenu-item">分类管理</a>
-            </div>
-        </div>
-        
-        <!-- ===== 运营分析（子菜单）===== -->
-        <div class="menu-item has-submenu">
-            <input type="checkbox" id="toggle-operation-menu" class="submenu-toggle">
-            <label for="toggle-operation-menu">
-                <i class="fas fa-chart-line"></i>
-                <span>运营分析</span>
-                <i class="fas fa-chevron-down arrow"></i>
-            </label>
-            <div class="submenu" id="analyticsSubmenu">
-                <a href="/admin/revenue.html" class="submenu-item">收入分析</a>
-                <a href="/admin/region-analysis.html" class="submenu-item">地区分析</a>
-                <a href="/admin/content-performance.html" class="submenu-item">内容表现</a>
-            </div>
-        </div>
-        
-        <!-- ===== 系统管理（子菜单）===== -->
-        <div class="menu-item has-submenu">
-            <input type="checkbox" id="toggle-system-menu" class="submenu-toggle">
-            <label for="toggle-system-menu">
-                <i class="fas fa-cog"></i>
-                <span>系统管理</span>
-                <i class="fas fa-chevron-down arrow"></i>
-            </label>
-            <div class="submenu" id="systemSubmenu">
-                <a href="/admin/admin-manage.html" class="submenu-item">管理员管理</a>
-                <a href="/admin/region-language.html" class="submenu-item">区域语言</a>
-                <a href="/admin/payment-interface.html" class="submenu-item">支付接口</a>
-                <a href="/admin/vip-plans.html" class="submenu-item">VIP套餐</a>
-                <a href="/admin/coin-packages.html" class="submenu-item">金币套餐</a>
-                <a href="/admin/withdrawals.html" class="submenu-item">提现管理</a>
-                <a href="/admin/ad-positions.html" class="submenu-item">广告位管理</a>
-                <a href="/admin/system-settings.html" class="submenu-item">系统设置</a>
-                <a href="/admin/frontend-manage.html" class="submenu-item">前台管理</a>
-            </div>
-        </div>
-        
-        <!-- ===== 个人设置（子菜单，可选）===== -->
-        <div class="menu-item has-submenu">
-            <input type="checkbox" id="toggle-personal-menu" class="submenu-toggle">
-            <label for="toggle-personal-menu">
-                <i class="fas fa-user-cog"></i>
-                <span>个人设置</span>
-                <i class="fas fa-chevron-down arrow"></i>
-            </label>
-            <div class="submenu" id="personalSubmenu">
-                <a href="/admin/profile.html" class="submenu-item">个人资料</a>
-                <a href="/admin/change-password.html" class="submenu-item">修改密码</a>
-                <a href="/admin/settings.html" class="submenu-item">账户设置</a>
-            </div>
-        </div>
-        
-        <!-- 如果有其他独立页面，可单独添加，例如首页（可选） -->
-        <!-- <a href="/admin/index.html" class="menu-item"><i class="fas fa-home"></i><span>首页</span></a> -->
-    </div>
-</aside>
+        </aside>
 
         <main class="admin-main">
             <div class="page-header">
@@ -169,32 +105,24 @@
                         </div>
                     </div>
 
-                    <!-- 创建新剧集表单（保持不变） -->
+                    <!-- 创建新剧集表单（动态从后台加载分类和语言） -->
                     <div id="newDramaForm" style="display:none; margin-top:20px; padding:20px; background:var(--gray-light); border-radius:8px;">
                         <h4 style="margin-bottom:16px;">创建新剧集</h4>
                         <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                             <div class="form-group">
                                 <label class="form-label">剧集名称 <span style="color:var(--error);">*</span></label>
-                                <input type="text" class="form-control" id="newDramaTitle" placeholder="例如：The CEO's Secret Marriage">
+                                <input type="text" class="form-control" id="newDramaTitle" placeholder="请输入剧集名称">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">主要语言 <span style="color:var(--error);">*</span></label>
                                 <select class="form-control" id="newDramaLanguage">
-                                    <option value="zh-CN">简体中文 (国语剧)</option>
-                                    <option value="en-US" selected>英语 (美剧)</option>
-                                    <option value="es-ES">西班牙语 (西语剧)</option>
-                                    <option value="ja-JP">日语 (日剧)</option>
-                                    <option value="ko-KR">韩语 (韩剧)</option>
+                                    <option value="">加载中...</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">分类</label>
+                                <label class="form-label">分类 <span style="color:var(--error);">*</span></label>
                                 <select class="form-control" id="newDramaCategory">
-                                    <option value="romance">爱情</option>
-                                    <option value="ceo">总裁</option>
-                                    <option value="fantasy">玄幻</option>
-                                    <option value="suspense">悬疑</option>
-                                    <option value="comedy">喜剧</option>
+                                    <option value="">加载中...</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -222,7 +150,7 @@
                         <div class="upload-tab" data-tab="batch">📝 批量链接</div>
                     </div>
 
-                    <!-- 文件上传区域（保持不变） -->
+                    <!-- 文件上传区域 -->
                     <div class="upload-tab-content" id="fileTab">
                         <div class="upload-area" id="fileUploadArea">
                             <i class="fas fa-cloud-upload-alt"></i>
@@ -233,18 +161,18 @@
                             </button>
                         </div>
                         <p style="color:var(--gray); margin-top:8px;">
-                            <i class="fas fa-info-circle"></i> 文件名格式：<code>01_第一集.mp4</code> 会自动识别集数和标题
+                            <i class="fas fa-info-circle"></i> 支持文件名格式：<code>01_第一集.mp4</code>、<code>巴西漂泊17.mp4</code>、<code>第1集_标题.mp4</code> 等
                         </p>
                     </div>
 
-                    <!-- 链接添加区域（修改：增加免费试看集复选框） -->
+                    <!-- 链接添加区域 -->
                     <div class="upload-tab-content" id="linkTab" style="display:none;">
                         <div style="padding:20px;">
                             <div class="form-group">
                                 <label class="form-label">视频链接 <span style="color:var(--error);">*</span></label>
                                 <input type="text" class="form-control" id="videoLink" placeholder="https://cdn.example.com/video.m3u8 或 https://.../video.mp4">
                             </div>
-                            <div class="row" style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px;">
+                            <div class="row" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
                                 <div class="form-group">
                                     <label class="form-label">集数</label>
                                     <input type="number" class="form-control" id="linkEpisode" value="1" min="1">
@@ -253,28 +181,19 @@
                                     <label class="form-label">标题</label>
                                     <input type="text" class="form-control" id="linkTitle" placeholder="第一集">
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">语言</label>
-                                    <select class="form-control" id="linkLanguage">
-                                        <option value="en-US">英语 (原声)</option>
-                                        <option value="zh-CN">中文 (配音)</option>
-                                        <option value="es-ES">西班牙语</option>
-                                    </select>
-                                </div>
-                                
                             </div>
                             <button class="btn btn-primary" id="addLinkBtn">添加到列表</button>
                         </div>
                     </div>
 
-                    <!-- 批量链接区域（修改：支持第五个可选字段 is_free） -->
+                    <!-- 批量链接区域 -->
                     <div class="upload-tab-content" id="batchTab" style="display:none;">
                         <div class="batch-link-area">
-                            <p style="margin-bottom:12px;">每行格式：<code>集数,标题,视频URL,语言代码,是否免费</code></p>
+                            <p style="margin-bottom:12px;">每行格式：<code>集数,标题,视频URL</code></p>
                             <textarea class="form-control" id="batchLinks" rows="6" placeholder="例如：
-1,第一集,https://cdn.com/ep1.m3u8,en-US,1
-2,第二集,https://cdn.com/ep2.mp4,en-US
-3,第三集,https://cdn.com/ep3.m3u8,zh-CN,0"></textarea>
+1,第一集,https://cdn.com/ep1.m3u8
+2,第二集,https://cdn.com/ep2.mp4
+3,第三集,https://cdn.com/ep3.m3u8"></textarea>
                             <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
                                 <button class="btn btn-secondary" id="parseBatchBtn">解析并添加</button>
                             </div>
@@ -297,7 +216,6 @@
                         <div class="empty-placeholder" style="padding:40px;">暂无内容，请添加文件或链接</div>
                     </div>
 
-                    <!-- 上传进度（保持不变） -->
                     <div id="uploadProgress" style="display:none; margin-top:20px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                             <span>上传进度</span>
@@ -308,7 +226,6 @@
                         </div>
                     </div>
 
-                    <!-- 操作按钮 -->
                     <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
                         <button class="btn btn-secondary" id="cancelUploadBtn">取消</button>
                         <button class="btn btn-primary" id="startUploadBtn" disabled>开始上传</button>
@@ -324,11 +241,13 @@
     <script src="js/admin-core.js"></script>
     <script src="js/admin-content.js"></script>
 
-   <script>
-    // 使用 window.API_BASE 和 window.UPLOAD_BASE（已在 admin-core.js 中定义）
+    <script>
+    // 使用 window.API_BASE
     let uploadQueue = [];
     let currentDramaId = null;
     let isUploading = false;
+    let languageList = [];
+    let categoryList = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
         const token = localStorage.getItem('token');
@@ -337,6 +256,9 @@
             return;
         }
 
+        // 加载分类和语言列表
+        await loadCategoryList();
+        await loadLanguageList();
         await loadDramaSelect();
 
         // 选项卡切换
@@ -344,7 +266,6 @@
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('.upload-tab-content').forEach(c => c.style.display = 'none');
-                
                 tab.classList.add('active');
                 const tabId = tab.dataset.tab;
                 document.getElementById(tabId + 'Tab').style.display = 'block';
@@ -393,13 +314,67 @@
         });
     });
 
+    // 加载分类列表
+    async function loadCategoryList() {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${window.API_BASE}/categories`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                categoryList = data.data;
+                // 更新新剧集表单的分类下拉框
+                const categorySelect = document.getElementById('newDramaCategory');
+                if (categorySelect) {
+                    categorySelect.innerHTML = '<option value="">请选择分类</option>';
+                    categoryList.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.id;
+                        option.textContent = cat.name;
+                        categorySelect.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('加载分类列表失败:', error);
+        }
+    }
+
+    // 加载语言列表
+    async function loadLanguageList() {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${window.API_BASE}/languages`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                languageList = data.data;
+                // 更新新剧集表单的语言下拉框
+                const langSelect = document.getElementById('newDramaLanguage');
+                if (langSelect) {
+                    langSelect.innerHTML = '';
+                    languageList.forEach(lang => {
+                        const option = document.createElement('option');
+                        option.value = lang.code;
+                        option.textContent = `${lang.name} (${lang.code})`;
+                        if (lang.is_default) option.selected = true;
+                        langSelect.appendChild(option);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('加载语言列表失败:', error);
+        }
+    }
+
     // 加载剧集下拉框
     async function loadDramaSelect() {
         const select = document.getElementById('dramaSelect');
         const token = localStorage.getItem('token');
 
         try {
-            // 修改：使用 window.API_BASE
             const response = await fetch(`${window.API_BASE}/dramas?limit=100`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -410,7 +385,9 @@
                 data.data.forEach(drama => {
                     const option = document.createElement('option');
                     option.value = drama.id;
-                    option.textContent = `${drama.title} (${drama.language || 'en-US'})`;
+                    const langObj = languageList.find(l => l.code === drama.language);
+                    const langName = langObj ? langObj.name : (drama.language || 'en-US');
+                    option.textContent = `${drama.title} (${langName})`;
                     select.appendChild(option);
                 });
             }
@@ -419,27 +396,79 @@
         }
     }
 
-    // 处理文件
+    // 处理文件（支持多种文件名格式）
     function handleFiles(files) {
         Array.from(files).forEach(file => {
+            const originalName = file.name;
             let episodeNum = 1;
-            let title = file.name.replace(/\.[^/.]+$/, '');
+            let title = originalName.replace(/\.[^/.]+$/, '');
             
-            const match = file.name.match(/^(\d+)[_\-\s]*(.*?)\.[^.]+$/);
+            // 格式1: "01_第一集.mp4" 或 "01-第一集.mp4" 或 "01 第一集.mp4"
+            let match = originalName.match(/^(\d+)[_\-\s]+(.+?)\./);
             if (match) {
                 episodeNum = parseInt(match[1]);
-                title = match[2] || `第${episodeNum}集`;
+                title = match[2];
             }
-
-            const ext = file.name.split('.').pop().toLowerCase();
+            
+            // 格式2: "巴西漂泊17.mp4" (数字在文字后面)
+            if (!match) {
+                match = originalName.match(/^(.+?)(\d+)\./);
+                if (match) {
+                    episodeNum = parseInt(match[2]);
+                    title = match[1];
+                }
+            }
+            
+            // 格式3: "17_巴西漂泊.mp4" (数字在前面)
+            if (!match) {
+                match = originalName.match(/^(\d+)_?(.+?)\./);
+                if (match && match[2]) {
+                    episodeNum = parseInt(match[1]);
+                    title = match[2];
+                }
+            }
+            
+            // 格式4: "第17集_巴西漂泊.mp4" (中文前缀)
+            if (!match) {
+                match = originalName.match(/第(\d+)集[_\-\s]*(.*?)\./);
+                if (match) {
+                    episodeNum = parseInt(match[1]);
+                    title = match[2] || `第${episodeNum}集`;
+                }
+            }
+            
+            // 格式5: "巴西漂泊-17.mp4" (横杠分隔)
+            if (!match) {
+                match = originalName.match(/^(.+?)-(\d+)\./);
+                if (match) {
+                    episodeNum = parseInt(match[2]);
+                    title = match[1];
+                }
+            }
+            
+            // 格式6: "17.mp4" (只有数字)
+            if (!match) {
+                match = originalName.match(/^(\d+)\./);
+                if (match) {
+                    episodeNum = parseInt(match[1]);
+                    title = `第${episodeNum}集`;
+                }
+            }
+            
+            // 清理标题
+            title = title.replace(/[_\-\s]+$/, '').trim();
+            if (!title) title = `第${episodeNum}集`;
+            
+            const ext = originalName.split('.').pop().toLowerCase();
             const isM3u8 = ext === 'm3u8';
-
+            
+            console.log(`✅ 解析: ${originalName} → 集数: ${episodeNum}, 标题: ${title}`);
+            
             uploadQueue.push({
                 type: 'file',
                 file: file,
                 episode: episodeNum,
                 title: title,
-                language: 'en-US',
                 format: isM3u8 ? 'm3u8' : ext,
                 size: file.size,
                 status: 'pending'
@@ -450,7 +479,7 @@
         updateUploadButton();
     }
 
-    // 添加链接
+    // 添加链接（语言从剧集继承，不需要选择）
     function addLink() {
         const url = document.getElementById('videoLink').value;
         if (!url) {
@@ -460,14 +489,12 @@
 
         const episode = parseInt(document.getElementById('linkEpisode').value) || 1;
         const title = document.getElementById('linkTitle').value || `第${episode}集`;
-        const language = document.getElementById('linkLanguage').value;
         
         uploadQueue.push({
             type: 'link',
             url: url,
             episode: episode,
             title: title,
-            language: language,
             format: url.includes('.m3u8') ? 'm3u8' : 'mp4',
             status: 'pending'
         });
@@ -479,7 +506,7 @@
         updateUploadButton();
     }
 
-    // 解析批量链接
+    // 解析批量链接（格式：集数,标题,视频URL）
     function parseBatchLinks() {
         const text = document.getElementById('batchLinks').value;
         const lines = text.split('\n');
@@ -489,18 +516,16 @@
             if (!line) return;
 
             const parts = line.split(',');
-            if (parts.length >= 4) {
+            if (parts.length >= 3) {
                 const episode = parseInt(parts[0]) || 1;
                 const title = parts[1].trim();
                 const url = parts[2].trim();
-                const language = parts[3]?.trim() || 'en-US';
                 
                 uploadQueue.push({
                     type: 'link',
                     url: url,
                     episode: episode,
                     title: title,
-                    language: language,
                     format: url.includes('.m3u8') ? 'm3u8' : 'mp4',
                     status: 'pending'
                 });
@@ -534,12 +559,6 @@
             if (item.format === 'm3u8') iconClass = 'fas fa-play-circle';
             if (item.type === 'link') iconClass = 'fas fa-link';
 
-            let languageText = '';
-            if (item.language === 'en-US') languageText = '🇺🇸 英语';
-            else if (item.language === 'zh-CN') languageText = '🇨🇳 中文';
-            else if (item.language === 'es-ES') languageText = '🇪🇸 西语';
-            else languageText = item.language;
-
             div.innerHTML = `
                 <div class="file-info">
                     <i class="${iconClass} file-icon ${item.format === 'm3u8' ? 'm3u8' : ''} ${item.type === 'link' ? 'link' : ''}"></i>
@@ -550,7 +569,6 @@
                 </div>
                 <div class="file-meta">
                     <span><i class="fas fa-tag"></i> ${item.format}</span>
-                    <span class="language-badge">${languageText}</span>
                     ${item.type === 'file' ? `<span>${(item.size / 1024 / 1024).toFixed(2)} MB</span>` : ''}
                 </div>
                 <div class="file-actions">
@@ -579,108 +597,122 @@
         const btn = document.getElementById('startUploadBtn');
         btn.disabled = !(currentDramaId && uploadQueue.length > 0 && !isUploading);
     }
- // 开始上传
-async function startUpload() {
-    if (!currentDramaId) {
-        alert('请先选择或创建剧集');
-        return;
-    }
 
-    isUploading = true;
-    document.getElementById('startUploadBtn').disabled = true;
-    document.getElementById('cancelUploadBtn').disabled = false;
-    document.getElementById('uploadProgress').style.display = 'block';
-
-    let completed = 0;
-    const total = uploadQueue.length;
-    const token = localStorage.getItem('token');
-
-    for (let i = 0; i < uploadQueue.length; i++) {
-        const item = uploadQueue[i];
-        
-        try {
-            let videoUrl = '';
-            
-            if (item.type === 'file') {
-                const formData = new FormData();
-                formData.append('file', item.file);
-                formData.append('type', 'video');
-
-                document.getElementById('progressPercent').textContent = `正在上传第${i+1}/${total}个文件...`;
-
-                // ✅ 使用 API_BASE + /upload/video（因为 Worker 路由是 /api/upload/video）
-                const uploadRes = await fetch(`${window.API_BASE}/upload/video`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: formData
-                });
-
-                // 检查响应状态
-                if (!uploadRes.ok) {
-                    throw new Error(`HTTP ${uploadRes.status}: ${uploadRes.statusText}`);
-                }
-
-                const uploadData = await uploadRes.json();
-                if (!uploadData.success) {
-                    throw new Error(uploadData.error || '上传失败');
-                }
-                videoUrl = uploadData.url;
-            } else {
-                videoUrl = item.url;
-            }
-
-            const episodeData = {
-                drama_id: currentDramaId,
-                episode_number: item.episode,
-                title: item.title,
-                video_url: videoUrl,
-                duration: 0,
-                status: 'published',
-                language: item.language
-            };
-
-            // 使用 API_BASE
-            const episodeRes = await fetch(`${window.API_BASE}/episodes`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(episodeData)
-            });
-
-            if (!episodeRes.ok) {
-                throw new Error(`HTTP ${episodeRes.status}`);
-            }
-
-            const episodeData_ = await episodeRes.json();
-            if (!episodeData_.success) {
-                throw new Error(episodeData_.error || '创建分集失败');
-            }
-
-        } catch (error) {
-            console.error('上传失败:', error);
-            alert(`第${item.episode}集上传失败：${error.message}`);
+    // 开始上传（分集语言从剧集继承）
+    async function startUpload() {
+        if (!currentDramaId) {
+            alert('请先选择或创建剧集');
+            return;
         }
 
-        completed++;
-        const percent = Math.round((completed / total) * 100);
-        document.getElementById('progressPercent').textContent = percent + '%';
-        document.getElementById('progressBar').style.width = percent + '%';
-    }
+        // 获取当前剧集的语言
+        let dramaLanguage = 'en-US';
+        try {
+            const token = localStorage.getItem('token');
+            const dramaRes = await fetch(`${window.API_BASE}/dramas/${currentDramaId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const dramaData = await dramaRes.json();
+            if (dramaData.success && dramaData.data) {
+                dramaLanguage = dramaData.data.language || 'en-US';
+            }
+        } catch (error) {
+            console.error('获取剧集语言失败:', error);
+        }
 
-    alert(`上传完成！成功创建 ${completed} 个分集`);
-    
-    uploadQueue = [];
-    renderUploadList();
-    
-    isUploading = false;
-    document.getElementById('startUploadBtn').disabled = false;
-    document.getElementById('cancelUploadBtn').disabled = true;
-    document.getElementById('uploadProgress').style.display = 'none';
-}
+        isUploading = true;
+        document.getElementById('startUploadBtn').disabled = true;
+        document.getElementById('cancelUploadBtn').disabled = false;
+        document.getElementById('uploadProgress').style.display = 'block';
+
+        let completed = 0;
+        const total = uploadQueue.length;
+        const token = localStorage.getItem('token');
+
+        for (let i = 0; i < uploadQueue.length; i++) {
+            const item = uploadQueue[i];
+            
+            try {
+                let videoUrl = '';
+                
+                if (item.type === 'file') {
+                    const formData = new FormData();
+                    formData.append('file', item.file);
+                    formData.append('type', 'video');
+
+                    document.getElementById('progressPercent').textContent = `正在上传第${i+1}/${total}个文件...`;
+
+                    const uploadRes = await fetch(`${window.API_BASE}/upload/video`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    if (!uploadRes.ok) {
+                        throw new Error(`HTTP ${uploadRes.status}: ${uploadRes.statusText}`);
+                    }
+
+                    const uploadData = await uploadRes.json();
+                    if (!uploadData.success) {
+                        throw new Error(uploadData.error || '上传失败');
+                    }
+                    videoUrl = uploadData.url;
+                } else {
+                    videoUrl = item.url;
+                }
+
+                // 创建分集，语言使用剧集的语言
+                const episodeData = {
+                    drama_id: currentDramaId,
+                    episode_number: item.episode,
+                    title: item.title,
+                    video_url: videoUrl,
+                    duration: 0,
+                    status: 'published',
+                    language: dramaLanguage  // ✅ 从剧集继承
+                };
+
+                const episodeRes = await fetch(`${window.API_BASE}/episodes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(episodeData)
+                });
+
+                if (!episodeRes.ok) {
+                    throw new Error(`HTTP ${episodeRes.status}`);
+                }
+
+                const episodeData_ = await episodeRes.json();
+                if (!episodeData_.success) {
+                    throw new Error(episodeData_.error || '创建分集失败');
+                }
+
+            } catch (error) {
+                console.error('上传失败:', error);
+                alert(`第${item.episode}集上传失败：${error.message}`);
+            }
+
+            completed++;
+            const percent = Math.round((completed / total) * 100);
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        alert(`上传完成！成功创建 ${completed} 个分集`);
+        
+        uploadQueue = [];
+        renderUploadList();
+        
+        isUploading = false;
+        document.getElementById('startUploadBtn').disabled = false;
+        document.getElementById('cancelUploadBtn').disabled = true;
+        document.getElementById('uploadProgress').style.display = 'none';
+    }
 
     function cancelUpload() {
         isUploading = false;
@@ -689,7 +721,7 @@ async function startUpload() {
         document.getElementById('uploadProgress').style.display = 'none';
     }
 
-    // 保存新剧集
+    // 保存新剧集（使用动态加载的分类和语言）
     async function saveNewDrama() {
         const token = localStorage.getItem('token');
         
@@ -698,18 +730,23 @@ async function startUpload() {
             language: document.getElementById('newDramaLanguage').value,
             category: document.getElementById('newDramaCategory').value,
             cover_url: document.getElementById('newDramaCover').value,
-            access_type: 'free',
-            coin_cost: 0,
-            free_preview_episodes: 0
+            status: 'draft'
         };
 
         if (!formData.title) {
             alert('请输入剧集名称');
             return;
         }
+        if (!formData.language) {
+            alert('请选择主要语言');
+            return;
+        }
+        if (!formData.category) {
+            alert('请选择分类');
+            return;
+        }
 
         try {
-            // 修改：使用 window.API_BASE
             const response = await fetch(`${window.API_BASE}/dramas`, {
                 method: 'POST',
                 headers: {
@@ -732,9 +769,10 @@ async function startUpload() {
                 alert('创建失败：' + data.error);
             }
         } catch (error) {
+            console.error('创建剧集失败:', error);
             alert('网络错误，请重试');
         }
     }
-</script>
+    </script>
 </body>
 </html>
