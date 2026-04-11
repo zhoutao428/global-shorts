@@ -2,8 +2,8 @@
 (function() {
     // ---------- API 基础路径配置 ----------
     window.API_BASE = '/api/admin';
-    window.UPLOAD_BASE = '/upload';
-    
+    window.UPLOAD_BASE = '/api/upload';
+    window.UPLOAD_BASE = '/api/admin';
     // ---------- 全局工具函数 ----------
     
     // 统一处理 API 请求（自动添加 token）
