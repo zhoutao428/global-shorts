@@ -354,7 +354,7 @@
             if (!title) title = `第${episodeNum}集`;
             
             const ext = originalName.split('.').pop().toLowerCase();
-            
+            console.log(`解析文件: ${originalName} → 集数: ${episodeNum}, 标题: ${title}`);
             uploadQueue.push({
                 id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random(),
                 type: 'file',
@@ -657,7 +657,7 @@
                     status: 'published',
                     language: dramaLanguage
                 };
-                
+                console.log('发送的 episodeData:', JSON.stringify(episodeData, null, 2));
                 const episodeRes = await fetch(`${window.API_BASE}/episodes`, {
                     method: 'POST',
                     headers: {
