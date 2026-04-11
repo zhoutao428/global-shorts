@@ -551,37 +551,154 @@
     }
 
     // ==================== 核心上传逻辑（并行+队列）====================
-    async function startUpload() {
-        if (!currentDramaId) { alert('请先选择或创建剧集'); return; }
-        if (isUploading) return;
-        
-        // 获取剧集语言
-        let dramaLanguage = 'en-US';
-        if (dramaLanguageCache[currentDramaId]) {
-            dramaLanguage = dramaLanguageCache[currentDramaId];
-        } else {
-            try {
-                const token = localStorage.getItem('token');
-                const dramaRes = await fetch(`${window.API_BASE}/dramas/${currentDramaId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const dramaData = await dramaRes.json();
-                if (dramaData.success && dramaData.data) {
-                    dramaLanguage = dramaData.data.language || 'en-US';
-                    dramaLanguageCache[currentDramaId] = dramaLanguage;
-                }
-            } catch (error) { console.error('获取剧集语言失败:', error); }
-        }
-        
-        isUploading = true;
-        isPaused = false;
-        document.getElementById('startUploadBtn').style.display = 'none';
-        document.getElementById('pauseUploadBtn').style.display = 'inline-block';
-        document.getElementById('resumeUploadBtn').style.display = 'none';
-        document.getElementById('uploadProgress').style.display = 'block';
-        
-        await processQueue(dramaLanguage);
+    // 开始上传（带剧集目录分类）
+async function startUpload() {
+    if (!currentDramaId) {
+        alert('请先选择或创建剧集');
+        return;
     }
+
+    // 获取剧集信息（标题、语言）
+    let dramaInfo = null;
+    try {
+        const token = localStorage.getItem('token');
+        const dramaRes = await fetch(`${window.API_BASE}/dramas/${currentDramaId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const dramaData = await dramaRes.json();
+        if (dramaData.success && dramaData.data) {
+            dramaInfo = dramaData.data;
+        }
+    } catch (error) {
+        console.error('获取剧集信息失败:', error);
+    }
+
+    if (!dramaInfo) {
+        alert('无法获取剧集信息');
+        return;
+    }
+
+    // 生成剧集目录名（使用剧集ID + 标题拼音或ID）
+    const dramaFolder = `dramas/${currentDramaId}`;
+    const dramaLanguage = dramaInfo.language || 'en-US';
+
+    isUploading = true;
+    document.getElementById('startUploadBtn').disabled = true;
+    document.getElementById('cancelUploadBtn').disabled = false;
+    document.getElementById('uploadProgress').style.display = 'block';
+
+    let completed = 0;
+    const total = uploadQueue.length;
+    const token = localStorage.getItem('token');
+
+    // 并发控制
+    const CONCURRENT = 3;
+    const results = [];
+
+    const updateProgress = () => {
+        completed++;
+        const percent = Math.round((completed / total) * 100);
+        document.getElementById('progressPercent').textContent = percent + '%';
+        document.getElementById('progressBar').style.width = percent + '%';
+    };
+
+    const uploadTask = async (item, index) => {
+        try {
+            let videoUrl = '';
+            
+            if (item.type === 'file') {
+                const formData = new FormData();
+                formData.append('file', item.file);
+                formData.append('type', 'video');
+                
+                // ✅ 添加自定义路径：按剧集分类
+                // 文件名格式：集数_原始文件名（保留原始意义）
+                const originalName = item.file.name;
+                const ext = originalName.split('.').pop();
+                // 生成有意义的文件名：集数_原标题.扩展名
+                const meaningfulName = `${item.episode.toString().padStart(2, '0')}_${item.title.replace(/[\\/:*?"<>|]/g, '_')}.${ext}`;
+                const customPath = `${dramaFolder}/${meaningfulName}`;
+                
+                // 使用自定义路径上传
+                formData.append('path', customPath);
+
+                const uploadRes = await fetch(`${window.API_BASE}/upload/video?path=${encodeURIComponent(customPath)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error(`HTTP ${uploadRes.status}`);
+                }
+
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) {
+                    throw new Error(uploadData.error || '上传失败');
+                }
+                videoUrl = uploadData.url;
+            } else {
+                videoUrl = item.url;
+            }
+
+            const episodeData = {
+                drama_id: currentDramaId,
+                episode_number: item.episode,
+                title: item.title,
+                video_url: videoUrl,
+                duration: 0,
+                status: 'published',
+                language: dramaLanguage
+            };
+
+            const episodeRes = await fetch(`${window.API_BASE}/episodes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(episodeData)
+            });
+
+            if (!episodeRes.ok) {
+                throw new Error(`HTTP ${episodeRes.status}`);
+            }
+
+            const episodeData_ = await episodeRes.json();
+            if (!episodeData_.success) {
+                throw new Error(episodeData_.error || '创建分集失败');
+            }
+
+            updateProgress();
+            return { success: true, episode: item.episode, title: item.title };
+            
+        } catch (error) {
+            console.error('上传失败:', error);
+            updateProgress();
+            return { success: false, episode: item.episode, error: error.message };
+        }
+    };
+
+    for (let i = 0; i < total; i += CONCURRENT) {
+        const batch = uploadQueue.slice(i, i + CONCURRENT);
+        const batchTasks = batch.map((item, idx) => uploadTask(item, i + idx));
+        const batchResults = await Promise.all(batchTasks);
+        results.push(...batchResults);
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+    
+    alert(`上传完成！成功: ${successCount}, 失败: ${failCount}`);
+    
+    uploadQueue = [];
+    renderUploadList();
+    
+    isUploading = false;
+    document.getElementById('startUploadBtn').disabled = false;
+    document.getElementById('cancelUploadBtn').disabled = true;
+    document.getElementById('uploadProgress').style.display = 'none';
+}
 
     async function processQueue(dramaLanguage) {
         const maxConcurrent = parseInt(document.getElementById('maxConcurrent').value) || 3;
