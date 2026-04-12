@@ -5,29 +5,53 @@ import { jsonResponse } from '../../utils/response.js';
 const R2_PUBLIC_URL = 'https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev';
 
 // 上传图片
+// functions/api/admin/upload.js
+
 export async function uploadImage(request, env) {
   try {
     const formData = await request.formData();
     const file = formData.get('file');
+    
     if (!file) {
+      console.error('封面上传：没有文件');
       return jsonResponse({ error: '没有上传文件' }, 400);
     }
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      return jsonResponse({ error: '不支持的文件类型' }, 400);
+    
+    // 获取文件扩展名
+    const fileName = file.name || 'image.jpg';
+    const ext = fileName.split('.').pop().toLowerCase();
+    const allowedExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    
+    // 根据扩展名判断，而不是依赖 MIME 类型
+    if (!allowedExt.includes(ext)) {
+      console.error('封面上传：不支持的扩展名', ext);
+      return jsonResponse({ error: `不支持的图片格式: .${ext}` }, 400);
     }
-    const ext = file.name.split('.').pop();
+    
+    // 根据扩展名设置正确的 Content-Type
+    const mimeMap = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp'
+    };
+    const contentType = mimeMap[ext] || 'image/jpeg';
+    
     const filename = `images/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    
     await env.MY_BUCKET.put(filename, file.stream(), {
-      httpMetadata: { contentType: file.type },
+      httpMetadata: { contentType },
     });
+    
     const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
+    console.log('封面上传成功:', publicUrl);
     return jsonResponse({ success: true, url: publicUrl });
   } catch (error) {
+    console.error('封面上传失败:', error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
 // 上传视频
 export async function uploadVideo(request, env) {
     try {
