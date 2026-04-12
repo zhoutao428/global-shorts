@@ -1,28 +1,8 @@
 // src/routes/admin/upload.js
 import { jsonResponse } from '../../utils/response.js';
 
-// 通用上传（原 /upload）
-export async function uploadGeneric(request, env) {
-  try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const type = formData.get('type') || 'video';
-
-    if (!file) {
-      return jsonResponse({ error: '没有上传文件' }, 400);
-    }
-
-    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-    await env.MY_BUCKET.put(filename, file.stream(), {
-      httpMetadata: { contentType: file.type },
-    });
-    const publicUrl = `https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev/${filename}`;
-
-    return jsonResponse({ success: true, url: publicUrl });
-  } catch (error) {
-    return jsonResponse({ error: error.message }, 500);
-  }
-}
+// R2 公开访问域名（固定值）
+const R2_PUBLIC_URL = 'https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev';
 
 // 上传图片
 export async function uploadImage(request, env) {
@@ -41,7 +21,7 @@ export async function uploadImage(request, env) {
     await env.MY_BUCKET.put(filename, file.stream(), {
       httpMetadata: { contentType: file.type },
     });
-    const publicUrl = `https://cdn.globalshorts.com/${filename}`;
+    const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
     return jsonResponse({ success: true, url: publicUrl });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
@@ -49,7 +29,6 @@ export async function uploadImage(request, env) {
 }
 
 // 上传视频
-// upload.js - 修改上传函数支持自定义路径
 export async function uploadVideo(request, env) {
     try {
         const url = new URL(request.url);
@@ -68,7 +47,6 @@ export async function uploadVideo(request, env) {
             return jsonResponse({ error: '不支持的视频格式' }, 400);
         }
         
-        // 使用自定义路径或默认路径
         let filename;
         if (customPath) {
             filename = customPath;
@@ -80,13 +58,33 @@ export async function uploadVideo(request, env) {
             httpMetadata: { contentType: file.type || 'video/mp4' },
         });
         
-        const publicUrl = `https://${env.BUCKET_PUBLIC_URL}/${filename}`;
+        const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
         return jsonResponse({ success: true, url: publicUrl, filename, size: file.size });
     } catch (error) {
         return jsonResponse({ error: error.message }, 500);
     }
 }
-// 获取上传任务状态（模拟）
+
+// 通用上传
+export async function uploadGeneric(request, env) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+    if (!file) {
+      return jsonResponse({ error: '没有上传文件' }, 400);
+    }
+    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+    await env.MY_BUCKET.put(filename, file.stream(), {
+      httpMetadata: { contentType: file.type },
+    });
+    const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
+    return jsonResponse({ success: true, url: publicUrl });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+// 获取上传任务状态
 export async function getUploadStatus(request, env, url) {
   try {
     const taskIds = url.searchParams.get('ids')?.split(',') || [];
@@ -94,7 +92,7 @@ export async function getUploadStatus(request, env, url) {
       task_id: id,
       status: 'completed',
       progress: 100,
-      url: `https://cdn.globalshorts.com/videos/${id}.mp4`
+      url: `${R2_PUBLIC_URL}/videos/${id}.mp4`
     }));
     return jsonResponse({ success: true, data: statuses });
   } catch (error) {
