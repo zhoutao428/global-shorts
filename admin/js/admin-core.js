@@ -3,7 +3,7 @@
     // ---------- API 基础路径配置 ----------
     window.API_BASE = '/api/admin';
     window.UPLOAD_BASE = '/api/upload';
-    window.UPLOAD_BASE = '/api/admin';
+    window.CDN_BASE = 'https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev';
     // ---------- 全局工具函数 ----------
     
     // 统一处理 API 请求（自动添加 token）
