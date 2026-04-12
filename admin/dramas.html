@@ -324,41 +324,46 @@
         } catch (error) { tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">加载失败</td></tr>'; }
     }
 
-    function renderDramas(dramas) {
-        const tbody = document.getElementById('dramaTableBody');
-        if (!dramas || !dramas.length) { 
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无剧集</td></tr>'; 
-            return; 
-        }
-        tbody.innerHTML = '';
-        dramas.forEach(drama => {
-            const statusClass = drama.status === 'published' ? 'status-active' : (drama.status === 'draft' ? 'status-inactive' : 'status-suspended');
-            const statusText = drama.status === 'published' ? '已发布' : (drama.status === 'draft' ? '草稿' : '隐藏');
-            
-            const langObj = languageList.find(l => l.code === drama.language);
-            const languageName = langObj ? langObj.name : (drama.language || '-');
-            
-            const catObj = categoryList.find(c => c.id === drama.category);
-            const categoryName = catObj ? catObj.name : (drama.category || '-');
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${drama.id.substring(0, 8)}...</td>
-                <td>${drama.cover_url ? `<img src="${drama.cover_url}" style="width:40px; height:50px; object-fit:cover; border-radius:4px;">` : '<span style="color:var(--gray);">无封面</span>'}</td>
-                <td><a href="/admin/episodes.html?drama_id=${drama.id}" style="color:var(--primary);">${drama.title}</a></td>
-                <td>${categoryName}</td>
-                <td>${languageName}</td>
-                <td>${drama.total_episodes || 0}</td>
-                <td>${(drama.view_count || 0).toLocaleString()}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-secondary" onclick="editDrama('${drama.id}')"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteDrama('${drama.id}')"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
+    // dramas.html 中的 renderDramas 函数修改
+function renderDramas(dramas) {
+    const tbody = document.getElementById('dramaTableBody');
+    if (!dramas || !dramas.length) { 
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-placeholder">暂无剧集</td></tr>'; 
+        return; 
     }
+    
+    tbody.innerHTML = '';
+    
+    dramas.forEach(drama => {
+        const statusClass = drama.status === 'published' ? 'status-active' : (drama.status === 'draft' ? 'status-inactive' : 'status-suspended');
+        const statusText = drama.status === 'published' ? '已发布' : (drama.status === 'draft' ? '草稿' : '隐藏');
+        
+        // 语言查找 - 确保类型匹配
+        const langObj = languageList.find(l => l.code === drama.language);
+        const languageName = langObj ? langObj.name : (drama.language || '-');
+        
+        // 分类查找 - 确保字符串比较
+        const catObj = categoryList.find(c => String(c.id) === String(drama.category));
+        const categoryName = catObj ? catObj.name : (drama.category || '-');
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${drama.id ? drama.id.substring(0, 8) + '...' : '-'}</td>
+            <td>${drama.cover_url ? `<img src="${drama.cover_url}" style="width:40px; height:50px; object-fit:cover; border-radius:4px;">` : '<span style="color:var(--gray);">无封面</span>'}</td>
+            <td><a href="/admin/episodes.html?drama_id=${drama.id}" style="color:var(--primary);">${drama.title || '-'}</a></td>
+            <td>${categoryName}</td>
+            <td>${languageName}</td>
+            <td>${drama.total_episodes || 0}</td>
+            <td>${(drama.view_count || 0).toLocaleString()}</td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td>
+                <button class="btn btn-sm btn-secondary" onclick="editDrama('${drama.id}')"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteDrama('${drama.id}')"><i class="fas fa-trash"></i></button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
 
     window.editDrama = async function(id) {
         const token = localStorage.getItem('token');
