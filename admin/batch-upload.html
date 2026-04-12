@@ -422,7 +422,7 @@
             formData.append('file', coverBlob);
             formData.append('type', 'cover');
             try {
-                const uploadRes = await fetch(`${window.API_BASE}/upload/image`, {
+                const uploadRes = await fetch(`${window.UPLOAD_BASE}/image`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
@@ -654,7 +654,7 @@
                 // ✅ 统一 R2 存储格式：01_第1集.mp4
                 const filename = `dramas/${item.dramaId}/${item.episode.toString().padStart(2, '0')}_第${item.episode}集.${ext}`;
                 
-                const uploadRes = await fetch(`${window.API_BASE}/upload/video?path=${encodeURIComponent(filename)}`, {
+                const uploadRes = await fetch(`${window.UPLOAD_BASE}/video?path=${encodeURIComponent(filename)}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
