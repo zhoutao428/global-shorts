@@ -1,4 +1,5 @@
 // functions/api/admin/dramas.js
+import { jsonResponse } from '../../utils/response.js';
 
 export async function getDramas(request, env) {
     try {
@@ -11,19 +12,8 @@ export async function getDramas(request, env) {
         
         const offset = (page - 1) * limit;
         
-        console.log('getDramas called with:', { page, limit, search, category, status, offset });
-
-        // 获取当前登录用户ID
-        let userId = null;
-        try {
-            const { authenticate } = await import('../../middleware/auth.js');
-            const auth = await authenticate(request, env);
-            if (!auth.error) {
-                userId = auth.user?.id;
-            }
-        } catch (e) {
-            console.log('Auth error (non-critical):', e.message);
-        }
+        // 获取当前登录用户ID（已经在 index.js 中验证过管理员权限）
+        const userId = request.user?.id || null;
 
         // 构建 WHERE 条件
         let whereConditions = [];
@@ -52,12 +42,14 @@ export async function getDramas(request, env) {
             FROM dramas d
             ${whereClause}
         `;
-        console.log('Count query:', countQuery);
-        console.log('Count params:', queryParams);
         
-        const countResult = await env.MY_DB.prepare(countQuery).bind(...queryParams).first();
+        let countResult;
+        if (queryParams.length > 0) {
+            countResult = await env.MY_DB.prepare(countQuery).bind(...queryParams).first();
+        } else {
+            countResult = await env.MY_DB.prepare(countQuery).first();
+        }
         const total = countResult?.total || 0;
-        console.log('Total count:', total);
 
         // 2. 查询数据
         const dataQuery = `
@@ -69,39 +61,42 @@ export async function getDramas(request, env) {
                 d.category,
                 d.language,
                 d.region,
-                d.total_episodes,
-                d.views_count as view_count,
-                d.likes_count as like_count,
-                d.favorites_count,
-                d.comments_count,
-                d.shares_count,
+                COALESCE(d.total_episodes, 0) as total_episodes,
+                COALESCE(d.views_count, 0) as view_count,
+                COALESCE(d.likes_count, 0) as like_count,
+                COALESCE(d.favorites_count, 0) as favorites_count,
+                COALESCE(d.comments_count, 0) as comments_count,
+                COALESCE(d.shares_count, 0) as shares_count,
                 d.is_vip,
                 d.status,
                 d.tags,
                 d.subtitles,
                 d.created_at,
                 d.updated_at,
-                (SELECT COUNT(*) FROM episodes e WHERE e.drama_id = d.id) as actual_episodes,
-                (SELECT COUNT(DISTINCT uh.episode_id) FROM user_history uh WHERE uh.drama_id = d.id AND uh.user_id = ?) as watchedEpisodes
+                (SELECT COUNT(*) FROM episodes e WHERE e.drama_id = d.id) as actual_episodes
             FROM dramas d
             ${whereClause}
             ORDER BY d.created_at DESC
             LIMIT ${limit} OFFSET ${offset}
         `;
         
-        const dataParams = [userId || '', ...queryParams];
-        console.log('Data query:', dataQuery);
-        console.log('Data params:', dataParams);
+        let results;
+        if (queryParams.length > 0) {
+            const statement = env.MY_DB.prepare(dataQuery).bind(...queryParams);
+            const result = await statement.all();
+            results = result.results;
+        } else {
+            const statement = env.MY_DB.prepare(dataQuery);
+            const result = await statement.all();
+            results = result.results;
+        }
         
-        const statement = env.MY_DB.prepare(dataQuery).bind(...dataParams);
-        console.log('SQL:', statement);
-        
-        const { results } = await statement.all();
-        console.log('Results count:', results?.length || 0);
-        
+        // 处理结果
         const processedResults = (results || []).map(drama => ({
             ...drama,
-            total_episodes: drama.actual_episodes || drama.total_episodes || 0
+            total_episodes: drama.actual_episodes || drama.total_episodes || 0,
+            tags: parseJsonField(drama.tags),
+            subtitles: parseJsonField(drama.subtitles)
         }));
 
         return jsonResponse({ 
@@ -114,35 +109,63 @@ export async function getDramas(request, env) {
                 total_pages: Math.ceil(total / limit)
             }
         });
-    } catch (error) { 
-        console.error('getDramas ERROR:', error);
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-        console.error('Error cause:', error.cause);
-        
-        return jsonResponse({ 
+    } catch (error) {
+        console.error('getDramas error:', error);
+        return new Response(JSON.stringify({ 
             success: false,
             error: error.message,
-            stack: error.stack,
-            cause: error.cause?.message
-        }, 500); 
+            stack: error.stack 
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+// 辅助函数：解析 JSON 字段
+function parseJsonField(field) {
+    if (!field) return [];
+    if (Array.isArray(field)) return field;
+    try {
+        return JSON.parse(field);
+    } catch {
+        return [];
     }
 }
 
 export async function createDrama(request, env) {
     try {
-        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = await request.json();
+        const body = await request.json();
+        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = body;
         const id = crypto.randomUUID();
         
         await env.MY_DB.prepare(`
             INSERT INTO dramas (id, title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(id, title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, subtitles ? JSON.stringify(subtitles) : null, region || 'global', language || 'en-US').run();
+        `).bind(
+            id, 
+            title, 
+            description || '', 
+            cover_url || '', 
+            category || '', 
+            total_episodes || 0, 
+            status || 'draft', 
+            tags ? JSON.stringify(tags) : null, 
+            subtitles ? JSON.stringify(subtitles) : null, 
+            region || 'global', 
+            language || 'en-US'
+        ).run();
         
         return jsonResponse({ success: true, id });
-    } catch (error) { 
+    } catch (error) {
         console.error('createDrama error:', error);
-        return jsonResponse({ error: error.message }, 500); 
+        return new Response(JSON.stringify({ 
+            success: false,
+            error: error.message 
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
@@ -151,8 +174,8 @@ export async function getDrama(request, env, id) {
         const drama = await env.MY_DB.prepare(`
             SELECT 
                 d.*,
-                d.views_count as view_count,
-                d.likes_count as like_count,
+                COALESCE(d.views_count, 0) as view_count,
+                COALESCE(d.likes_count, 0) as like_count,
                 (SELECT COUNT(*) FROM episodes e WHERE e.drama_id = d.id) as actual_episodes
             FROM dramas d 
             WHERE d.id = ?
@@ -162,51 +185,56 @@ export async function getDrama(request, env, id) {
             return jsonResponse({ error: '剧集不存在' }, 404);
         }
         
-        // 确保 total_episodes 有值
         drama.total_episodes = drama.actual_episodes || drama.total_episodes || 0;
-        
-        // 解析 JSON 字段
-        if (drama.tags) {
-            try {
-                drama.tags = JSON.parse(drama.tags);
-            } catch {
-                drama.tags = drama.tags.split(',').map(t => t.trim());
-            }
-        } else {
-            drama.tags = [];
-        }
-        
-        if (drama.subtitles) {
-            try {
-                drama.subtitles = JSON.parse(drama.subtitles);
-            } catch {
-                drama.subtitles = [];
-            }
-        } else {
-            drama.subtitles = [];
-        }
+        drama.tags = parseJsonField(drama.tags);
+        drama.subtitles = parseJsonField(drama.subtitles);
         
         return jsonResponse({ success: true, data: drama });
-    } catch (error) { 
+    } catch (error) {
         console.error('getDrama error:', error);
-        return jsonResponse({ error: error.message }, 500); 
+        return new Response(JSON.stringify({ 
+            success: false,
+            error: error.message 
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
 export async function updateDrama(request, env, id) {
     try {
-        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = await request.json();
+        const body = await request.json();
+        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = body;
         
         await env.MY_DB.prepare(`
             UPDATE dramas 
             SET title = ?, description = ?, cover_url = ?, category = ?, total_episodes = ?, status = ?, tags = ?, subtitles = ?, region = ?, language = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).bind(title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, subtitles ? JSON.stringify(subtitles) : null, region || 'global', language || 'en-US', id).run();
+        `).bind(
+            title, 
+            description || '', 
+            cover_url || '', 
+            category || '', 
+            total_episodes || 0, 
+            status || 'draft', 
+            tags ? JSON.stringify(tags) : null, 
+            subtitles ? JSON.stringify(subtitles) : null, 
+            region || 'global', 
+            language || 'en-US', 
+            id
+        ).run();
         
         return jsonResponse({ success: true });
-    } catch (error) { 
+    } catch (error) {
         console.error('updateDrama error:', error);
-        return jsonResponse({ error: error.message }, 500); 
+        return new Response(JSON.stringify({ 
+            success: false,
+            error: error.message 
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
@@ -218,8 +246,14 @@ export async function deleteDrama(request, env, id) {
         await env.MY_DB.prepare('DELETE FROM dramas WHERE id = ?').bind(id).run();
         
         return jsonResponse({ success: true });
-    } catch (error) { 
+    } catch (error) {
         console.error('deleteDrama error:', error);
-        return jsonResponse({ error: error.message }, 500); 
+        return new Response(JSON.stringify({ 
+            success: false,
+            error: error.message 
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
