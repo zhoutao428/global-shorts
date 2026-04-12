@@ -53,7 +53,7 @@ export async function getDramas(request, env) {
         const countResult = await env.MY_DB.prepare(countQuery).bind(...queryParams).first();
         const total = countResult?.total || 0;
 
-        // 2. 查询数据 - 修复：LIMIT 和 OFFSET 直接拼接
+        // 2. 查询数据 - 修正列名：views_count, likes_count, favorites_count, comments_count, shares_count
         const dataQuery = `
             SELECT 
                 d.id,
@@ -64,11 +64,15 @@ export async function getDramas(request, env) {
                 d.language,
                 d.region,
                 d.total_episodes,
-                d.view_count,
-                d.like_count,
+                d.views_count as view_count,
+                d.likes_count as like_count,
+                d.favorites_count,
+                d.comments_count,
+                d.shares_count,
                 d.is_vip,
                 d.status,
                 d.tags,
+                d.subtitles,
                 d.created_at,
                 d.updated_at,
                 (SELECT COUNT(*) FROM episodes e WHERE e.drama_id = d.id) as actual_episodes,
@@ -107,13 +111,13 @@ export async function getDramas(request, env) {
 
 export async function createDrama(request, env) {
     try {
-        const { title, description, cover_url, category, total_episodes, status, tags, region, language } = await request.json();
+        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = await request.json();
         const id = crypto.randomUUID();
         
         await env.MY_DB.prepare(`
-            INSERT INTO dramas (id, title, description, cover_url, category, total_episodes, status, tags, region, language) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(id, title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, region || 'global', language || 'en-US').run();
+            INSERT INTO dramas (id, title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(id, title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, subtitles ? JSON.stringify(subtitles) : null, region || 'global', language || 'en-US').run();
         
         return jsonResponse({ success: true, id });
     } catch (error) { 
@@ -127,6 +131,8 @@ export async function getDrama(request, env, id) {
         const drama = await env.MY_DB.prepare(`
             SELECT 
                 d.*,
+                d.views_count as view_count,
+                d.likes_count as like_count,
                 (SELECT COUNT(*) FROM episodes e WHERE e.drama_id = d.id) as actual_episodes
             FROM dramas d 
             WHERE d.id = ?
@@ -139,7 +145,7 @@ export async function getDrama(request, env, id) {
         // 确保 total_episodes 有值
         drama.total_episodes = drama.actual_episodes || drama.total_episodes || 0;
         
-        // 解析 tags
+        // 解析 JSON 字段
         if (drama.tags) {
             try {
                 drama.tags = JSON.parse(drama.tags);
@@ -148,6 +154,16 @@ export async function getDrama(request, env, id) {
             }
         } else {
             drama.tags = [];
+        }
+        
+        if (drama.subtitles) {
+            try {
+                drama.subtitles = JSON.parse(drama.subtitles);
+            } catch {
+                drama.subtitles = [];
+            }
+        } else {
+            drama.subtitles = [];
         }
         
         return jsonResponse({ success: true, data: drama });
@@ -159,13 +175,13 @@ export async function getDrama(request, env, id) {
 
 export async function updateDrama(request, env, id) {
     try {
-        const { title, description, cover_url, category, total_episodes, status, tags, region, language } = await request.json();
+        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = await request.json();
         
         await env.MY_DB.prepare(`
             UPDATE dramas 
-            SET title = ?, description = ?, cover_url = ?, category = ?, total_episodes = ?, status = ?, tags = ?, region = ?, language = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, description = ?, cover_url = ?, category = ?, total_episodes = ?, status = ?, tags = ?, subtitles = ?, region = ?, language = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).bind(title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, region || 'global', language || 'en-US', id).run();
+        `).bind(title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, subtitles ? JSON.stringify(subtitles) : null, region || 'global', language || 'en-US', id).run();
         
         return jsonResponse({ success: true });
     } catch (error) { 
