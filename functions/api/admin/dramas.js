@@ -72,7 +72,7 @@ export async function getDramas(request, env) {
                 d.tags,
                 d.subtitles,
                 d.created_at,
-                d.updated_at,
+              
                 (SELECT COUNT(*) FROM episodes e WHERE e.drama_id = d.id) as actual_episodes
             FROM dramas d
             ${whereClause}
