@@ -1,5 +1,4 @@
 // functions/api/admin/dramas.js
-import { jsonResponse } from '../../utils/response.js';
 
 export async function getDramas(request, env) {
     try {
@@ -54,7 +53,7 @@ export async function getDramas(request, env) {
         const countResult = await env.MY_DB.prepare(countQuery).bind(...queryParams).first();
         const total = countResult?.total || 0;
 
-        // 2. 查询数据
+        // 2. 查询数据 - 修复：LIMIT 和 OFFSET 直接拼接
         const dataQuery = `
             SELECT 
                 d.id,
@@ -77,11 +76,11 @@ export async function getDramas(request, env) {
             FROM dramas d
             ${whereClause}
             ORDER BY d.created_at DESC
-            LIMIT ? OFFSET ?
+            LIMIT ${limit} OFFSET ${offset}
         `;
         
-        // 参数顺序：先 userId，再 WHERE 条件参数，最后 limit 和 offset
-        const dataParams = [userId || '', ...queryParams, limit, offset];
+        // 参数只需要 userId 和 WHERE 条件参数
+        const dataParams = [userId || '', ...queryParams];
         const { results } = await env.MY_DB.prepare(dataQuery).bind(...dataParams).all();
         
         // 处理结果，确保 total_episodes 有值
@@ -108,13 +107,13 @@ export async function getDramas(request, env) {
 
 export async function createDrama(request, env) {
     try {
-        const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = await request.json();
+        const { title, description, cover_url, category, total_episodes, status, tags, region, language } = await request.json();
         const id = crypto.randomUUID();
         
         await env.MY_DB.prepare(`
             INSERT INTO dramas (id, title, description, cover_url, category, total_episodes, status, tags, region, language) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(id, title, description, cover_url, category, total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, region || 'global', language || 'en-US').run();
+        `).bind(id, title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, region || 'global', language || 'en-US').run();
         
         return jsonResponse({ success: true, id });
     } catch (error) { 
@@ -140,13 +139,15 @@ export async function getDrama(request, env, id) {
         // 确保 total_episodes 有值
         drama.total_episodes = drama.actual_episodes || drama.total_episodes || 0;
         
-        // 解析 JSON 字段
+        // 解析 tags
         if (drama.tags) {
             try {
                 drama.tags = JSON.parse(drama.tags);
             } catch {
                 drama.tags = drama.tags.split(',').map(t => t.trim());
             }
+        } else {
+            drama.tags = [];
         }
         
         return jsonResponse({ success: true, data: drama });
@@ -164,7 +165,7 @@ export async function updateDrama(request, env, id) {
             UPDATE dramas 
             SET title = ?, description = ?, cover_url = ?, category = ?, total_episodes = ?, status = ?, tags = ?, region = ?, language = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).bind(title, description, cover_url, category, total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, region || 'global', language || 'en-US', id).run();
+        `).bind(title, description || '', cover_url || '', category || '', total_episodes || 0, status || 'draft', tags ? JSON.stringify(tags) : null, region || 'global', language || 'en-US', id).run();
         
         return jsonResponse({ success: true });
     } catch (error) { 
