@@ -418,19 +418,31 @@
         
         let coverUrl = '';
         if (coverBlob) {
-            const formData = new FormData();
-            formData.append('file', coverBlob);
-            formData.append('type', 'cover');
-            try {
-                const uploadRes = await fetch(`${window.UPLOAD_BASE}/image`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                const uploadData = await uploadRes.json();
-                if (uploadData.success) coverUrl = uploadData.url;
-            } catch (error) { console.error('封面上传失败:', error); }
+    const formData = new FormData();
+    formData.append('file', coverBlob, coverBlob.name || 'cover.jpg');
+    
+    try {
+        console.log('上传封面:', coverBlob.name, coverBlob.type, coverBlob.size);
+        const uploadRes = await fetch(`${window.UPLOAD_BASE}/image`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        
+        if (!uploadRes.ok) {
+            const errorText = await uploadRes.text();
+            console.error('封面上传失败:', uploadRes.status, errorText);
+            throw new Error(`上传失败: ${uploadRes.status}`);
         }
+        
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) coverUrl = uploadData.url;
+    } catch (error) {
+        console.error('封面上传失败:', error);
+        // 继续执行，只是没有封面
+        alert('封面上传失败，将继续创建剧集');
+    }
+}
         
         let dramaId = null;
         try {
