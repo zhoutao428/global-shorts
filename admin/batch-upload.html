@@ -6,7 +6,6 @@
     <title>批量上传 - Global Shorts 后台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/admin-common.css">
-    <!-- JSZip 库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         .free-badge { background: #52c41a; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 8px; }
@@ -68,27 +67,24 @@
                 <p class="page-description">上传ZIP压缩包，自动解析剧集信息、封面、分集，一键创建并上传</p>
             </div>
 
-            <!-- ZIP 上传区域 -->
-            <!-- 替换原来的 ZIP 上传区域 -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">📦 上传剧集压缩包</h3>
-    </div>
-    <div class="card-content">
-        <div class="upload-area zip-upload-area" id="zipUploadArea" style="text-align:center; padding:40px;">
-            <i class="fas fa-file-archive" style="font-size:48px; color:var(--primary);"></i>
-            <h3>拖放ZIP压缩包到这里</h3>
-            <p>支持 .zip 格式 | 自动解析剧集信息、封面、分集视频</p>
-            <button class="btn btn-primary" id="selectZipBtn"><i class="fas fa-folder-open"></i>选择ZIP文件</button>
-        </div>
-        <p style="color:var(--gray); margin-top:8px;">
-            <i class="fas fa-info-circle"></i> 
-            文件夹命名格式：<code>剧集名称_语言_分类.zip</code> 例如：<code>总裁的秘密婚姻_zh-CN_romance.zip</code>
-        </p>
-    </div>
-</div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📦 上传剧集压缩包</h3>
+                </div>
+                <div class="card-content">
+                    <div class="upload-area zip-upload-area" id="zipUploadArea" style="text-align:center; padding:40px;">
+                        <i class="fas fa-file-archive" style="font-size:48px; color:var(--primary);"></i>
+                        <h3>拖放ZIP压缩包到这里</h3>
+                        <p>支持 .zip 格式 | 自动解析剧集信息、封面、分集视频</p>
+                        <button class="btn btn-primary" id="selectZipBtn"><i class="fas fa-folder-open"></i>选择ZIP文件</button>
+                    </div>
+                    <p style="color:var(--gray); margin-top:8px;">
+                        <i class="fas fa-info-circle"></i> 
+                        文件夹命名格式：<code>剧集名称_语言_分类.zip</code> 例如：<code>总裁的秘密婚姻_zh-CN_romance.zip</code>
+                    </p>
+                </div>
+            </div>
 
-            <!-- 上传队列 -->
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">3. 上传队列</h3>
@@ -131,7 +127,6 @@
         </main>
     </div>
 
-    <!-- 预览确认模态框 -->
     <div class="modal-overlay" id="previewModal">
         <div class="modal" style="max-width:700px;">
             <div class="modal-header">
@@ -168,42 +163,36 @@
         await loadCategoryList();
         await loadLanguageList();
 
-        // ZIP 上传区域事件
-const zipArea = document.getElementById('zipUploadArea');
-if (zipArea) {
-    zipArea.addEventListener('dragover', (e) => { 
-        e.preventDefault(); 
-        zipArea.style.borderColor = 'var(--primary)'; 
-    });
-    zipArea.addEventListener('dragleave', () => { 
-        zipArea.style.borderColor = 'var(--border)'; 
-    });
-    zipArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        zipArea.style.borderColor = 'var(--border)';
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            // 检查是否是 .zip 文件
-            if (files[0].name.endsWith('.zip')) {
-                handleZipFile(files[0]);
-            } else {
-                alert('请拖放 ZIP 压缩包文件（.zip）');
-            }
+        const zipArea = document.getElementById('zipUploadArea');
+        if (zipArea) {
+            zipArea.addEventListener('dragover', (e) => { 
+                e.preventDefault(); 
+                zipArea.style.borderColor = 'var(--primary)'; 
+            });
+            zipArea.addEventListener('dragleave', () => { 
+                zipArea.style.borderColor = 'var(--border)'; 
+            });
+            zipArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zipArea.style.borderColor = 'var(--border)';
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].name.endsWith('.zip')) {
+                    handleZipFile(files[0]);
+                } else {
+                    alert('请拖放 ZIP 压缩包文件（.zip）');
+                }
+            });
         }
-    });
-}
 
-document.getElementById('selectZipBtn')?.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.zip';
-    input.onchange = (e) => {
-        if (e.target.files[0]) {
-            handleZipFile(e.target.files[0]);
-        }
-    };
-    input.click();
-});
+        document.getElementById('selectZipBtn')?.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.zip';
+            input.onchange = (e) => {
+                if (e.target.files[0]) handleZipFile(e.target.files[0]);
+            };
+            input.click();
+        });
 
         document.getElementById('clearListBtn').addEventListener('click', clearList);
         document.getElementById('startUploadBtn').addEventListener('click', startUpload);
@@ -218,7 +207,6 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         document.getElementById('confirmPreviewBtn').addEventListener('click', confirmAndUpload);
     });
 
-    // ==================== 数据加载 ====================
     async function loadCategoryList() {
         try {
             const token = localStorage.getItem('token');
@@ -245,101 +233,69 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         } catch (error) { console.error('加载语言失败:', error); }
     }
 
-    // ==================== ZIP 解析 ====================
     async function handleZipFile(zipFile) {
-    const JSZip = window.JSZip;
-    if (!JSZip) {
-        alert('JSZip 库加载中，请刷新页面重试');
-        return;
-    }
-
-    try {
-        const zip = await JSZip.loadAsync(zipFile);
-        
-        // 解析文件夹名（去掉 .zip 后缀）
-        let folderName = zipFile.name.replace('.zip', '');
-        
-        // 尝试获取第一层文件夹名
-        const firstFolder = Object.keys(zip.files).find(name => name.includes('/') && !name.endsWith('/'));
-        if (firstFolder) {
-            folderName = firstFolder.split('/')[0];
-        }
-        
-        console.log('解析ZIP:', zipFile.name, '文件夹名:', folderName);
-        
-        // 从文件夹名解析剧集信息
-        let dramaInfo = parseFolderName(folderName);
-        
-        let coverBlob = null;
-        let videoFiles = [];
-        let infoContent = null;
-        
-        // 遍历ZIP内文件
-        for (const [path, file] of Object.entries(zip.files)) {
-            if (file.dir) continue;
-            
-            const fileName = path.split('/').pop();
-            const ext = fileName.split('.').pop().toLowerCase();
-            
-            console.log('发现文件:', path, '扩展名:', ext);
-            
-            // 查找封面
-            if (fileName.match(/cover|poster|封面/i) && ['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
-                coverBlob = await file.async('blob');
-                dramaInfo.coverFile = new File([coverBlob], fileName, { type: `image/${ext}` });
-                console.log('找到封面:', fileName);
-            }
-            
-            // 查找 info 文件
-            if (fileName === 'info.txt' || fileName === 'info.json') {
-                infoContent = await file.async('string');
-                dramaInfo = parseInfoFile(infoContent, dramaInfo);
-                console.log('找到info文件:', fileName);
-            }
-            
-            // 查找视频文件
-            if (['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'].includes(ext)) {
-                const videoBlob = await file.async('blob');
-                videoFiles.push({
-                    file: new File([videoBlob], fileName, { type: `video/${ext}` }),
-                    name: fileName,
-                    path: path
-                });
-                console.log('找到视频:', fileName);
-            }
-        }
-        
-        if (videoFiles.length === 0) {
-            alert('ZIP文件中没有找到视频文件！请确保视频文件在压缩包内。');
+        const JSZip = window.JSZip;
+        if (!JSZip) {
+            alert('JSZip 库加载中，请刷新页面重试');
             return;
         }
-        
-        // 显示预览确认
-        showPreviewModal(dramaInfo, videoFiles, coverBlob);
-        
-    } catch (error) {
-        console.error('解析ZIP失败:', error);
-        alert('解析ZIP文件失败：' + error.message);
-    }
-}
 
-    // 解析文件夹名
+        try {
+            const zip = await JSZip.loadAsync(zipFile);
+            let folderName = zipFile.name.replace('.zip', '');
+            console.log('解析ZIP:', zipFile.name, '文件夹名:', folderName);
+            
+            let dramaInfo = parseFolderName(folderName);
+            let coverBlob = null;
+            let videoFiles = [];
+            
+            for (const [path, file] of Object.entries(zip.files)) {
+                if (file.dir) continue;
+                const fileName = path.split('/').pop();
+                const ext = fileName.split('.').pop().toLowerCase();
+                
+                if (fileName.match(/cover|poster|封面/i) && ['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+                    coverBlob = await file.async('blob');
+                    dramaInfo.coverFile = new File([coverBlob], fileName, { type: `image/${ext}` });
+                    console.log('找到封面:', fileName);
+                }
+                
+                if (['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'].includes(ext)) {
+                    const videoBlob = await file.async('blob');
+                    videoFiles.push({
+                        file: new File([videoBlob], fileName, { type: `video/${ext}` }),
+                        name: fileName,
+                        path: path
+                    });
+                    console.log('找到视频:', fileName);
+                }
+            }
+            
+            if (videoFiles.length === 0) {
+                alert('ZIP文件中没有找到视频文件！');
+                return;
+            }
+            
+            showPreviewModal(dramaInfo, videoFiles, coverBlob);
+        } catch (error) {
+            console.error('解析ZIP失败:', error);
+            alert('解析ZIP文件失败：' + error.message);
+        }
+    }
+
     function parseFolderName(folderName) {
-        // 格式: 剧集名称_语言_分类
-        let match = folderName.match(/^(.+?)_([a-z]{2}-[A-Z]{2})_(.+)$/);
+        let match = folderName.match(/^(.+?)_([a-z]{2}-[A-Z]{2})_(.+)$/i);
         if (match) {
             return {
                 title: match[1],
                 language: match[2],
-                category: match[3],
+                category: match[3].toLowerCase(),
                 coverFile: null,
                 description: '',
                 tags: ''
             };
         }
-        
-        // 格式: 剧集名称_语言
-        match = folderName.match(/^(.+?)_([a-z]{2}-[A-Z]{2})$/);
+        match = folderName.match(/^(.+?)_([a-z]{2}-[A-Z]{2})$/i);
         if (match) {
             return {
                 title: match[1],
@@ -350,8 +306,6 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                 tags: ''
             };
         }
-        
-        // 只有剧集名称
         return {
             title: folderName,
             language: null,
@@ -362,44 +316,7 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         };
     }
 
-    // 解析 info 文件
-    function parseInfoFile(content, dramaInfo) {
-        try {
-            if (content.trim().startsWith('{')) {
-                const json = JSON.parse(content);
-                return {
-                    ...dramaInfo,
-                    title: json.title || dramaInfo.title,
-                    language: json.language || dramaInfo.language,
-                    category: json.category || dramaInfo.category,
-                    description: json.description || '',
-                    tags: json.tags || ''
-                };
-            }
-            
-            const lines = content.split('\n');
-            lines.forEach(line => {
-                const [key, ...valueParts] = line.split('=');
-                if (key && valueParts.length) {
-                    const value = valueParts.join('=').trim();
-                    switch(key.trim()) {
-                        case 'title': dramaInfo.title = value; break;
-                        case 'language': dramaInfo.language = value; break;
-                        case 'category': dramaInfo.category = value; break;
-                        case 'description': dramaInfo.description = value; break;
-                        case 'tags': dramaInfo.tags = value; break;
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('解析info文件失败:', error);
-        }
-        return dramaInfo;
-    }
-
-    // 显示预览模态框
     function showPreviewModal(dramaInfo, videoFiles, coverBlob) {
-        // 生成分类和语言的选项HTML
         let categoryOptions = '<option value="">请选择分类</option>';
         categoryList.forEach(cat => {
             const selected = (dramaInfo.category === cat.id) ? 'selected' : '';
@@ -416,9 +333,10 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
             `<img src="${URL.createObjectURL(coverBlob)}" style="width:100px; height:140px; object-fit:cover; border-radius:4px;">` :
             '<div style="width:100px; height:140px; background:var(--gray-light); display:flex; align-items:center; justify-content:center;"><i class="fas fa-image" style="font-size:32px; color:var(--gray);"></i></div>';
         
-        const videoListHtml = videoFiles.map((vf, idx) => 
-            `<div>${idx+1}. ${vf.name} (${(vf.file.size / 1024 / 1024).toFixed(2)} MB)</div>`
-        ).join('');
+        const videoListHtml = videoFiles.map((vf, idx) => {
+            const episodeNum = extractEpisodeNumber(vf.name);
+            return `<div>${idx+1}. ${vf.name} → 第${episodeNum}集 (${(vf.file.size / 1024 / 1024).toFixed(2)} MB)</div>`;
+        }).join('');
         
         document.getElementById('previewContent').innerHTML = `
             <div class="preview-card">
@@ -451,12 +369,13 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
             <div class="preview-card">
                 <h4>检测到的视频文件 (${videoFiles.length}个)</h4>
                 <div style="max-height:200px; overflow:auto;">${videoListHtml}</div>
+                <p style="margin-top:8px; font-size:12px; color:var(--gray);">
+                    <i class="fas fa-info-circle"></i> 上传后R2存储格式：<code>01_第1集.mp4</code>、<code>02_第2集.mp4</code>
+                </p>
             </div>
         `;
         
-        // 存储临时数据
         pendingZipData = { dramaInfo, videoFiles, coverBlob };
-        
         adminCore.openModal('previewModal');
     }
 
@@ -467,14 +386,24 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         return div.innerHTML;
     }
 
-    // 确认并上传
+    function extractEpisodeNumber(fileName) {
+        let match = fileName.match(/^(\d+)[_\-\s]/);
+        if (match) return parseInt(match[1], 10);
+        match = fileName.match(/(\d+)(?=\.[^.]+$)/);
+        if (match) return parseInt(match[1], 10);
+        match = fileName.match(/第(\d+)集/);
+        if (match) return parseInt(match[1], 10);
+        match = fileName.match(/\d+/);
+        if (match) return parseInt(match[0], 10);
+        return null;
+    }
+
     async function confirmAndUpload() {
         if (!pendingZipData) return;
         
         const { videoFiles, coverBlob } = pendingZipData;
         const token = localStorage.getItem('token');
         
-        // 获取表单中的值
         const title = document.getElementById('previewTitle').value;
         const language = document.getElementById('previewLanguage').value;
         const category = document.getElementById('previewCategory').value;
@@ -487,13 +416,11 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         
         adminCore.closeModal('previewModal');
         
-        // 1. 上传封面
         let coverUrl = '';
         if (coverBlob) {
             const formData = new FormData();
             formData.append('file', coverBlob);
             formData.append('type', 'cover');
-            
             try {
                 const uploadRes = await fetch(`${window.API_BASE}/upload/image`, {
                     method: 'POST',
@@ -501,39 +428,20 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                     body: formData
                 });
                 const uploadData = await uploadRes.json();
-                if (uploadData.success) {
-                    coverUrl = uploadData.url;
-                }
-            } catch (error) {
-                console.error('封面上传失败:', error);
-            }
+                if (uploadData.success) coverUrl = uploadData.url;
+            } catch (error) { console.error('封面上传失败:', error); }
         }
         
-        // 2. 创建剧集
         let dramaId = null;
         try {
-            const dramaData = {
-                title: title,
-                language: language,
-                category: category,
-                cover_url: coverUrl,
-                description: description,
-                tags: tags,
-                status: 'published'
-            };
-            
+            const dramaData = { title, language, category, cover_url: coverUrl, description, tags, status: 'published' };
             const dramaRes = await fetch(`${window.API_BASE}/dramas`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(dramaData)
             });
             const dramaResult = await dramaRes.json();
-            if (!dramaResult.success) {
-                throw new Error(dramaResult.error || '创建剧集失败');
-            }
+            if (!dramaResult.success) throw new Error(dramaResult.error || '创建剧集失败');
             dramaId = dramaResult.id;
             alert(`✅ 剧集 "${title}" 创建成功！`);
         } catch (error) {
@@ -541,42 +449,20 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
             return;
         }
         
-        // 3. 解析视频文件并添加到上传队列
-        videoFiles.forEach(videoFile => {
-            const originalName = videoFile.name;
-            let episodeNum = null;
-            let videoTitle = originalName.replace(/\.[^/.]+$/, '');
-            
-            // 解析集数
-            let match = originalName.match(/^(\d+)[_\-\s]+/);
-            if (match) {
-                episodeNum = parseInt(match[1], 10);
-                videoTitle = videoTitle.replace(/^\d+[_\-\s]+/, '');
-            }
-            if (!match) {
-                match = originalName.match(/(\d+)/);
-                if (match) {
-                    episodeNum = parseInt(match[1], 10);
-                    videoTitle = videoTitle.replace(/\d+/, '').replace(/[_\-\s]+$/, '');
-                }
-            }
-            
+        for (const videoFile of videoFiles) {
+            const episodeNum = extractEpisodeNumber(videoFile.name);
             if (!episodeNum) {
-                console.error(`无法解析集数: ${originalName}`);
-                return;
+                console.error(`无法解析集数: ${videoFile.name}`);
+                continue;
             }
             
-            if (!videoTitle) videoTitle = `第${episodeNum}集`;
-            videoTitle = videoTitle.replace(/[_\-\s]+$/, '').trim();
-            
-            const ext = originalName.split('.').pop().toLowerCase();
-            
+            const ext = videoFile.name.split('.').pop().toLowerCase();
             uploadQueue.push({
                 id: crypto.randomUUID(),
                 type: 'file',
                 file: videoFile.file,
                 episode: episodeNum,
-                title: videoTitle,
+                title: `第${episodeNum}集`,
                 format: ext === 'm3u8' ? 'm3u8' : ext,
                 size: videoFile.file.size,
                 status: 'pending',
@@ -584,19 +470,14 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                 error: null,
                 dramaId: dramaId
             });
-        });
+        }
         
-        // 4. 渲染上传列表
+        uploadQueue.sort((a, b) => a.episode - b.episode);
         renderUploadList();
         updateUploadButton();
-        
-        // 5. 自动开始上传
-        if (uploadQueue.length > 0) {
-            startUpload();
-        }
+        if (uploadQueue.length > 0) startUpload();
     }
 
-    // ==================== 渲染列表 ====================
     function renderUploadList() {
         const container = document.getElementById('uploadList');
         const countSpan = document.getElementById('listCount');
@@ -618,7 +499,7 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         countSpan.textContent = stats.total;
 
         container.innerHTML = '';
-        uploadQueue.sort((a, b) => a.episode - b.episode).forEach((item) => {
+        uploadQueue.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'file-item';
             div.dataset.id = item.id;
@@ -641,6 +522,7 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                     <div>
                         <div><strong>第${item.episode}集</strong> - ${item.title}</div>
                         <div style="font-size:12px; color:var(--gray);">${item.file.name}</div>
+                        <div style="font-size:11px; color:var(--success);">→ R2: ${item.episode.toString().padStart(2, '0')}_第${item.episode}集.${item.format}</div>
                     </div>
                 </div>
                 <div class="file-meta">
@@ -679,9 +561,7 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
             item.status = 'pending';
             item.error = null;
             renderUploadList();
-            if (isUploading) {
-                processQueue();
-            }
+            if (isUploading) processQueue();
         }
     };
 
@@ -693,9 +573,7 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
             }
         });
         renderUploadList();
-        if (isUploading) {
-            processQueue();
-        }
+        if (isUploading) processQueue();
     }
 
     function clearList() {
@@ -712,7 +590,6 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         btn.disabled = !(hasPending && !isUploading);
     }
 
-    // ==================== 核心上传逻辑 ====================
     async function startUpload() {
         if (isUploading) return;
         
@@ -726,7 +603,6 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
         const autoRetry = document.getElementById('autoRetryCheckbox').checked;
         const token = localStorage.getItem('token');
 
-        // 重置所有 pending 和 failed 状态
         uploadQueue.forEach(item => {
             if (item.status === 'failed' && autoRetry) {
                 item.status = 'pending';
@@ -770,14 +646,13 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
             updateOverallProgress();
             
             try {
-                // 上传视频到 R2
                 const formData = new FormData();
                 formData.append('file', item.file);
                 formData.append('type', 'video');
                 
                 const ext = item.file.name.split('.').pop();
-                const safeTitle = item.title.replace(/[\\/:*?"<>|]/g, '_');
-                const filename = `dramas/${item.dramaId}/${item.episode.toString().padStart(2, '0')}_${safeTitle}.${ext}`;
+                // ✅ 统一 R2 存储格式：01_第1集.mp4
+                const filename = `dramas/${item.dramaId}/${item.episode.toString().padStart(2, '0')}_第${item.episode}集.${ext}`;
                 
                 const uploadRes = await fetch(`${window.API_BASE}/upload/video?path=${encodeURIComponent(filename)}`, {
                     method: 'POST',
@@ -790,7 +665,6 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                 if (!uploadData.success) throw new Error(uploadData.error || '上传失败');
                 const videoUrl = uploadData.url;
                 
-                // 获取剧集语言
                 let dramaLanguage = 'en-US';
                 const dramaRes = await fetch(`${window.API_BASE}/dramas/${item.dramaId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -800,11 +674,10 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                     dramaLanguage = dramaData.data.language || 'en-US';
                 }
                 
-                // 创建分集记录
                 const episodeData = {
                     drama_id: item.dramaId,
                     episode_number: item.episode,
-                    title: item.title,
+                    title: `第${item.episode}集`,
                     video_url: videoUrl,
                     duration: 0,
                     status: 'published',
@@ -826,17 +699,16 @@ document.getElementById('selectZipBtn')?.addEventListener('click', () => {
                 
                 item.status = 'success';
                 item.error = null;
-                
+                console.log(`✅ 第${item.episode}集上传成功: ${filename}`);
             } catch (error) {
                 console.error('上传失败:', error);
                 item.status = 'failed';
                 item.error = error.message;
-                
                 if (autoRetry && item.retryCount < 3) {
                     item.retryCount++;
                     item.status = 'pending';
                     item.error = null;
-                    console.log(`🔄 重试第 ${item.retryCount} 次: ${item.title}`);
+                    console.log(`🔄 重试第 ${item.retryCount} 次: 第${item.episode}集`);
                 }
             }
             
