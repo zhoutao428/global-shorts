@@ -254,11 +254,13 @@
                 const fileName = path.split('/').pop();
                 const ext = fileName.split('.').pop().toLowerCase();
                 
-                if (fileName.match(/cover|poster|封面/i) && ['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
-                    coverBlob = await file.async('blob');
-                    dramaInfo.coverFile = new File([coverBlob], fileName, { type: `image/${ext}` });
-                    console.log('找到封面:', fileName);
-                }
+               if (fileName.match(/cover|poster|封面/i) && ['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+    coverBlob = await file.async('blob');
+    // 创建 File 对象时指定正确的 MIME 类型
+    const mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+    dramaInfo.coverFile = new File([coverBlob], fileName, { type: mimeType });
+    console.log('找到封面:', fileName, '类型:', mimeType);
+}
                 
                 if (['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'].includes(ext)) {
                     const videoBlob = await file.async('blob');
