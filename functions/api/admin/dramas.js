@@ -11,6 +11,8 @@ export async function getDramas(request, env) {
         
         const offset = (page - 1) * limit;
         
+        console.log('getDramas called with:', { page, limit, search, category, status, offset });
+
         // 获取当前登录用户ID
         let userId = null;
         try {
@@ -20,7 +22,7 @@ export async function getDramas(request, env) {
                 userId = auth.user?.id;
             }
         } catch (e) {
-            // 未登录，userId 保持 null
+            console.log('Auth error (non-critical):', e.message);
         }
 
         // 构建 WHERE 条件
@@ -50,10 +52,14 @@ export async function getDramas(request, env) {
             FROM dramas d
             ${whereClause}
         `;
+        console.log('Count query:', countQuery);
+        console.log('Count params:', queryParams);
+        
         const countResult = await env.MY_DB.prepare(countQuery).bind(...queryParams).first();
         const total = countResult?.total || 0;
+        console.log('Total count:', total);
 
-        // 2. 查询数据 - 修正列名：views_count, likes_count, favorites_count, comments_count, shares_count
+        // 2. 查询数据
         const dataQuery = `
             SELECT 
                 d.id,
@@ -83,11 +89,16 @@ export async function getDramas(request, env) {
             LIMIT ${limit} OFFSET ${offset}
         `;
         
-        // 参数只需要 userId 和 WHERE 条件参数
         const dataParams = [userId || '', ...queryParams];
-        const { results } = await env.MY_DB.prepare(dataQuery).bind(...dataParams).all();
+        console.log('Data query:', dataQuery);
+        console.log('Data params:', dataParams);
         
-        // 处理结果，确保 total_episodes 有值
+        const statement = env.MY_DB.prepare(dataQuery).bind(...dataParams);
+        console.log('SQL:', statement);
+        
+        const { results } = await statement.all();
+        console.log('Results count:', results?.length || 0);
+        
         const processedResults = (results || []).map(drama => ({
             ...drama,
             total_episodes: drama.actual_episodes || drama.total_episodes || 0
@@ -104,8 +115,17 @@ export async function getDramas(request, env) {
             }
         });
     } catch (error) { 
-        console.error('getDramas error:', error);
-        return jsonResponse({ error: error.message }, 500); 
+        console.error('getDramas ERROR:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Error cause:', error.cause);
+        
+        return jsonResponse({ 
+            success: false,
+            error: error.message,
+            stack: error.stack,
+            cause: error.cause?.message
+        }, 500); 
     }
 }
 
