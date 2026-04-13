@@ -16,15 +16,15 @@ async function getDramas(request, env, url) {
     const offset = (page - 1) * limit;
 
     // 构建 WHERE 条件
-    let whereClause = 'WHERE status = "published" AND language = ?';
+    let whereClause = 'WHERE d.status = "published" AND d.language = ?';
     const params = [language];
     
     if (category && category !== 'all') {
-      whereClause += ' AND category = ?';
+      whereClause += ' AND d.category = ?';
       params.push(category);
     }
     if (search) {
-      whereClause += ' AND (title LIKE ? OR description LIKE ?)';
+      whereClause += ' AND (d.title LIKE ? OR d.description LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
 
@@ -38,21 +38,29 @@ async function getDramas(request, env, url) {
     }
 
     // 查询总数
-    const countResult = await env.MY_DB.prepare(
-      `SELECT COUNT(*) as total FROM dramas ${whereClause}`
-    ).bind(...params).first();
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM dramas d
+      ${whereClause}
+    `;
+    const countResult = await env.MY_DB.prepare(countQuery).bind(...params).first();
     const total = countResult.total || 0;
 
-    // 构建主查询
+    // 构建主查询 - 动态计算 total_episodes
     let selectFields = `
       d.*,
+      (SELECT COUNT(*) FROM episodes WHERE drama_id = d.id) as total_episodes,
       (SELECT COUNT(DISTINCT episode_id) FROM user_history WHERE user_id = ? AND drama_id = d.id) as watchedEpisodes
     `;
     let mainParams = [];
     if (userId) {
       mainParams.push(userId);
     } else {
-      selectFields = `d.*, NULL as watchedEpisodes`;
+      selectFields = `
+        d.*,
+        (SELECT COUNT(*) FROM episodes WHERE drama_id = d.id) as total_episodes,
+        NULL as watchedEpisodes
+      `;
     }
 
     const query = `
