@@ -3,6 +3,7 @@ import { jsonResponse } from '../../utils/response.js';
 
 // 获取所有翻译键及对应翻译
 export async function getTranslationKeys(request, env) {
+   console.log('✅ getTranslationKeys 被调用了');
   try {
     const keys = await env.MY_DB.prepare(
       'SELECT * FROM translation_keys ORDER BY key'
@@ -28,8 +29,6 @@ export async function getTranslationKeys(request, env) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
-// 新增翻译键
 // 新增翻译键（修复版）
 export async function createTranslationKey(request, env) {
   try {
