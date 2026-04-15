@@ -123,35 +123,29 @@ export async function getUploadStatus(request, env, url) {
   }
 }
 
-// 生成 R2 预签名上传 URL
+// 生成 R2 预签名上传 URL（使用 R2 原生绑定）
 export async function getPresignedUrl(request, env) {
   try {
     const url = new URL(request.url);
     const filePath = url.searchParams.get('path');
+    const fileType = url.searchParams.get('type') || 'video/mp4';
     
     if (!filePath) {
       return jsonResponse({ error: '缺少 path 参数' }, 400);
     }
     
-    // ✅ 使用 AWS SDK（Pages 兼容）
-    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+    // ✅ 使用 R2 原生的 createSignedUrl 方法
+    // 注意：Pages 中这个方法确实存在，只是用法略有不同
     
-    const s3 = new S3Client({
-      region: 'auto',
-      endpoint: `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: env.R2_ACCESS_KEY_ID,
-        secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-      },
+    const presignedUrl = await env.MY_BUCKET.createSignedUrl({
+      key: filePath,
+      method: 'PUT',
+      expiresIn: 1800,  // 30 分钟，单位秒
+      headers: {
+        'Content-Type': fileType,
+      }
     });
     
-    const command = new PutObjectCommand({
-      Bucket: 'global-shorts-storage',
-      Key: filePath,
-    });
-    
-    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 1800 });
     const publicUrl = `${R2_PUBLIC_URL}/${filePath}`;
     
     return jsonResponse({ 
@@ -161,6 +155,14 @@ export async function getPresignedUrl(request, env) {
     });
   } catch (error) {
     console.error('getPresignedUrl error:', error);
+    
+    // 如果 createSignedUrl 不存在，返回更详细的错误
+    if (error.message.includes('createSignedUrl')) {
+      return jsonResponse({ 
+        error: 'R2 绑定不支持 createSignedUrl，请检查 Cloudflare Pages 的 R2 绑定配置' 
+      }, 500);
+    }
+    
     return jsonResponse({ error: error.message }, 500);
   }
 }
