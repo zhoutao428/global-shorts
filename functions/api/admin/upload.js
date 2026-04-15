@@ -5,8 +5,6 @@ import { jsonResponse } from '../../utils/response.js';
 const R2_PUBLIC_URL = 'https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev';
 
 // 上传图片
-// functions/api/admin/upload.js
-
 export async function uploadImage(request, env) {
   try {
     const formData = await request.formData();
@@ -52,41 +50,42 @@ export async function uploadImage(request, env) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
+
 // 上传视频
 export async function uploadVideo(request, env) {
-    try {
-        const url = new URL(request.url);
-        const customPath = url.searchParams.get('path');
-        
-        const formData = await request.formData();
-        const file = formData.get('file');
-        
-        if (!file) {
-            return jsonResponse({ error: '没有上传文件' }, 400);
-        }
-        
-        const allowedExt = ['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'];
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (!allowedExt.includes(ext)) {
-            return jsonResponse({ error: '不支持的视频格式' }, 400);
-        }
-        
-        let filename;
-        if (customPath) {
-            filename = customPath;
-        } else {
-            filename = `videos/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-        }
-        
-        await env.MY_BUCKET.put(filename, file.stream(), {
-            httpMetadata: { contentType: file.type || 'video/mp4' },
-        });
-        
-        const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
-        return jsonResponse({ success: true, url: publicUrl, filename, size: file.size });
-    } catch (error) {
-        return jsonResponse({ error: error.message }, 500);
+  try {
+    const url = new URL(request.url);
+    const customPath = url.searchParams.get('path');
+    
+    const formData = await request.formData();
+    const file = formData.get('file');
+    
+    if (!file) {
+      return jsonResponse({ error: '没有上传文件' }, 400);
     }
+    
+    const allowedExt = ['mp4', 'm3u8', 'ts', 'avi', 'mov', 'mkv'];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!allowedExt.includes(ext)) {
+      return jsonResponse({ error: '不支持的视频格式' }, 400);
+    }
+    
+    let filename;
+    if (customPath) {
+      filename = customPath;
+    } else {
+      filename = `videos/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    }
+    
+    await env.MY_BUCKET.put(filename, file.stream(), {
+      httpMetadata: { contentType: file.type || 'video/mp4' },
+    });
+    
+    const publicUrl = `${R2_PUBLIC_URL}/${filename}`;
+    return jsonResponse({ success: true, url: publicUrl, filename, size: file.size });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
 }
 
 // 通用上传
@@ -119,6 +118,40 @@ export async function getUploadStatus(request, env, url) {
       url: `${R2_PUBLIC_URL}/videos/${id}.mp4`
     }));
     return jsonResponse({ success: true, data: statuses });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+// 生成 R2 预签名上传 URL
+export async function getPresignedUrl(request, env) {
+  try {
+    const url = new URL(request.url);
+    const filePath = url.searchParams.get('path');
+    const fileType = url.searchParams.get('type') || 'video/mp4';
+    
+    if (!filePath) {
+      return jsonResponse({ error: '缺少 path 参数' }, 400);
+    }
+    
+    // 生成预签名 URL（有效期 30 分钟）
+    const presignedUrl = await env.MY_BUCKET.createSignedUrl({
+      key: filePath,
+      method: 'PUT',
+      expiration: 1800, // 30 分钟
+      headers: {
+        'Content-Type': fileType,
+      }
+    });
+    
+    // 同时返回公开访问 URL
+    const publicUrl = `${R2_PUBLIC_URL}/${filePath}`;
+    
+    return jsonResponse({ 
+      success: true, 
+      presignedUrl, 
+      publicUrl 
+    });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
   }
