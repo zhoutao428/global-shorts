@@ -36,12 +36,6 @@ export async function onRequest(context) {
             return addCors(response);
         }
 
-        // ---------- 🚩 新增：预签名上传 URL（需要 admin 认证）----------
-        if (path === '/api/admin/upload/presigned' && method === 'GET') {
-            const response = await getPresignedUrl(request, env);
-            return addCors(response);
-        }
-
         // ---------- 🚩 第一步：公开接口（完全无需认证）----------
         const publicResponse = await handlePublic(request, env, url, method);
         if (publicResponse) return addCors(publicResponse);
