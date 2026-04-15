@@ -8,7 +8,7 @@ function escapeHtml(text) {
 }
 
 (function() {
-    const API_BASE = '/api';
+    const API_BASE = '/api/admin';
     let languages = [];
     let translationKeys = [];
     let currentLanguageFilter = 'all';
