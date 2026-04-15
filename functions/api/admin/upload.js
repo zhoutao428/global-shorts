@@ -128,23 +128,30 @@ export async function getPresignedUrl(request, env) {
   try {
     const url = new URL(request.url);
     const filePath = url.searchParams.get('path');
-    const fileType = url.searchParams.get('type') || 'video/mp4';
     
     if (!filePath) {
       return jsonResponse({ error: '缺少 path 参数' }, 400);
     }
     
-    // 生成预签名 URL（有效期 30 分钟）
-    const presignedUrl = await env.MY_BUCKET.createSignedUrl({
-      key: filePath,
-      method: 'PUT',
-      expiration: 1800, // 30 分钟
-      headers: {
-        'Content-Type': fileType,
-      }
+    // ✅ 使用 AWS SDK（Pages 兼容）
+    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+    
+    const s3 = new S3Client({
+      region: 'auto',
+      endpoint: `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: env.R2_ACCESS_KEY_ID,
+        secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+      },
     });
     
-    // 同时返回公开访问 URL
+    const command = new PutObjectCommand({
+      Bucket: 'global-shorts-storage',
+      Key: filePath,
+    });
+    
+    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 1800 });
     const publicUrl = `${R2_PUBLIC_URL}/${filePath}`;
     
     return jsonResponse({ 
@@ -153,6 +160,7 @@ export async function getPresignedUrl(request, env) {
       publicUrl 
     });
   } catch (error) {
+    console.error('getPresignedUrl error:', error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
