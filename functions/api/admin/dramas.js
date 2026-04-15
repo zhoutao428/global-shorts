@@ -207,9 +207,15 @@ export async function updateDrama(request, env, id) {
         const body = await request.json();
         const { title, description, cover_url, category, total_episodes, status, tags, subtitles, region, language } = body;
         
+        // 1. 获取剧集原来的语言
+        const oldDrama = await env.MY_DB.prepare(
+            'SELECT language FROM dramas WHERE id = ?'
+        ).bind(id).first();
+        
+        // 2. 更新剧集
         await env.MY_DB.prepare(`
             UPDATE dramas 
-            SET title = ?, description = ?, cover_url = ?, category = ?, total_episodes = ?, status = ?, tags = ?, subtitles = ?, region = ?, language = ?, updated_at = CURRENT_TIMESTAMP
+            SET title = ?, description = ?, cover_url = ?, category = ?, total_episodes = ?, status = ?, tags = ?, subtitles = ?, region = ?, language = ?
             WHERE id = ?
         `).bind(
             title, 
@@ -225,6 +231,17 @@ export async function updateDrama(request, env, id) {
             id
         ).run();
         
+        // ✅ 3. 如果语言发生了变化，同步更新所有分集的语言
+        if (oldDrama && oldDrama.language !== language) {
+            await env.MY_DB.prepare(`
+                UPDATE episodes 
+                SET language = ? 
+                WHERE drama_id = ?
+            `).bind(language || 'en-US', id).run();
+            
+            console.log(`剧集 ${id} 语言从 ${oldDrama.language} 更新为 ${language}，已同步更新所有分集`);
+        }
+        
         return jsonResponse({ success: true });
     } catch (error) {
         console.error('updateDrama error:', error);
@@ -237,7 +254,6 @@ export async function updateDrama(request, env, id) {
         });
     }
 }
-
 export async function deleteDrama(request, env, id) {
     try {
         // 先删除关联的分集
