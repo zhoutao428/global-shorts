@@ -4,8 +4,8 @@ import { jsonResponse } from '../utils/response.js';
 import { handlePublic } from './public.js';
 import { handleUser } from './user.js';
 import { handleAdmin } from './admin/index.js';
-// 👇 添加这两行：导入上传处理函数
-import { uploadImage, uploadVideo, uploadGeneric } from './admin/upload.js';
+// 👇 修改导入：添加 getPresignedUrl
+import { uploadImage, uploadVideo, uploadGeneric, getPresignedUrl } from './admin/upload.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
@@ -20,7 +20,7 @@ export async function onRequest(context) {
     const method = request.method;
 
     try {
-        // ---------- 🚩 新增：上传路由（放在最前面，不需要 /api 前缀）----------
+        // ---------- 🚩 上传路由（不需要 /api/admin 前缀，保持向后兼容）----------
         if (path === '/api/upload/image' && method === 'POST') {
             const response = await uploadImage(request, env);
             return addCors(response);
@@ -33,6 +33,12 @@ export async function onRequest(context) {
 
         if (path === '/api/upload' && method === 'POST') {
             const response = await uploadGeneric(request, env);
+            return addCors(response);
+        }
+
+        // ---------- 🚩 新增：预签名上传 URL（需要 admin 认证）----------
+        if (path === '/api/admin/upload/presigned' && method === 'GET') {
+            const response = await getPresignedUrl(request, env);
             return addCors(response);
         }
 
