@@ -7,7 +7,7 @@ import * as users from './users.js';
 import * as categories from './categories.js';
 import * as settings from './settings.js';
 import * as stats from './stats.js';
-import * as payment from './payment.js';
+import * as payment from '../payment.js';
 import * as vipPlans from './vip-plans.js';
 import * as coinPackages from './coin-packages.js';
 import * as adPositions from './ad-positions.js';
