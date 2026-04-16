@@ -425,6 +425,10 @@ if (path === '/api/admin/region/preference' && method === 'GET') {
 if (path === '/api/admin/region/export' && method === 'GET') {
   return region.exportRegionData(request, env, url);
 }
+// 生成预签名上传 URL
+if (path === '/api/admin/upload/presigned' && method === 'GET') {
+    return upload.getPresignedUrl(request, env);
+}
  // 未匹配
   return null;
 }
