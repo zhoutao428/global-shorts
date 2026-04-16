@@ -1,5 +1,7 @@
 // src/routes/admin/upload.js
 import { jsonResponse } from '../../utils/response.js';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // R2 公开访问域名（固定值）
 const R2_PUBLIC_URL = 'https://pub-14d8ae6302504cd1acd67e69300b1d91.r2.dev';
@@ -51,7 +53,7 @@ export async function uploadImage(request, env) {
   }
 }
 
-// 上传视频
+// 上传视频（直接上传方式，保留作为备用）
 export async function uploadVideo(request, env) {
   try {
     const url = new URL(request.url);
@@ -123,3 +125,47 @@ export async function getUploadStatus(request, env, url) {
   }
 }
 
+// ✅ 生成 R2 预签名上传 URL（AWS SDK 版本，绕过 Pages 100MB 限制）
+export async function getPresignedUrl(request, env) {
+  try {
+    const url = new URL(request.url);
+    const filePath = url.searchParams.get('path');
+    const fileType = url.searchParams.get('type') || 'video/mp4';
+
+    if (!filePath) {
+      return jsonResponse({ error: '缺少 path 参数' }, 400);
+    }
+
+    // 初始化 S3 客户端
+    const S3 = new S3Client({
+      region: "auto",
+      endpoint: `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: env.R2_ACCESS_KEY_ID,
+        secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+      },
+    });
+
+    // 创建上传命令
+    const command = new PutObjectCommand({
+      Bucket: "global-shorts-storage",
+      Key: filePath,
+      ContentType: fileType,
+    });
+
+    // 生成预签名 URL，有效期 1 小时
+    const presignedUrl = await getSignedUrl(S3, command, { expiresIn: 3600 });
+    
+    // 公开访问 URL
+    const publicUrl = `${R2_PUBLIC_URL}/${filePath}`;
+
+    return jsonResponse({ 
+      success: true, 
+      presignedUrl, 
+      publicUrl 
+    });
+  } catch (error) {
+    console.error('getPresignedUrl error:', error);
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
