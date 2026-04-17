@@ -930,6 +930,24 @@ if (path === '/api/user/unlock-episode' && method === 'POST') {
 if (path === '/api/drama/play' && method === 'POST') {
   return recordPlay(request, env, user);
 }
+// ========== 前台支付路由（需要登录）==========
+    if (path === '/api/payment/gateways' && method === 'GET') {
+        const { getAvailableGateways } = await import('./payment.js');
+        return getAvailableGateways(request, env);
+    }
+    if (path === '/api/payment/order' && method === 'POST') {
+        const { createOrder } = await import('./payment.js');
+        return createOrder(request, env);
+    }
+    if (path === '/api/payment/status' && method === 'GET') {
+        const { getOrderStatus } = await import('./payment.js');
+        return getOrderStatus(request, env);
+    }
+    if (path === '/api/payment/mock-success' && method === 'POST') {
+        const { mockPaymentSuccess } = await import('./payment.js');
+        return mockPaymentSuccess(request, env);
+    }
+
   // 未匹配
   return null;
 }  

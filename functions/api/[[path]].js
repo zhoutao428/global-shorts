@@ -4,8 +4,8 @@ import { jsonResponse } from '../utils/response.js';
 import { handlePublic } from './public.js';
 import { handleUser } from './user.js';
 import { handleAdmin } from './admin/index.js';
-// 👇 修改导入：添加 getPresignedUrl
 import { uploadImage, uploadVideo, uploadGeneric, getPresignedUrl } from './admin/upload.js';
+import * as payment from './payment.js';
 
 export async function onRequest(context) {
     const { request, env } = context;
@@ -20,7 +20,14 @@ export async function onRequest(context) {
     const method = request.method;
 
     try {
-        // ---------- 🚩 上传路由（不需要 /api/admin 前缀，保持向后兼容）----------
+        // ---------- 🚩 支付回调（完全无需认证，第三方调用）----------
+        if (path.startsWith('/api/payment/callback/') && method === 'POST') {
+            const provider = path.split('/')[4];
+            const response = await payment.paymentCallback(request, env, provider);
+            return addCors(response);
+        }
+
+        // ---------- 🚩 上传路由 ----------
         if (path === '/api/upload/image' && method === 'POST') {
             const response = await uploadImage(request, env);
             return addCors(response);
@@ -36,17 +43,22 @@ export async function onRequest(context) {
             return addCors(response);
         }
 
+        if (path === '/api/admin/upload/presigned' && method === 'GET') {
+            const response = await getPresignedUrl(request, env);
+            return addCors(response);
+        }
+
         // ---------- 🚩 第一步：公开接口（完全无需认证）----------
         const publicResponse = await handlePublic(request, env, url, method);
         if (publicResponse) return addCors(publicResponse);
 
-        // ---------- 第二步：管理员路由 ----------
+        // ---------- 🚩 第二步：管理员路由 ----------
         if (path.startsWith('/api/admin/')) {
             const response = await handleAdmin(request, env, url, method);
             if (response) return addCors(response);
         }
 
-        // ---------- 第三步：用户私有接口 ----------
+        // ---------- 🚩 第三步：用户私有接口 ----------
         const userResponse = await handleUser(request, env, url, method);
         if (userResponse) return addCors(userResponse);
 
