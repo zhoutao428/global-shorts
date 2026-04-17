@@ -460,7 +460,7 @@
             <div class="modal-body">
                 <div style="text-align:center; padding:20px;">
                     <i class="fas fa-credit-card" style="font-size:48px; color:var(--primary); margin-bottom:16px;"></i>
-                    <h4 style="margin-bottom:8px;">支付宝</h4>
+                    <h4 style="margin-bottom:8px;" id="testPaymentName">支付方式</h4>
                     <p style="color:var(--gray); margin-bottom:20px;">测试支付1分钱，验证接口是否正常</p>
                     <div style="background:var(--gray-light); padding:12px; border-radius:8px; margin-bottom:20px; text-align:left;">
                         <div style="margin-bottom:8px;">测试金额：<strong>¥0.01</strong></div>
@@ -755,8 +755,15 @@
     };
 
     window.testPaymentGateway = function(id) {
-        adminCore.openModal('testPaymentModal');
-    };
+    const gateway = gateways.find(g => g.id === id);
+    const modal = document.getElementById('testPaymentModal');
+    
+    // 动态更新弹窗标题和内容
+    const titleEl = modal.querySelector('h4');
+    if (titleEl) titleEl.textContent = gateway?.name || '支付方式';
+    
+    adminCore.openModal('testPaymentModal');
+};
 
     async function savePaymentGateway() {
         const token = localStorage.getItem('token');
