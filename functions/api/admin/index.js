@@ -236,23 +236,6 @@ if (path === '/api/admin/content/performance/export' && method === 'GET') {
     const id = path.split('/')[4];
     return coinPackages.deletePackage(request, env, id);
   }
-// 前台支付路由（不需要管理员权限）
-if (path === '/api/payment/gateways' && method === 'GET') {
-  return payment.getAvailableGateways(request, env);
-}
-if (path === '/api/payment/order' && method === 'POST') {
-  return payment.createOrder(request, env);
-}
-if (path === '/api/payment/status' && method === 'GET') {
-  return payment.getOrderStatus(request, env);
-}
-if (path === '/api/payment/mock-success' && method === 'POST') {
-  return payment.mockPaymentSuccess(request, env);
-}
-if (path.startsWith('/api/payment/callback/') && method === 'POST') {
-  const provider = path.split('/')[4];
-  return payment.paymentCallback(request, env, provider);
-}  
 // ---------- 广告位管理 ----------
   if (path === '/api/admin/ad-positions' && method === 'GET') {
     return adPositions.getPositions(request, env);
