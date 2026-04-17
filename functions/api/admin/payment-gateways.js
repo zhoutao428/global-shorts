@@ -6,23 +6,29 @@ export async function getGateways(request, env) {
     const settings = await env.MY_DB.prepare(
       "SELECT value FROM settings WHERE key = 'payment_gateways'"
     ).first();
+    
     let gateways = [];
     if (settings && settings.value) {
       gateways = JSON.parse(settings.value);
     } else {
+      // 默认数据
       gateways = [
-        { id: '1', name: '支付宝', type: 'alipay', merchant_id: '', is_active: false, sort_order: 1, config: {} },
-        { id: '2', name: '微信支付', type: 'wechat', merchant_id: '', is_active: false, sort_order: 2, config: {} },
-        { id: '3', name: 'PayPal', type: 'paypal', merchant_id: '', is_active: false, sort_order: 3, config: {} },
-        { id: '4', name: 'Stripe', type: 'stripe', merchant_id: '', is_active: false, sort_order: 4, config: {} }
+        { id: '1', name: '支付宝', type: 'alipay', merchant_id: '', is_active: false, sort_order: 1 },
+        { id: '2', name: '微信支付', type: 'wechat', merchant_id: '', is_active: false, sort_order: 2 },
+        { id: '3', name: 'PayPal', type: 'paypal', merchant_id: '', is_active: false, sort_order: 3 },
+        { id: '4', name: 'Stripe', type: 'stripe', merchant_id: '', is_active: false, sort_order: 4 }
       ];
+      
+      // ✅ 自动保存到数据库
+      await env.MY_DB.prepare(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)"
+      ).bind('payment_gateways', JSON.stringify(gateways)).run();
     }
     return jsonResponse({ success: true, data: gateways });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
 export async function createGateway(request, env) {
   try {
     const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = await request.json();
