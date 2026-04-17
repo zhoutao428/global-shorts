@@ -60,34 +60,34 @@ export async function createOrder(request, env) {
       return jsonResponse({ error: '支付方式不可用' }, 400);
     }
     
-    // 获取套餐信息
+    // ✅ 从数据库表获取套餐信息
     let itemName, amount, itemId, details;
     if (type === 'coins') {
-      const coinSettings = await env.MY_DB.prepare(
-        "SELECT value FROM settings WHERE key = 'coin_packages'"
-      ).first();
-      const packages = coinSettings?.value ? JSON.parse(coinSettings.value) : [];
-      const pkg = packages.find(p => p.id === packageId);
+      const pkg = await env.MY_DB.prepare(
+        'SELECT * FROM coin_packages WHERE id = ? AND is_active = 1'
+      ).bind(packageId).first();
+      
       if (!pkg) {
         return jsonResponse({ error: '套餐不存在' }, 400);
       }
       itemName = pkg.name;
-      amount = pkg.price_usd || pkg.price || 0;
+      amount = pkg.price_usd || 0;
       itemId = pkg.id;
       details = { coins: pkg.base_coins || 0, bonus: pkg.bonus_coins || 0 };
+      
     } else if (type === 'vip') {
-      const vipSettings = await env.MY_DB.prepare(
-        "SELECT value FROM settings WHERE key = 'vip_plans'"
-      ).first();
-      const plans = vipSettings?.value ? JSON.parse(vipSettings.value) : [];
-      const plan = plans.find(p => p.id === packageId);
+      const plan = await env.MY_DB.prepare(
+        'SELECT * FROM vip_plans WHERE id = ? AND is_active = 1'
+      ).bind(packageId).first();
+      
       if (!plan) {
         return jsonResponse({ error: '套餐不存在' }, 400);
       }
       itemName = plan.name;
-      amount = plan.price_usd || plan.price || 0;
+      amount = plan.price_usd || 0;
       itemId = plan.id;
       details = { duration: plan.duration_days || 0 };
+      
     } else {
       return jsonResponse({ error: '无效的购买类型' }, 400);
     }
@@ -125,7 +125,7 @@ export async function createOrder(request, env) {
     let paymentParams = {};
     if (paymentMethod === 'stripe') {
       paymentParams = {
-        publishableKey: gateway.public_key,
+        publishableKey: gateway.merchant_id,  // Stripe Publishable Key 存在 merchant_id 字段
         amount: Math.round(amount * 100),
         currency: paymentSettings.currency?.toLowerCase() || 'usd',
         description: itemName
@@ -158,7 +158,6 @@ export async function createOrder(request, env) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
 // 查询订单状态
 export async function getOrderStatus(request, env) {
   try {
@@ -272,29 +271,23 @@ export async function paymentCallback(request, env, provider) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
 // 更新订单成功状态
 async function updateOrderSuccess(env, orderId, paymentMethod, transactionId = null) {
-  // 获取订单信息
   const order = await env.MY_DB.prepare(
     'SELECT * FROM purchases WHERE id = ? AND status = ?'
   ).bind(orderId, 'pending').first();
   
   if (!order) return;
   
-  // 更新订单状态
   await env.MY_DB.prepare(
     'UPDATE purchases SET status = ?, payment_method = ?, transaction_id = ?, updated_at = ? WHERE id = ?'
   ).bind('success', paymentMethod, transactionId || '', new Date().toISOString(), orderId).run();
   
-  // 处理业务逻辑
   if (order.item_type === 'coins') {
-    // 获取套餐信息
-    const coinSettings = await env.MY_DB.prepare(
-      "SELECT value FROM settings WHERE key = 'coin_packages'"
-    ).first();
-    const packages = coinSettings?.value ? JSON.parse(coinSettings.value) : [];
-    const pkg = packages.find(p => p.id === order.item_id);
+    // ✅ 从 coin_packages 表读取
+    const pkg = await env.MY_DB.prepare(
+      'SELECT base_coins, bonus_coins FROM coin_packages WHERE id = ?'
+    ).bind(order.item_id).first();
     
     if (pkg) {
       const totalCoins = (pkg.base_coins || 0) + (pkg.bonus_coins || 0);
@@ -303,12 +296,10 @@ async function updateOrderSuccess(env, orderId, paymentMethod, transactionId = n
       ).bind(totalCoins, order.user_id).run();
     }
   } else if (order.item_type === 'vip') {
-    // 获取 VIP 套餐信息
-    const vipSettings = await env.MY_DB.prepare(
-      "SELECT value FROM settings WHERE key = 'vip_plans'"
-    ).first();
-    const plans = vipSettings?.value ? JSON.parse(vipSettings.value) : [];
-    const plan = plans.find(p => p.id === order.item_id);
+    // ✅ 从 vip_plans 表读取
+    const plan = await env.MY_DB.prepare(
+      'SELECT duration_days FROM vip_plans WHERE id = ?'
+    ).bind(order.item_id).first();
     
     if (plan) {
       const durationDays = plan.duration_days || 30;
