@@ -452,26 +452,25 @@
 
     <!-- 测试支付模态框 -->
     <div class="modal-overlay" id="testPaymentModal">
-        <div class="modal" style="max-width:400px;">
-            <div class="modal-header">
-                <h3 class="modal-title">测试支付接口</h3>
-                <button class="modal-close" id="closeTestModal"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align:center; padding:20px;">
-                    <i class="fas fa-credit-card" style="font-size:48px; color:var(--primary); margin-bottom:16px;"></i>
-                    <h4 style="margin-bottom:8px;" id="testPaymentName">支付方式</h4>
-                    <p style="color:var(--gray); margin-bottom:20px;">测试支付1分钱，验证接口是否正常</p>
-                    <div style="background:var(--gray-light); padding:12px; border-radius:8px; margin-bottom:20px; text-align:left;">
-                        <div style="margin-bottom:8px;">测试金额：<strong>¥0.01</strong></div>
-                        <div style="margin-bottom:8px;">订单号：<code>TEST_20240323123456</code></div>
-                        <div>回调地址：<code>https://api.globalshorts.com/payment/test/callback</code></div>
-                    </div>
-                    <button class="btn btn-primary" style="width:100%;">发起测试支付</button>
+    <div class="modal" style="max-width:400px;">
+        <div class="modal-header">
+            <h3 class="modal-title">测试支付接口 - <span id="testPaymentName">Stripe</span></h3>
+            <button class="modal-close" id="closeTestModal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align:center; padding:20px;">
+                <i class="fas fa-credit-card" style="font-size:48px; color:var(--primary); margin-bottom:16px;"></i>
+                <p style="color:var(--gray); margin-bottom:20px;">测试支付1分钱，验证接口是否正常</p>
+                <div style="background:var(--gray-light); padding:12px; border-radius:8px; margin-bottom:20px; text-align:left;">
+                    <div style="margin-bottom:8px;">测试金额：<span id="testPaymentAmount"><strong>$0.01</strong></span></div>
+                    <div style="margin-bottom:8px;">订单号：<code id="testOrderNo">TEST_20240323123456</code></div>
+                    <div>回调地址：<code id="testCallbackUrl">https://api.globalshorts.com/payment/callback/stripe</code></div>
                 </div>
+                <button class="btn btn-primary" style="width:100%;" id="startTestPaymentBtn">发起测试支付</button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- 语言选择模态框 -->
     <div class="modal-overlay" id="languageModal">
@@ -756,11 +755,21 @@
 
     window.testPaymentGateway = function(id) {
     const gateway = gateways.find(g => g.id === id);
+    if (!gateway) return;
+    
     const modal = document.getElementById('testPaymentModal');
     
-    // 动态更新弹窗标题和内容
-    const titleEl = modal.querySelector('h4');
-    if (titleEl) titleEl.textContent = gateway?.name || '支付方式';
+    // 动态生成测试订单号
+    const testOrderNo = `TEST_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    
+    // 根据支付方式显示不同的货币
+    const currencySymbol = gateway.type === 'stripe' ? '$' : '¥';
+    
+    // 更新弹窗内容
+    modal.querySelector('#testPaymentName').textContent = gateway.name;
+    modal.querySelector('#testPaymentAmount').innerHTML = `<strong>${currencySymbol}0.01</strong>`;
+    modal.querySelector('#testOrderNo').textContent = testOrderNo;
+    modal.querySelector('#testCallbackUrl').textContent = `${window.location.origin}/api/payment/callback/${gateway.type}`;
     
     adminCore.openModal('testPaymentModal');
 };
