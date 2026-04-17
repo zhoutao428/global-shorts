@@ -124,21 +124,30 @@ export async function createOrder(request, env) {
     // 根据支付方式生成支付参数
     let paymentParams = {};
     if (paymentMethod === 'stripe') {
-      paymentParams = {
-        publishableKey: gateway.merchant_id,  // Stripe Publishable Key 存在 merchant_id 字段
-        amount: Math.round(amount * 100),
-        currency: paymentSettings.currency?.toLowerCase() || 'usd',
-        description: itemName
-      };
-    } else if (paymentMethod === 'paypal') {
-      paymentParams = {
-        clientId: gateway.merchant_id,
-        currency: paymentSettings.currency || 'USD',
-        amount: amount,
-        description: itemName
-      };
-    }
+    // ✅ 动态导入 Stripe（避免顶层 import 问题）
+    const { default: Stripe } = await import('stripe');
+    const stripe = new Stripe(gateway.secret_key);
     
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+            price_data: {
+                currency: 'usd',
+                product_data: { name: itemName },
+                unit_amount: Math.round(amount * 100),
+            },
+            quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${request.headers.get('origin')}/pages/payment-success.html?orderId=${orderId}`,
+        cancel_url: `${request.headers.get('origin')}/pages/payment-cancel.html?orderId=${orderId}`,
+        metadata: { orderId },
+    });
+    
+    paymentParams = {
+        url: session.url,  // 只需要 URL
+    };
+}
     return jsonResponse({
       success: true,
       data: {
