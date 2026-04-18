@@ -1,6 +1,7 @@
 // functions/api/payment.js
 import { jsonResponse } from '../utils/response.js';
 import { authenticate } from '../middleware/auth.js';
+import Stripe from 'stripe';
 
 // 获取可用的支付方式（前台调用，从后台配置读取）
 export async function getAvailableGateways(request, env) {
@@ -18,14 +19,33 @@ export async function getAvailableGateways(request, env) {
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
         .map(g => ({
           id: g.id,
-          name: g.name || g.type,
+          name: g.display_name || g.name || g.type,
           type: g.type,
+          description: g.description || '',
           icon: g.type,
-          is_default: g.is_default || false
+          is_default: g.is_default || false,
+          is_active: g.is_active,
+          sort_order: g.sort_order,
+          config: g.config || {}
         }));
     }
     
-    // 如果没有配置，返回空数组
+    // 如果没有配置，返回默认的 card
+    if (gateways.length === 0) {
+      gateways = [{
+        id: 'default-card',
+        name: '信用卡/借记卡',
+        type: 'card',
+        description: 'Visa, MasterCard, AMEX',
+        icon: 'card',
+        is_default: true,
+        is_active: true,
+        sort_order: 1,
+        config: {}
+      }];
+    }
+    
+    console.log('getAvailableGateways 返回:', gateways.length, '个支付方式');
     return jsonResponse({ success: true, data: gateways });
   } catch (error) {
     console.error('getAvailableGateways error:', error);
@@ -43,7 +63,9 @@ export async function createOrder(request, env) {
     const user = auth.user;
     
     const body = await request.json();
-    const { packageId, type, paymentMethod } = body;
+    const { packageId, type, paymentMethod, promoCode } = body;
+    
+    console.log('📦 createOrder 请求:', { packageId, type, paymentMethod, promoCode, userId: user.id });
     
     if (!packageId || !type || !paymentMethod) {
       return jsonResponse({ error: '缺少必要参数' }, 400);
@@ -56,11 +78,17 @@ export async function createOrder(request, env) {
     const gateways = JSON.parse(gatewaySettings?.value || '[]');
     const gateway = gateways.find(g => g.type === paymentMethod && g.is_active);
     
+    console.log('🔑 网关配置:', gateway ? { 
+      type: gateway.type, 
+      hasSecretKey: !!gateway.secret_key,
+      hasMerchantId: !!gateway.merchant_id 
+    } : '未找到');
+    
     if (!gateway) {
       return jsonResponse({ error: '支付方式不可用' }, 400);
     }
     
-    // ✅ 从数据库表获取套餐信息
+    // 从数据库表获取套餐信息
     let itemName, amount, itemId, details;
     if (type === 'coins') {
       const pkg = await env.MY_DB.prepare(
@@ -92,6 +120,8 @@ export async function createOrder(request, env) {
       return jsonResponse({ error: '无效的购买类型' }, 400);
     }
     
+    console.log('💰 套餐信息:', { itemName, amount });
+    
     // 生成订单号
     const orderNo = `ORD${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const orderId = crypto.randomUUID();
@@ -112,6 +142,8 @@ export async function createOrder(request, env) {
       new Date().toISOString()
     ).run();
     
+    console.log('✅ 订单已创建:', orderNo);
+    
     // 获取全局支付设置
     const paymentSettingsRes = await env.MY_DB.prepare(
       "SELECT value FROM settings WHERE key = 'payment_settings'"
@@ -123,50 +155,116 @@ export async function createOrder(request, env) {
     
     // 根据支付方式生成支付参数
     let paymentParams = {};
-    if (paymentMethod === 'stripe') {
-    // ✅ 动态导入 Stripe（避免顶层 import 问题）
-    const { default: Stripe } = await import('stripe');
-    const stripe = new Stripe(gateway.secret_key);
     
-    const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{
+    if (paymentMethod === 'stripe') {
+      // 检查密钥
+      if (!gateway.secret_key) {
+        console.error('❌ Stripe 密钥未配置');
+        return jsonResponse({ error: 'Stripe 支付未正确配置，请联系管理员' }, 500);
+      }
+      
+      try {
+        console.log('🔄 创建 Stripe Checkout Session...');
+        const stripe = new Stripe(gateway.secret_key);
+        
+        const successUrl = `${request.headers.get('origin')}/pages/payment-success.html?orderId=${orderId}`;
+        const cancelUrl = `${request.headers.get('origin')}/pages/payment-cancel.html?orderId=${orderId}`;
+        
+        console.log('📎 Success URL:', successUrl);
+        console.log('📎 Cancel URL:', cancelUrl);
+        
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [{
             price_data: {
-                currency: 'usd',
-                product_data: { name: itemName },
-                unit_amount: Math.round(amount * 100),
+              currency: 'usd',
+              product_data: { 
+                name: itemName,
+                description: type === 'coins' ? `${details.coins} 金币 + ${details.bonus} 赠送` : `${details.duration} 天 VIP`
+              },
+              unit_amount: Math.round(amount * 100),
             },
             quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: `${request.headers.get('origin')}/pages/payment-success.html?orderId=${orderId}`,
-        cancel_url: `${request.headers.get('origin')}/pages/payment-cancel.html?orderId=${orderId}`,
-        metadata: { orderId },
+          }],
+          mode: 'payment',
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: { 
+            orderId,
+            userId: user.id,
+            type 
+          },
+        });
+        
+        paymentParams = { url: session.url };
+        console.log('✅ Stripe Session 创建成功:', session.url);
+        
+      } catch (stripeError) {
+        console.error('❌ Stripe 错误:', stripeError);
+        return jsonResponse({ 
+          error: 'Stripe 支付初始化失败: ' + (stripeError.message || '未知错误') 
+        }, 500);
+      }
+    } else if (paymentMethod === 'card') {
+      // 信用卡支付 - 模拟
+      paymentParams = { 
+        simulate: true,
+        message: '模拟信用卡支付'
+      };
+      console.log('💳 使用模拟信用卡支付');
+    } else if (paymentMethod === 'paypal') {
+      // PayPal - 模拟
+      paymentParams = { 
+        simulate: true,
+        message: '模拟 PayPal 支付'
+      };
+      console.log('🅿️ 使用模拟 PayPal 支付');
+    } else if (paymentMethod === 'alipay' || paymentMethod === 'wechat') {
+      // 支付宝/微信 - 模拟二维码
+      paymentParams = { 
+        qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ORDER_${orderNo}`,
+        simulate: true
+      };
+      console.log('📱 使用模拟二维码支付');
+    } else {
+      // 其他支付方式
+      paymentParams = { 
+        simulate: true,
+        message: '模拟支付'
+      };
+      console.log('🎯 使用模拟支付');
+    }
+    
+    const responseData = {
+      orderId,
+      orderNo,
+      amount,
+      currency: paymentSettings.currency || 'USD',
+      currencySymbol: paymentSettings.currency_symbol || '$',
+      itemName,
+      details,
+      paymentParams,
+      gateway: paymentMethod
+    };
+    
+    console.log('📤 返回数据:', { 
+      orderId, 
+      amount, 
+      gateway: paymentMethod, 
+      hasUrl: !!paymentParams.url 
     });
     
-    paymentParams = {
-        url: session.url,  // 只需要 URL
-    };
-}
     return jsonResponse({
       success: true,
-      data: {
-        orderId,
-        orderNo,
-        amount,
-        currency: paymentSettings.currency || 'USD',
-        currencySymbol: paymentSettings.currency_symbol || '$',
-        itemName,
-        details,
-        paymentParams,
-        gateway: paymentMethod
-      }
+      data: responseData
     });
+    
   } catch (error) {
-    console.error('createOrder error:', error);
+    console.error('❌ createOrder error:', error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
+
 // 查询订单状态
 export async function getOrderStatus(request, env) {
   try {
@@ -178,6 +276,8 @@ export async function getOrderStatus(request, env) {
     const url = new URL(request.url);
     const orderId = url.searchParams.get('orderId');
     const orderNo = url.searchParams.get('orderNo');
+    
+    console.log('🔍 查询订单状态:', { orderId, orderNo });
     
     if (!orderId && !orderNo) {
       return jsonResponse({ error: '缺少订单参数' }, 400);
@@ -235,6 +335,8 @@ export async function mockPaymentSuccess(request, env) {
       return jsonResponse({ error: '缺少订单ID' }, 400);
     }
     
+    console.log('🎭 模拟支付成功:', orderId);
+    
     // 更新订单状态
     await updateOrderSuccess(env, orderId, 'mock');
     
@@ -248,26 +350,31 @@ export async function mockPaymentSuccess(request, env) {
 // 支付回调处理
 export async function paymentCallback(request, env, provider) {
   try {
+    console.log('📞 支付回调:', provider);
+    
     let orderId, transactionId;
     
     if (provider === 'stripe') {
       const payload = await request.text();
       const sig = request.headers.get('stripe-signature');
-      // 验证 Stripe 签名
-      // const event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
-      // orderId = event.data.object.metadata.orderId;
-      // transactionId = event.data.object.id;
       
-      // 临时处理：从 payload 解析
       try {
         const event = JSON.parse(payload);
-        orderId = event.data?.object?.metadata?.orderId;
-        transactionId = event.data?.object?.id;
-      } catch (e) {}
+        
+        // 检查事件类型
+        if (event.type === 'checkout.session.completed') {
+          orderId = event.data?.object?.metadata?.orderId;
+          transactionId = event.data?.object?.id;
+          console.log('✅ Stripe 支付成功:', { orderId, transactionId });
+        }
+      } catch (e) {
+        console.error('解析 Stripe 回调失败:', e);
+      }
     } else if (provider === 'paypal') {
       const body = await request.json();
       orderId = body.resource?.purchase_units?.[0]?.custom_id;
       transactionId = body.resource?.id;
+      console.log('✅ PayPal 支付成功:', { orderId, transactionId });
     }
     
     if (orderId) {
@@ -280,20 +387,29 @@ export async function paymentCallback(request, env, provider) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
+
 // 更新订单成功状态
 async function updateOrderSuccess(env, orderId, paymentMethod, transactionId = null) {
+  console.log('🔄 更新订单状态:', { orderId, paymentMethod, transactionId });
+  
   const order = await env.MY_DB.prepare(
     'SELECT * FROM purchases WHERE id = ? AND status = ?'
   ).bind(orderId, 'pending').first();
   
-  if (!order) return;
+  if (!order) {
+    console.log('⚠️ 订单不存在或已处理:', orderId);
+    return;
+  }
   
+  // 更新订单状态
   await env.MY_DB.prepare(
     'UPDATE purchases SET status = ?, payment_method = ?, transaction_id = ?, updated_at = ? WHERE id = ?'
   ).bind('success', paymentMethod, transactionId || '', new Date().toISOString(), orderId).run();
   
+  console.log('✅ 订单状态已更新为 success');
+  
+  // 根据购买类型处理
   if (order.item_type === 'coins') {
-    // ✅ 从 coin_packages 表读取
     const pkg = await env.MY_DB.prepare(
       'SELECT base_coins, bonus_coins FROM coin_packages WHERE id = ?'
     ).bind(order.item_id).first();
@@ -303,9 +419,10 @@ async function updateOrderSuccess(env, orderId, paymentMethod, transactionId = n
       await env.MY_DB.prepare(
         'UPDATE users SET coins = coins + ? WHERE id = ?'
       ).bind(totalCoins, order.user_id).run();
+      
+      console.log('💰 用户金币已增加:', totalCoins);
     }
   } else if (order.item_type === 'vip') {
-    // ✅ 从 vip_plans 表读取
     const plan = await env.MY_DB.prepare(
       'SELECT duration_days FROM vip_plans WHERE id = ?'
     ).bind(order.item_id).first();
@@ -314,9 +431,25 @@ async function updateOrderSuccess(env, orderId, paymentMethod, transactionId = n
       const durationDays = plan.duration_days || 30;
       const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
       
+      // 检查用户当前 VIP 状态
+      const user = await env.MY_DB.prepare(
+        'SELECT vip_expires_at FROM users WHERE id = ?'
+      ).bind(order.user_id).first();
+      
+      let finalExpiresAt = expiresAt;
+      if (user?.vip_expires_at) {
+        const currentExpires = new Date(user.vip_expires_at);
+        if (currentExpires > new Date()) {
+          // 如果当前 VIP 未过期，叠加时间
+          finalExpiresAt = new Date(currentExpires.getTime() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+        }
+      }
+      
       await env.MY_DB.prepare(
         'UPDATE users SET is_vip = ?, vip_expires_at = ? WHERE id = ?'
-      ).bind(true, expiresAt, order.user_id).run();
+      ).bind(1, finalExpiresAt, order.user_id).run();
+      
+      console.log('👑 用户 VIP 已激活，过期时间:', finalExpiresAt);
     }
   }
 }
