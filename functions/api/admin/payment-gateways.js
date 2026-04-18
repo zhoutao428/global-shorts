@@ -50,14 +50,18 @@ export async function getGateways(request, env) {
   }
 }
 
+// functions/api/admin/payment-gateways.js
+
 export async function createGateway(request, env) {
   try {
     const body = await request.json();
     const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = body;
     
+    // ✅ 正确：只查询 value 字段
     const settings = await env.MY_DB.prepare(
       "SELECT value FROM settings WHERE key = 'payment_gateways'"
     ).first();
+    
     let gateways = [];
     if (settings && settings.value) {
       gateways = JSON.parse(settings.value);
@@ -80,16 +84,110 @@ export async function createGateway(request, env) {
     
     gateways.sort((a, b) => a.sort_order - b.sort_order);
     
+    // ✅ 正确：UPDATE 语句只设置 value 字段
     await env.MY_DB.prepare(
       "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
     ).bind(JSON.stringify(gateways)).run();
     
     return jsonResponse({ success: true, id });
   } catch (error) {
+    console.error('createGateway error:', error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
 
+export async function updateGateway(request, env, id) {
+  try {
+    const body = await request.json();
+    const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = body;
+    
+    // ✅ 正确：只查询 value 字段
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_gateways'"
+    ).first();
+    
+    if (!settings || !settings.value) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    
+    let gateways = JSON.parse(settings.value);
+    const index = gateways.findIndex(g => g.id === id);
+    
+    if (index === -1) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    
+    if (is_default) {
+      gateways.forEach(g => g.is_default = false);
+    }
+    
+    // 更新字段
+    if (name !== undefined) gateways[index].name = name;
+    if (type !== undefined) gateways[index].type = type;
+    if (merchant_id !== undefined) gateways[index].merchant_id = merchant_id;
+    if (public_key !== undefined) gateways[index].public_key = public_key;
+    if (gateway_url !== undefined) gateways[index].gateway_url = gateway_url;
+    if (sort_order !== undefined) gateways[index].sort_order = sort_order;
+    if (is_active !== undefined) gateways[index].is_active = is_active;
+    if (is_default !== undefined) gateways[index].is_default = is_default;
+    
+    // 只有提供了新值才更新密钥
+    if (secret_key && secret_key !== '********') {
+      gateways[index].secret_key = secret_key;
+    }
+    if (webhook_secret && webhook_secret !== '********') {
+      gateways[index].webhook_secret = webhook_secret;
+    }
+    
+    gateways.sort((a, b) => a.sort_order - b.sort_order);
+    
+    // ✅ 正确：UPDATE 语句
+    await env.MY_DB.prepare(
+      "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
+    ).bind(JSON.stringify(gateways)).run();
+    
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.error('updateGateway error:', error);
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+export async function deleteGateway(request, env, id) {
+  try {
+    // ✅ 正确：只查询 value 字段
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_gateways'"
+    ).first();
+    
+    if (!settings || !settings.value) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    
+    let gateways = JSON.parse(settings.value);
+    const gateway = gateways.find(g => g.id === id);
+    
+    if (!gateway) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    
+    if (gateway.is_default) {
+      return jsonResponse({ error: '不能删除默认支付接口' }, 400);
+    }
+    
+    gateways = gateways.filter(g => g.id !== id);
+    
+    // ✅ 正确：UPDATE 语句
+    await env.MY_DB.prepare(
+      "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
+    ).bind(JSON.stringify(gateways)).run();
+    
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.error('deleteGateway error:', error);
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
 export async function getGateway(request, env, id) {
   try {
     const settings = await env.MY_DB.prepare(
@@ -119,14 +217,18 @@ export async function updateGateway(request, env, id) {
     const body = await request.json();
     const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = body;
     
+    // ✅ 正确：只查询 value 字段
     const settings = await env.MY_DB.prepare(
       "SELECT value FROM settings WHERE key = 'payment_gateways'"
     ).first();
+    
     if (!settings || !settings.value) {
       return jsonResponse({ error: '支付接口不存在' }, 404);
     }
+    
     let gateways = JSON.parse(settings.value);
     const index = gateways.findIndex(g => g.id === id);
+    
     if (index === -1) {
       return jsonResponse({ error: '支付接口不存在' }, 404);
     }
@@ -135,18 +237,17 @@ export async function updateGateway(request, env, id) {
       gateways.forEach(g => g.is_default = false);
     }
     
-    gateways[index] = {
-      ...gateways[index],
-      name: name !== undefined ? name : gateways[index].name,
-      type: type !== undefined ? type : gateways[index].type,
-      merchant_id: merchant_id !== undefined ? merchant_id : gateways[index].merchant_id,
-      public_key: public_key !== undefined ? public_key : gateways[index].public_key,
-      gateway_url: gateway_url !== undefined ? gateway_url : gateways[index].gateway_url,
-      sort_order: sort_order !== undefined ? sort_order : gateways[index].sort_order,
-      is_active: is_active !== undefined ? is_active : gateways[index].is_active,
-      is_default: is_default !== undefined ? is_default : gateways[index].is_default
-    };
+    // 更新字段
+    if (name !== undefined) gateways[index].name = name;
+    if (type !== undefined) gateways[index].type = type;
+    if (merchant_id !== undefined) gateways[index].merchant_id = merchant_id;
+    if (public_key !== undefined) gateways[index].public_key = public_key;
+    if (gateway_url !== undefined) gateways[index].gateway_url = gateway_url;
+    if (sort_order !== undefined) gateways[index].sort_order = sort_order;
+    if (is_active !== undefined) gateways[index].is_active = is_active;
+    if (is_default !== undefined) gateways[index].is_default = is_default;
     
+    // 只有提供了新值才更新密钥
     if (secret_key && secret_key !== '********') {
       gateways[index].secret_key = secret_key;
     }
@@ -156,44 +257,53 @@ export async function updateGateway(request, env, id) {
     
     gateways.sort((a, b) => a.sort_order - b.sort_order);
     
+    // ✅ 正确：UPDATE 语句
     await env.MY_DB.prepare(
       "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
     ).bind(JSON.stringify(gateways)).run();
     
     return jsonResponse({ success: true });
   } catch (error) {
+    console.error('updateGateway error:', error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
 
 export async function deleteGateway(request, env, id) {
   try {
+    // ✅ 正确：只查询 value 字段
     const settings = await env.MY_DB.prepare(
       "SELECT value FROM settings WHERE key = 'payment_gateways'"
     ).first();
+    
     if (!settings || !settings.value) {
       return jsonResponse({ error: '支付接口不存在' }, 404);
     }
+    
     let gateways = JSON.parse(settings.value);
     const gateway = gateways.find(g => g.id === id);
+    
     if (!gateway) {
       return jsonResponse({ error: '支付接口不存在' }, 404);
     }
+    
     if (gateway.is_default) {
       return jsonResponse({ error: '不能删除默认支付接口' }, 400);
     }
+    
     gateways = gateways.filter(g => g.id !== id);
     
+    // ✅ 正确：UPDATE 语句
     await env.MY_DB.prepare(
       "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
     ).bind(JSON.stringify(gateways)).run();
     
     return jsonResponse({ success: true });
   } catch (error) {
+    console.error('deleteGateway error:', error);
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
 export async function getPaymentSettings(request, env) {
   try {
     const settings = await env.MY_DB.prepare(
