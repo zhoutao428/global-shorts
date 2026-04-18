@@ -2,6 +2,36 @@
 import { jsonResponse } from '../utils/response.js';
 import { authenticate } from '../middleware/auth.js';
 
+// ✅ 获取可用的支付方式（前台调用）
+export async function getAvailableGateways(request, env) {
+  try {
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_gateways'"
+    ).first();
+    
+    let gateways = [];
+    if (settings?.value) {
+      const allGateways = JSON.parse(settings.value);
+      // 只返回启用的支付方式，并隐藏敏感信息
+      gateways = allGateways
+        .filter(g => g.is_active)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map(g => ({
+          id: g.id,
+          name: g.name || g.type,
+          type: g.type,
+          icon: g.type,
+          is_default: g.is_default || false
+        }));
+    }
+    
+    return jsonResponse({ success: true, data: gateways });
+  } catch (error) {
+    console.error('getAvailableGateways error:', error);
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
 // 创建 Stripe Checkout Session（使用 HTTP API）
 async function createStripeSession(secretKey, itemName, amount, successUrl, cancelUrl, orderId) {
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -114,7 +144,6 @@ export async function createOrder(request, env) {
         const successUrl = `${request.headers.get('origin')}/pages/payment-success.html?orderId=${orderId}`;
         const cancelUrl = `${request.headers.get('origin')}/pages/payment-cancel.html?orderId=${orderId}`;
         
-        // ✅ 使用 HTTP API 直接调用 Stripe
         const session = await createStripeSession(
           gateway.secret_key,
           itemName,
@@ -153,8 +182,6 @@ export async function createOrder(request, env) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
-// ... 其他函数保持不变
 
 // 查询订单状态
 export async function getOrderStatus(request, env) {
