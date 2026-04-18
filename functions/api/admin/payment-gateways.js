@@ -1,9 +1,6 @@
 // src/routes/admin/payment-gateways.js
 import { jsonResponse } from '../../utils/response.js';
 
-// src/routes/admin/payment-gateways.js
-import { jsonResponse } from '../../utils/response.js';
-
 export async function getGateways(request, env) {
   try {
     const settings = await env.MY_DB.prepare(
@@ -14,7 +11,7 @@ export async function getGateways(request, env) {
     if (settings && settings.value) {
       gateways = JSON.parse(settings.value);
     } else {
-      // ✅ 默认数据 - 包含 card 类型
+      // 默认数据
       gateways = [
         { 
           id: '1', 
@@ -30,55 +27,20 @@ export async function getGateways(request, env) {
         },
         { 
           id: '2', 
-          name: 'PayPal', 
-          display_name: 'PayPal',
-          description: '快速安全支付',
-          type: 'paypal', 
-          merchant_id: '', 
-          is_active: true, 
-          is_default: false,
-          sort_order: 2,
-          config: { redirect_type: 'popup' }
-        },
-        { 
-          id: '3', 
           name: 'Stripe', 
           display_name: 'Stripe',
           description: '信用卡/借记卡支付',
           type: 'stripe', 
           merchant_id: '', 
+          secret_key: '',
           is_active: true, 
           is_default: false,
-          sort_order: 3,
+          sort_order: 2,
           config: { redirect_type: 'checkout' }
-        },
-        { 
-          id: '4', 
-          name: '支付宝', 
-          display_name: '支付宝',
-          description: '支付宝扫码支付',
-          type: 'alipay', 
-          merchant_id: '', 
-          is_active: true, 
-          is_default: false,
-          sort_order: 4,
-          config: { payment_type: 'qrcode' }
-        },
-        { 
-          id: '5', 
-          name: '微信支付', 
-          display_name: '微信支付',
-          description: '微信扫码支付',
-          type: 'wechat', 
-          merchant_id: '', 
-          is_active: true, 
-          is_default: false,
-          sort_order: 5,
-          config: { payment_type: 'qrcode' }
         }
       ];
       
-      // ✅ 自动保存到数据库
+      // 自动保存到数据库
       await env.MY_DB.prepare(
         "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)"
       ).bind('payment_gateways', JSON.stringify(gateways)).run();
@@ -89,9 +51,11 @@ export async function getGateways(request, env) {
   }
 }
 
-// ... 其他函数保持不变export async function createGateway(request, env) {
+export async function createGateway(request, env) {
   try {
-    const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = await request.json();
+    const body = await request.json();
+    const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = body;
+    
     const settings = await env.MY_DB.prepare(
       "SELECT value FROM settings WHERE key = 'payment_gateways'"
     ).first();
@@ -99,10 +63,13 @@ export async function getGateways(request, env) {
     if (settings && settings.value) {
       gateways = JSON.parse(settings.value);
     }
+    
     const id = crypto.randomUUID();
+    
     if (is_default) {
       gateways.forEach(g => g.is_default = false);
     }
+    
     gateways.push({
       id, name, type, merchant_id, secret_key, public_key: public_key || '',
       gateway_url: gateway_url || '', webhook_secret: webhook_secret || '',
@@ -111,11 +78,161 @@ export async function getGateways(request, env) {
       is_default: is_default || false,
       created_at: new Date().toISOString()
     });
+    
     gateways.sort((a, b) => a.sort_order - b.sort_order);
+    
     await env.MY_DB.prepare(
       "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
     ).bind(JSON.stringify(gateways)).run();
+    
     return jsonResponse({ success: true, id });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+export async function getGateway(request, env, id) {
+  try {
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_gateways'"
+    ).first();
+    if (!settings || !settings.value) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    const gateways = JSON.parse(settings.value);
+    const gateway = gateways.find(g => g.id === id);
+    if (!gateway) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    
+    const safeGateway = { ...gateway };
+    if (safeGateway.secret_key) safeGateway.secret_key = '********';
+    if (safeGateway.webhook_secret) safeGateway.webhook_secret = '********';
+    
+    return jsonResponse({ success: true, data: safeGateway });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+export async function updateGateway(request, env, id) {
+  try {
+    const body = await request.json();
+    const { name, type, merchant_id, secret_key, public_key, gateway_url, webhook_secret, sort_order, is_active, is_default } = body;
+    
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_gateways'"
+    ).first();
+    if (!settings || !settings.value) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    let gateways = JSON.parse(settings.value);
+    const index = gateways.findIndex(g => g.id === id);
+    if (index === -1) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    
+    if (is_default) {
+      gateways.forEach(g => g.is_default = false);
+    }
+    
+    gateways[index] = {
+      ...gateways[index],
+      name: name !== undefined ? name : gateways[index].name,
+      type: type !== undefined ? type : gateways[index].type,
+      merchant_id: merchant_id !== undefined ? merchant_id : gateways[index].merchant_id,
+      public_key: public_key !== undefined ? public_key : gateways[index].public_key,
+      gateway_url: gateway_url !== undefined ? gateway_url : gateways[index].gateway_url,
+      sort_order: sort_order !== undefined ? sort_order : gateways[index].sort_order,
+      is_active: is_active !== undefined ? is_active : gateways[index].is_active,
+      is_default: is_default !== undefined ? is_default : gateways[index].is_default
+    };
+    
+    if (secret_key && secret_key !== '********') {
+      gateways[index].secret_key = secret_key;
+    }
+    if (webhook_secret && webhook_secret !== '********') {
+      gateways[index].webhook_secret = webhook_secret;
+    }
+    
+    gateways.sort((a, b) => a.sort_order - b.sort_order);
+    
+    await env.MY_DB.prepare(
+      "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
+    ).bind(JSON.stringify(gateways)).run();
+    
+    return jsonResponse({ success: true });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+export async function deleteGateway(request, env, id) {
+  try {
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_gateways'"
+    ).first();
+    if (!settings || !settings.value) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    let gateways = JSON.parse(settings.value);
+    const gateway = gateways.find(g => g.id === id);
+    if (!gateway) {
+      return jsonResponse({ error: '支付接口不存在' }, 404);
+    }
+    if (gateway.is_default) {
+      return jsonResponse({ error: '不能删除默认支付接口' }, 400);
+    }
+    gateways = gateways.filter(g => g.id !== id);
+    
+    await env.MY_DB.prepare(
+      "UPDATE settings SET value = ? WHERE key = 'payment_gateways'"
+    ).bind(JSON.stringify(gateways)).run();
+    
+    return jsonResponse({ success: true });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+// 支付全局设置
+export async function getPaymentSettings(request, env) {
+  try {
+    const settings = await env.MY_DB.prepare(
+      "SELECT value FROM settings WHERE key = 'payment_settings'"
+    ).first();
+    
+    let paymentSettings = {
+      default_payment: '',
+      timeout: 30,
+      currency: 'USD',
+      currency_symbol: '$',
+      enable_callback: true,
+      notify_url: 'https://api.globalshorts.com/payment/notify',
+      return_url: 'https://globalshorts.com/payment/success',
+      success_url: 'https://globalshorts.com/payment/success',
+      fail_url: 'https://globalshorts.com/payment/fail'
+    };
+    
+    if (settings && settings.value) {
+      paymentSettings = { ...paymentSettings, ...JSON.parse(settings.value) };
+    }
+    
+    return jsonResponse({ success: true, data: paymentSettings });
+  } catch (error) {
+    return jsonResponse({ error: error.message }, 500);
+  }
+}
+
+export async function updatePaymentSettings(request, env) {
+  try {
+    const settings = await request.json();
+    
+    await env.MY_DB.prepare(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)"
+    ).bind('payment_settings', JSON.stringify(settings)).run();
+    
+    return jsonResponse({ success: true });
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
   }
