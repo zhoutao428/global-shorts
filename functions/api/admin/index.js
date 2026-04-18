@@ -21,6 +21,7 @@ import * as withdrawals from './withdrawals.js';
 console.log('withdrawals exports:', Object.keys(withdrawals));
 import * as interactions from './interactions.js';
 import * as contentPerformance from './content-performance.js';
+
 export async function handleAdmin(request, env, url, method) {
   const path = url.pathname;
 
@@ -66,23 +67,25 @@ export async function handleAdmin(request, env, url, method) {
   if (path === '/api/admin/interactions/stats' && method === 'GET') {
     return stats.getInteractionStats(request, env, url);
   }
-// 点赞管理
-if (path === '/api/admin/likes' && method === 'GET') {
-  return interactions.getLikes(request, env, url);
-}
-if (path.match(/^\/api\/admin\/likes\/[^\/]+$/) && method === 'DELETE') {
-  const id = path.split('/')[4];
-  return interactions.deleteLike(request, env, id);
-}
 
-// 收藏管理
-if (path === '/api/admin/favorites' && method === 'GET') {
-  return interactions.getFavorites(request, env, url);
-}
-if (path.match(/^\/api\/admin\/favorites\/[^\/]+$/) && method === 'DELETE') {
-  const id = path.split('/')[4];
-  return interactions.deleteFavorite(request, env, id);
-}
+  // 点赞管理
+  if (path === '/api/admin/likes' && method === 'GET') {
+    return interactions.getLikes(request, env, url);
+  }
+  if (path.match(/^\/api\/admin\/likes\/[^\/]+$/) && method === 'DELETE') {
+    const id = path.split('/')[4];
+    return interactions.deleteLike(request, env, id);
+  }
+
+  // 收藏管理
+  if (path === '/api/admin/favorites' && method === 'GET') {
+    return interactions.getFavorites(request, env, url);
+  }
+  if (path.match(/^\/api\/admin\/favorites\/[^\/]+$/) && method === 'DELETE') {
+    const id = path.split('/')[4];
+    return interactions.deleteFavorite(request, env, id);
+  }
+
   // ---------- 用户管理 ----------
   if (path === '/api/admin/users' && method === 'GET') {
     return users.getUsers(request, env);
@@ -164,19 +167,21 @@ if (path.match(/^\/api\/admin\/favorites\/[^\/]+$/) && method === 'DELETE') {
   if (path === '/api/admin/episodes/batch-sort' && method === 'POST') {
     return episodes.batchUpdateSort(request, env);
   }
-// 内容表现路由
-if (path === '/api/admin/content/performance' && method === 'GET') {
-  return contentPerformance.getOverview(request, env, url);
-}
-if (path === '/api/admin/content/performance/dramas' && method === 'GET') {
-  return contentPerformance.getDramasPage(request, env, url);
-}
-if (path === '/api/admin/content/performance/categories' && method === 'GET') {
-  return contentPerformance.getCategoryStats(request, env, url);
-}
-if (path === '/api/admin/content/performance/export' && method === 'GET') {
-  return contentPerformance.exportData(request, env, url);
-}
+
+  // 内容表现路由
+  if (path === '/api/admin/content/performance' && method === 'GET') {
+    return contentPerformance.getOverview(request, env, url);
+  }
+  if (path === '/api/admin/content/performance/dramas' && method === 'GET') {
+    return contentPerformance.getDramasPage(request, env, url);
+  }
+  if (path === '/api/admin/content/performance/categories' && method === 'GET') {
+    return contentPerformance.getCategoryStats(request, env, url);
+  }
+  if (path === '/api/admin/content/performance/export' && method === 'GET') {
+    return contentPerformance.exportData(request, env, url);
+  }
+
   // ---------- 分类管理 ----------
   if (path === '/api/admin/categories' && method === 'GET') {
     return categories.getCategories(request, env);
@@ -236,7 +241,8 @@ if (path === '/api/admin/content/performance/export' && method === 'GET') {
     const id = path.split('/')[4];
     return coinPackages.deletePackage(request, env, id);
   }
-// ---------- 广告位管理 ----------
+
+  // ---------- 广告位管理 ----------
   if (path === '/api/admin/ad-positions' && method === 'GET') {
     return adPositions.getPositions(request, env);
   }
@@ -288,6 +294,16 @@ if (path === '/api/admin/content/performance/export' && method === 'GET') {
   if (path === '/api/admin/settings' && method === 'PUT') {
     return settings.updateAllSettings(request, env);
   }
+
+  // ✅ 具体路由放在前面：支付全局设置
+  if (path === '/api/admin/settings/payment' && method === 'GET') {
+    return paymentGateways.getPaymentSettings(request, env);
+  }
+  if (path === '/api/admin/settings/payment' && method === 'PUT') {
+    return paymentGateways.updatePaymentSettings(request, env);
+  }
+
+  // ✅ 通用路由放在后面
   if (path.match(/^\/api\/admin\/settings\/[^\/]+$/) && method === 'GET') {
     const key = path.split('/')[4];
     return settings.getSetting(request, env, key);
@@ -316,23 +332,18 @@ if (path === '/api/admin/content/performance/export' && method === 'GET') {
     const id = path.split('/')[4];
     return paymentGateways.deleteGateway(request, env, id);
   }
-if (path === '/api/admin/withdrawals' && method === 'GET') {
-  return withdrawals.getWithdrawals(request, env, url);
-}
-if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'GET') {
-  const id = path.split('/')[4];
-  return withdrawals.getWithdrawal(request, env, id);
-}
-if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'PUT') {
-  const id = path.split('/')[4];
-  return withdrawals.updateWithdrawalStatus(request, env, url, id);
-}
-// ---------- 支付全局设置 ----------
-  if (path === '/api/admin/settings/payment' && method === 'GET') {
-    return paymentGateways.getPaymentSettings(request, env);
+
+  // ---------- 提现管理 ----------
+  if (path === '/api/admin/withdrawals' && method === 'GET') {
+    return withdrawals.getWithdrawals(request, env, url);
   }
-  if (path === '/api/admin/settings/payment' && method === 'PUT') {
-    return paymentGateways.updatePaymentSettings(request, env);
+  if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'GET') {
+    const id = path.split('/')[4];
+    return withdrawals.getWithdrawal(request, env, id);
+  }
+  if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'PUT') {
+    const id = path.split('/')[4];
+    return withdrawals.updateWithdrawalStatus(request, env, url, id);
   }
 
   // ---------- 翻译管理 ----------
@@ -350,7 +361,7 @@ if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'PUT') {
     const encodedKey = path.split('/')[4];
     const key = decodeURIComponent(encodedKey);
     return translations.updateTranslation(request, env, key);
-}
+  }
   if (path === '/api/admin/translations/import' && method === 'POST') {
     return translations.importTranslations(request, env);
   }
@@ -378,8 +389,9 @@ if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'PUT') {
     return admins.deleteAdmin(request, env, id);
   }
   if (path === '/api/admin/roles' && method === 'GET') {
-  return admins.getRoles(request, env);
-}
+    return admins.getRoles(request, env);
+  }
+
   // ---------- 文件上传 ----------
   if (path === '/upload' && method === 'POST') {
     return upload.uploadGeneric(request, env);
@@ -393,42 +405,44 @@ if (path.match(/^\/api\/admin\/withdrawals\/[^\/]+$/) && method === 'PUT') {
   if (path === '/api/admin/upload/status' && method === 'GET') {
     return upload.getUploadStatus(request, env, url);
   }
-// 收入分析路由
-if (path === '/api/admin/revenue/summary' && method === 'GET') {
-  return revenue.getRevenueSummary(request, env, url);
-}
-if (path === '/api/admin/revenue/trend' && method === 'GET') {
-  return revenue.getRevenueTrend(request, env, url);
-}
-if (path === '/api/admin/revenue/composition' && method === 'GET') {
-  return revenue.getRevenueComposition(request, env, url);
-}
-if (path === '/api/admin/revenue/details' && method === 'GET') {
-  return revenue.getRevenueDetails(request, env, url);
-}
-if (path === '/api/admin/revenue/export' && method === 'GET') {
-  return revenue.exportRevenue(request, env, url);
-}
-if (path === '/api/admin/revenue/target' && method === 'POST') {
-  return revenue.setRevenueTarget(request, env);
-}
-// 地区分析路由
-if (path === '/api/admin/region/overview' && method === 'GET') {
-  return region.getRegionOverview(request, env, url);
-}
-if (path === '/api/admin/region/top' && method === 'GET') {
-  return region.getRegionTop(request, env, url);
-}
-if (path === '/api/admin/region/preference' && method === 'GET') {
-  return region.getRegionPreference(request, env, url);
-}
-if (path === '/api/admin/region/export' && method === 'GET') {
-  return region.exportRegionData(request, env, url);
-}
-// 生成预签名上传 URL
-if (path === '/api/admin/upload/presigned' && method === 'GET') {
+  if (path === '/api/admin/upload/presigned' && method === 'GET') {
     return upload.getPresignedUrl(request, env);
-}
- // 未匹配
+  }
+
+  // 收入分析路由
+  if (path === '/api/admin/revenue/summary' && method === 'GET') {
+    return revenue.getRevenueSummary(request, env, url);
+  }
+  if (path === '/api/admin/revenue/trend' && method === 'GET') {
+    return revenue.getRevenueTrend(request, env, url);
+  }
+  if (path === '/api/admin/revenue/composition' && method === 'GET') {
+    return revenue.getRevenueComposition(request, env, url);
+  }
+  if (path === '/api/admin/revenue/details' && method === 'GET') {
+    return revenue.getRevenueDetails(request, env, url);
+  }
+  if (path === '/api/admin/revenue/export' && method === 'GET') {
+    return revenue.exportRevenue(request, env, url);
+  }
+  if (path === '/api/admin/revenue/target' && method === 'POST') {
+    return revenue.setRevenueTarget(request, env);
+  }
+
+  // 地区分析路由
+  if (path === '/api/admin/region/overview' && method === 'GET') {
+    return region.getRegionOverview(request, env, url);
+  }
+  if (path === '/api/admin/region/top' && method === 'GET') {
+    return region.getRegionTop(request, env, url);
+  }
+  if (path === '/api/admin/region/preference' && method === 'GET') {
+    return region.getRegionPreference(request, env, url);
+  }
+  if (path === '/api/admin/region/export' && method === 'GET') {
+    return region.exportRegionData(request, env, url);
+  }
+
+  // 未匹配
   return null;
 }
