@@ -332,7 +332,50 @@ export async function handleAdmin(request, env, url, method) {
     const id = path.split('/')[4];
     return paymentGateways.deleteGateway(request, env, id);
   }
-
+// ---------- 支付记录 ----------
+if (path === '/api/admin/payment-records' && method === 'GET') {
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '5');
+    const status = url.searchParams.get('status') || '';
+    const offset = (page - 1) * limit;
+    
+    let whereClause = '';
+    let params = [];
+    
+    if (status) {
+        whereClause = 'WHERE p.status = ?';
+        params.push(status);
+    }
+    
+    const countResult = await env.MY_DB.prepare(
+        `SELECT COUNT(*) as total FROM purchases p ${whereClause}`
+    ).bind(...params).first();
+    
+    const { results } = await env.MY_DB.prepare(
+        `SELECT p.*, u.email, u.nickname 
+         FROM purchases p
+         LEFT JOIN users u ON p.user_id = u.id
+         ${whereClause}
+         ORDER BY p.created_at DESC
+         LIMIT ? OFFSET ?`
+    ).bind(...params, limit, offset).all();
+    
+    const records = results.map(r => ({
+        id: r.id,
+        order_no: r.order_no,
+        username: r.nickname || r.email,
+        amount: (r.amount_paid / 100).toFixed(2),
+        payment_method: r.payment_method,
+        status: r.status,
+        created_at: r.created_at
+    }));
+    
+    return jsonResponse({
+        success: true,
+        data: records,
+        pagination: { page, limit, total: countResult.total, pages: Math.ceil(countResult.total / limit) }
+    });
+}
   // ---------- 提现管理 ----------
   if (path === '/api/admin/withdrawals' && method === 'GET') {
     return withdrawals.getWithdrawals(request, env, url);
