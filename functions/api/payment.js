@@ -2,36 +2,35 @@
 import { jsonResponse } from '../utils/response.js';
 import { authenticate } from '../middleware/auth.js';
 
-// 获取可用的支付方式
-export async function getAvailableGateways(request, env) {
-  try {
-    const settings = await env.MY_DB.prepare(
-      "SELECT value FROM settings WHERE key = 'payment_gateways'"
-    ).first();
-    
-    let gateways = [];
-    if (settings?.value) {
-      const allGateways = JSON.parse(settings.value);
-      gateways = allGateways
-        .filter(g => g.is_active)
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-        .map(g => ({
-          id: g.id,
-          name: g.name || g.type,
-          type: g.type,
-          icon: g.type,
-          is_default: g.is_default || false
-        }));
-    }
-    
-    return jsonResponse({ success: true, data: gateways });
-  } catch (error) {
-    console.error('getAvailableGateways error:', error);
-    return jsonResponse({ error: error.message }, 500);
+// 创建 Stripe Checkout Session（使用 HTTP API）
+async function createStripeSession(secretKey, itemName, amount, successUrl, cancelUrl, orderId) {
+  const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${secretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      'payment_method_types[]': 'card',
+      'line_items[0][price_data][currency]': 'usd',
+      'line_items[0][price_data][product_data][name]': itemName,
+      'line_items[0][price_data][unit_amount]': Math.round(amount * 100),
+      'line_items[0][quantity]': '1',
+      'mode': 'payment',
+      'success_url': successUrl,
+      'cancel_url': cancelUrl,
+      'metadata[orderId]': orderId,
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Stripe API 错误: ${error}`);
   }
+  
+  return response.json();
 }
 
-// 创建订单
 export async function createOrder(request, env) {
   try {
     const auth = await authenticate(request, env);
@@ -56,8 +55,6 @@ export async function createOrder(request, env) {
     const gateways = JSON.parse(gatewaySettings?.value || '[]');
     const gateway = gateways.find(g => g.type === paymentMethod && g.is_active);
     
-    console.log('🔑 网关配置:', gateway ? { type: gateway.type, hasKey: !!gateway.secret_key } : '未找到');
-    
     if (!gateway) {
       return jsonResponse({ error: '支付方式不可用' }, 400);
     }
@@ -72,7 +69,7 @@ export async function createOrder(request, env) {
       if (!pkg) {
         return jsonResponse({ error: '套餐不存在' }, 400);
       }
-      itemName = pkg.name;
+      itemName = pkg.name || `${pkg.base_coins} 金币`;
       amount = pkg.price_usd || 0;
       itemId = pkg.id;
       details = { coins: pkg.base_coins || 0, bonus: pkg.bonus_coins || 0 };
@@ -85,16 +82,13 @@ export async function createOrder(request, env) {
       if (!plan) {
         return jsonResponse({ error: '套餐不存在' }, 400);
       }
-      itemName = plan.name;
+      itemName = plan.name || `VIP ${plan.duration_days}天`;
       amount = plan.price_usd || 0;
       itemId = plan.id;
       details = { duration: plan.duration_days || 0 };
-      
     } else {
       return jsonResponse({ error: '无效的购买类型' }, 400);
     }
-    
-    console.log('💰 套餐:', { itemName, amount });
     
     // 生成订单号
     const orderNo = `ORD${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -108,52 +102,27 @@ export async function createOrder(request, env) {
       orderId, user.id, type, itemId, Math.round(amount * 100), 'USD', 'pending', orderNo, new Date().toISOString()
     ).run();
     
-    console.log('✅ 订单已创建:', orderNo);
-    
-    // 获取全局支付设置
-    const paymentSettingsRes = await env.MY_DB.prepare(
-      "SELECT value FROM settings WHERE key = 'payment_settings'"
-    ).first();
-    const paymentSettings = paymentSettingsRes?.value ? JSON.parse(paymentSettingsRes.value) : {
-      currency: 'USD',
-      currency_symbol: '$'
-    };
-    
     // 根据支付方式生成支付参数
     let paymentParams = {};
     
     if (paymentMethod === 'stripe') {
       if (!gateway.secret_key) {
-        console.error('❌ Stripe 密钥未配置');
-        return jsonResponse({ error: 'Stripe 支付未配置，请联系管理员' }, 500);
+        return jsonResponse({ error: 'Stripe 支付未配置' }, 500);
       }
       
       try {
-        console.log('🔄 创建 Stripe Checkout Session...');
-        
-        // ✅ 使用动态 import() 导入 Stripe（兼容 CommonJS 环境）
-        const StripeModule = await import('stripe');
-        const Stripe = StripeModule.default || StripeModule;
-        const stripe = new Stripe(gateway.secret_key);
-        
         const successUrl = `${request.headers.get('origin')}/pages/payment-success.html?orderId=${orderId}`;
         const cancelUrl = `${request.headers.get('origin')}/pages/payment-cancel.html?orderId=${orderId}`;
         
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ['card'],
-          line_items: [{
-            price_data: {
-              currency: 'usd',
-              product_data: { name: itemName },
-              unit_amount: Math.round(amount * 100),
-            },
-            quantity: 1,
-          }],
-          mode: 'payment',
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-          metadata: { orderId },
-        });
+        // ✅ 使用 HTTP API 直接调用 Stripe
+        const session = await createStripeSession(
+          gateway.secret_key,
+          itemName,
+          amount,
+          successUrl,
+          cancelUrl,
+          orderId
+        );
         
         paymentParams = { url: session.url };
         console.log('✅ Stripe session URL:', session.url);
@@ -163,9 +132,7 @@ export async function createOrder(request, env) {
         return jsonResponse({ error: 'Stripe 初始化失败: ' + stripeError.message }, 500);
       }
     } else {
-      // 其他支付方式 - 模拟
       paymentParams = { simulate: true };
-      console.log('🎭 使用模拟支付');
     }
     
     return jsonResponse({
@@ -174,8 +141,7 @@ export async function createOrder(request, env) {
         orderId,
         orderNo,
         amount,
-        currency: paymentSettings.currency || 'USD',
-        currencySymbol: paymentSettings.currency_symbol || '$',
+        currency: 'USD',
         itemName,
         details,
         paymentParams,
@@ -187,6 +153,8 @@ export async function createOrder(request, env) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
+
+// ... 其他函数保持不变
 
 // 查询订单状态
 export async function getOrderStatus(request, env) {
