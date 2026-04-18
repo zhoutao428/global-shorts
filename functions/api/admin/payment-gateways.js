@@ -196,28 +196,17 @@ export async function getPaymentSettings(request, env) {
       "SELECT value FROM settings WHERE key = 'payment_settings'"
     ).first();
     
-    let paymentSettings = {
-      default_payment: '',
-      timeout: 30,
-      currency: 'USD',
-      currency_symbol: '$',
-      enable_callback: true,
-      notify_url: 'https://www.playlet.shop/api/payment/callback',
-      return_url: 'https://www.playlet.shop/pages/payment-success.html',
-      success_url: 'https://www.playlet.shop/pages/payment-success.html',
-      fail_url: 'https://www.playlet.shop/pages/payment-cancel.html'
-    };
+    let paymentSettings = { /* 默认值 */ };
     
     if (settings && settings.value) {
       paymentSettings = { ...paymentSettings, ...JSON.parse(settings.value) };
     }
     
-    return jsonResponse({ success: true, data: paymentSettings });
+    return jsonResponse({ success: true, data: paymentSettings });  // ← 始终返回 200
   } catch (error) {
     return jsonResponse({ error: error.message }, 500);
   }
 }
-
 export async function updatePaymentSettings(request, env) {
   try {
     const settings = await request.json();
